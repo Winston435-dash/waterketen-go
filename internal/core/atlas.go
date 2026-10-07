@@ -1,0 +1,573 @@
+package core
+
+import (
+	"fmt"
+	"math"
+	"sort"
+	"strings"
+)
+
+// --- Colours, modes, the layer vocabulary -----------------------------------
+//
+// These are the DATA colours (what a riool line is), NOT the UI tokens. The
+// ui package owns the chrome; this table owns the map. The mapping is the one
+// the Python atlas established and the TUI screenshots already taught.
+
+var layerColours = map[string]string{
+	"riool":               "#38d9ff",
+	"drinkwaterleidingen": "#ffa95c",
+	"drinkwater":          "#476c91",
+	"straten":             "#627d91",
+	"water":               "#416e91",
+	"spoor":               "#b19bbf",
+	"putten":              "#38d9ff",
+	"gemalen":             "#cc94ff",
+	"groen":               "#5a8f6f",
+	"gebouwen":            "#4a5a68",
+}
+
+// Networks are drawn even in overlay mode regardless of the active layer.
+var networks = []string{"drinkwaterleidingen", "riool"}
+
+// Modes is the colour-mode cycle for the atlas: netwerk → bob → materiaal.
+var Modes = []string{"netwerk", "bob", "materiaal"}
+
+// materialPalette cycles over distinct materials in MATERIAAL1 order.
+var materialPalette = []string{
+	"#38d9ff", "#ffa95c", "#cc94ff", "#8ee6a8", "#ff7096", "#e9d778",
+	"#73a7ff", "#dca775", "#bde693", "#ed8be4", "#9ddeda", "#ff765e",
+}
+
+const (
+	atlasBackground = "#0b1725"
+	hudBackground   = "#0c1927"
+	gridColour      = "#172b3e" // the reference RD grid
+	highlightStyle  = "bold #ffffff on #284a63"
+	labelStyle      = "bold #b9d5e7 on #0c1927"
+	northStyle      = "bold #a8c4df on #0b1725"
+	scaleStyle      = "bold #b3d3e9 on #0b1725"
+)
+
+// --- Scene: data the atlas draws --------------------------------------------
+
+// Feature is one drawable element: a geometry plus display attributes.
+type Feature struct {
+	Layer      string
+	Position   int
+	Geometry   Geometry
+	Properties map[string]string
+	Street     string
+	BOB        float64 // NaN = unknown
+}
+
+func (f Feature) key() [2]int { return [2]int{f.Position, int(layerIndex(f.Layer))} }
+
+func layerIndex(name string) int {
+	for i, n := range allLayers {
+		if n == name {
+			return i
+		}
+	}
+	return len(allLayers)
+}
+
+var allLayers = []string{
+	"straten", "water", "groen", "gebouwen", "spoor",
+	"riool", "drinkwaterleidingen", "drinkwater", "putten", "gemalen",
+}
+
+// Scene is a fully loaded multi-layer picture: features per layer, a spatial
+// index per layer, streets by name, the material→colour legend.
+type Scene struct {
+	Area      string
+	Bounds    BBox
+	Layers    map[string][]Feature
+	Index     map[string]GridIndex
+	Streets   map[string][]int // street name -> indices into Layers[layer]
+	StreetOf  map[int]string   // (layerCode<<32|pos) -> street — for stable keying
+	Materials map[string]string
+	Warnings  []string
+}
+
+// Frame is the current view rect at a given zoom, plus helpers to move
+// between world (RD) and cell coordinates.
+type Frame struct {
+	Bounds        BBox
+	Width, Height int
+	MetresPerDot  float64
+}
+
+// Project maps a world point to float cell coordinates.
+func (f Frame) Project(x, y float64) (float64, float64) {
+	return (x - f.Bounds.MinX) / f.MetresPerDot,
+		(f.Bounds.MaxY - y) / f.MetresPerDot
+}
+
+// Cell maps a world point to a terminal CELL (a braille cell, not a dot).
+func (f Frame) Cell(x, y float64) (int, int) {
+	px, py := f.Project(x, y)
+	return int(math.Round(px / 2)), int(math.Round(py / 4))
+}
+
+// World maps a cell to the world point at the centre of its 2x4 dot block.
+func (f Frame) World(col, row float64) (float64, float64) {
+	return f.Bounds.MinX + (col*2+.5)*f.MetresPerDot,
+		f.Bounds.MaxY - (row*4+1.5)*f.MetresPerDot
+}
+
+// View is the navigational state: centre + zoom. zoom=1 means "fit the scene".
+type View struct {
+	CX, CY float64
+	Zoom   float64
+}
+
+// FitView returns the view that exactly fits the bounds.
+func FitView(b BBox) View {
+	return View{CX: (b.MinX + b.MaxX) / 2, CY: (b.MinY + b.MaxY) / 2, Zoom: 1}
+}
+
+// Frame materialises the view at a given pixel budget.
+func (v View) Frame(scene BBox, width, height int) Frame {
+	dw := math.Max(float64(width*2-1), 1)
+	dh := math.Max(float64(height*4-1), 1)
+	metres := math.Max(math.Max(
+		(scene.MaxX-scene.MinX)/dw,
+		(scene.MaxY-scene.MinY)/dh,
+	), .01) * 1.08 / v.Zoom
+	sx, sy := dw*metres/2, dh*metres/2
+	return Frame{
+		Bounds:       BBox{v.CX - sx, v.CY - sy, v.CX + sx, v.CY + sy},
+		Width:        width,
+		Height:       height,
+		MetresPerDot: metres,
+	}
+}
+
+// ZoomAt changes the zoom while keeping the world point under (col, row) fixed.
+func (v *View) ZoomAt(factor, col, row float64, scene BBox, width, height int) {
+	bx, by := v.Frame(scene, width, height).World(col, row)
+	v.Zoom = math.Max(.5, math.Min(1024, v.Zoom*factor))
+	ax, ay := v.Frame(scene, width, height).World(col, row)
+	v.CX += bx - ax
+	v.CY += by - ay
+}
+
+// Pan moves the view by a fraction of the visible span.
+func (v *View) Pan(east, north float64, scene BBox, width, height int) {
+	f := v.Frame(scene, width, height)
+	v.CX += east * (f.Bounds.MaxX - f.Bounds.MinX) * .18
+	v.CY += north * (f.Bounds.MaxY - f.Bounds.MinY) * .18
+}
+
+// --- Scene construction -----------------------------------------------------
+//
+// Load a scene from open GeoPackage handles. The Python side used geopandas;
+// we use the gpkg.go reader plus the geometry.go index. One damaged layer is
+// a warning, not a blank map.
+
+// SceneSource is one layer's features.
+type SceneSource struct {
+	Name     string
+	Features []Feature
+}
+
+// NewScene builds a Scene from pre-read layers.
+func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, error) {
+	scene := &Scene{
+		Area:      area,
+		Layers:    map[string][]Feature{},
+		Index:     map[string]GridIndex{},
+		Streets:   map[string][]int{},
+		StreetOf:  map[int]string{},
+		Materials: map[string]string{},
+		Warnings:  warnings,
+	}
+	var fitBBox BBox
+	started := false
+	addExtent := func(b BBox, isNetwork bool) {
+		// Never let a country-wide service-area polygon determine network zoom.
+		if !isNetwork {
+			return
+		}
+		if !started {
+			fitBBox, started = b, true
+			return
+		}
+		fitBBox.MinX = math.Min(fitBBox.MinX, b.MinX)
+		fitBBox.MinY = math.Min(fitBBox.MinY, b.MinY)
+		fitBBox.MaxX = math.Max(fitBBox.MaxX, b.MaxX)
+		fitBBox.MaxY = math.Max(fitBBox.MaxY, b.MaxY)
+	}
+	isNetwork := func(name string) bool {
+		for _, n := range networks {
+			if n == name {
+				return true
+			}
+		}
+		return false
+	}
+
+	materialNames := map[string]struct{}{}
+	for _, layer := range layers {
+		if len(layer.Features) == 0 {
+			continue
+		}
+		geoms := make([]Geometry, len(layer.Features))
+		for i, f := range layer.Features {
+			geoms[i] = f.Geometry
+			if f.Street != "" {
+				scene.Streets[f.Street] = append(scene.Streets[f.Street], i)
+			}
+			if m := f.Properties["MATERIAAL1"]; m != "" {
+				materialNames[m] = struct{}{}
+			}
+		}
+		scene.Layers[layer.Name] = layer.Features
+		scene.Index[layer.Name] = NewGridIndex(geoms)
+		if isNetwork(layer.Name) {
+			for _, g := range geoms {
+				if b, ok := g.Bounds(); ok {
+					addExtent(b, true)
+				}
+			}
+		}
+	}
+	// No network: fall back to the union of everything.
+	if !started {
+		for _, layer := range layers {
+			for _, f := range layer.Features {
+				if b, ok := f.Geometry.Bounds(); ok {
+					if !started {
+						fitBBox, started = b, true
+						continue
+					}
+					fitBBox.MinX = math.Min(fitBBox.MinX, b.MinX)
+					fitBBox.MinY = math.Min(fitBBox.MinY, b.MinY)
+					fitBBox.MaxX = math.Max(fitBBox.MaxX, b.MaxX)
+					fitBBox.MaxY = math.Max(fitBBox.MaxY, b.MaxY)
+				}
+			}
+		}
+	}
+	if !started {
+		return nil, fmt.Errorf("geen geometrie beschikbaar voor de atlas")
+	}
+	scene.Bounds = fitBBox
+
+	names := make([]string, 0, len(materialNames))
+	for m := range materialNames {
+		names = append(names, m)
+	}
+	sort.Strings(names)
+	for i, m := range names {
+		scene.Materials[m] = materialPalette[i%len(materialPalette)]
+	}
+	return scene, nil
+}
+
+// VisibleLayers answers the same question as the Python atlas: overlay draws
+// the networks plus (if active is not a network) the active layer.
+func (s *Scene) VisibleLayers(active string, overlay bool, display []string) []string {
+	if display != nil {
+		var out []string
+		for _, n := range display {
+			if _, ok := s.Layers[n]; ok {
+				out = append(out, n)
+			}
+		}
+		return out
+	}
+	if !overlay {
+		if _, ok := s.Layers[active]; ok {
+			return []string{active}
+		}
+		return nil
+	}
+	nets := []string{}
+	for _, n := range networks {
+		if _, ok := s.Layers[n]; ok {
+			nets = append(nets, n)
+		}
+	}
+	if _, ok := s.Layers[active]; ok && !contains(nets, active) {
+		return append([]string{active}, nets...)
+	}
+	if len(nets) > 0 {
+		return nets
+	}
+	out := []string{}
+	for n := range s.Layers {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// Candidates is the sindex.query equivalent: features of `layer` whose bbox
+// intersects `bounds`.
+func (s *Scene) Candidates(layer string, bounds BBox) []Feature {
+	idx, ok := s.Index[layer]
+	if !ok {
+		return nil
+	}
+	ids := idx.Query(bounds)
+	feats := s.Layers[layer]
+	out := make([]Feature, len(ids))
+	for i, id := range ids {
+		out[i] = feats[id]
+	}
+	return out
+}
+
+// Search returns up to 8 street names matching the query (case-insensitive,
+// prefix-first), or the first 8 alphabetically when the query is empty.
+func (s *Scene) Search(query string) []string {
+	q := strings.ToLower(strings.TrimSpace(query))
+	names := make([]string, 0, len(s.Streets))
+	for n := range s.Streets {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	if q == "" {
+		if len(names) > 8 {
+			names = names[:8]
+		}
+		return names
+	}
+	type match struct {
+		name   string
+		prefix bool
+	}
+	var hits []match
+	for _, n := range names {
+		if strings.Contains(strings.ToLower(n), q) {
+			hits = append(hits, match{n, strings.HasPrefix(strings.ToLower(n), q)})
+		}
+	}
+	sort.SliceStable(hits, func(i, j int) bool {
+		if hits[i].prefix != hits[j].prefix {
+			return hits[i].prefix
+		}
+		return strings.ToLower(hits[i].name) < strings.ToLower(hits[j].name)
+	})
+	out := make([]string, 0, min(8, len(hits)))
+	for i, h := range hits {
+		if i >= 8 {
+			break
+		}
+		out = append(out, h.name)
+	}
+	return out
+}
+
+// Nearest returns the closest feature to world point (x, y) within `radius`,
+// over the layers visible given (active, overlay). Polygons measure to their
+// outline. nil when nothing is close.
+func (s *Scene) Nearest(x, y, radius float64, active string, overlay bool, display []string) *Feature {
+	p := Point{X: x, Y: y, Z: math.NaN()}
+	var winner *Feature
+	best := radius
+	for _, layer := range s.VisibleLayers(active, overlay, display) {
+		for _, f := range s.Candidates(layer, BBox{x - radius, y - radius, x + radius, y + radius}) {
+			d := f.Geometry.Distance(p)
+			if d <= best {
+				cpy := f
+				winner = &cpy
+				best = d
+			}
+		}
+	}
+	return winner
+}
+
+// StreetView focuses a view on all features of one street, with a 40 m margin.
+func (s *Scene) StreetView(name string, width, height int) (View, bool) {
+	ids, ok := s.Streets[name]
+	if !ok {
+		return View{}, false
+	}
+	var b BBox
+	started := false
+	for layer, feats := range s.Layers {
+		_ = layer
+		for _, i := range ids {
+			if i < 0 || i >= len(feats) {
+				continue
+			}
+			gb, ok := feats[i].Geometry.Bounds()
+			if !ok {
+				continue
+			}
+			if !started {
+				b, started = gb, true
+				continue
+			}
+			b.MinX = math.Min(b.MinX, gb.MinX)
+			b.MinY = math.Min(b.MinY, gb.MinY)
+			b.MaxX = math.Max(b.MaxX, gb.MaxX)
+			b.MaxY = math.Max(b.MaxY, gb.MaxY)
+		}
+	}
+	if !started {
+		return View{}, false
+	}
+	target := BBox{b.MinX - 40, b.MinY - 40, b.MaxX + 40, b.MaxY + 40}
+	base := FitView(s.Bounds).Frame(s.Bounds, width, height).MetresPerDot
+	needed := FitView(target).Frame(target, width, height).MetresPerDot
+	return View{
+		CX:   (b.MinX + b.MaxX) / 2,
+		CY:   (b.MinY + b.MaxY) / 2,
+		Zoom: math.Max(1, math.Min(1024, base/needed)),
+	}, true
+}
+
+// --- Rendering --------------------------------------------------------------
+
+// Render is the output of one draw: a grid of (rune, styleKey) cells plus the
+// legend and per-layer counts. styleKey indexes the StyleTable the caller
+// resolves to actual lipgloss styles — keeping core free of lipgloss.
+type Render struct {
+	Cells  [][]Cell
+	Frame  Frame
+	Counts map[string]int
+	Legend []LegendEntry
+}
+
+// Cell is one terminal cell on the map.
+type Cell struct {
+	Rune  rune
+	Style CellStyle
+}
+
+// CellStyle is a semantic style reference, not a colour. Renderers pick one;
+// the screen translates via a fixed table (the only place that may import
+// lipgloss for the atlas).
+type CellStyle string
+
+const (
+	StyleBlank     CellStyle = "bg"
+	StyleGrid      CellStyle = "grid"
+	StyleNorth     CellStyle = "north"
+	StyleScale     CellStyle = "scale"
+	StyleLabel     CellStyle = "label"
+	StyleHighlight CellStyle = "highlight"
+	// StyleLayerPrefix prefixes a per-layer style: "layer:riool".
+	StyleLayerPrefix CellStyle = "layer:"
+)
+
+// StyleForLayer returns the style key for a layer drawn in the default mode.
+func StyleForLayer(name string) CellStyle { return StyleLayerPrefix + CellStyle(name) }
+
+// LegendEntry is one legend item: label + which colour to draw it with.
+type LegendEntry struct {
+	Label string
+	Style CellStyle
+}
+
+// colourGrid keeps a colour per CELL (not per dot) — collisions resolve by
+// priority.
+type colourGrid struct {
+	grid       DotGrid
+	styles     [][]string
+	priorities [][]int
+	style      string
+	priority   int
+}
+
+func newColourGrid(w, h int) colourGrid {
+	styles := make([][]string, h)
+	prios := make([][]int, h)
+	for i := range styles {
+		styles[i] = make([]string, w)
+		prios[i] = make([]int, w)
+		for x := range styles[i] {
+			styles[i][x] = gridColour
+			prios[i][x] = -1
+		}
+	}
+	return colourGrid{grid: NewDotGrid(w, h), styles: styles, priorities: prios}
+}
+
+func (g *colourGrid) setDot(x, y int) {
+	g.grid.SetDot(x, y)
+	if x < 0 || y < 0 || x >= g.grid.DotWidth || y >= g.grid.DotHeight {
+		return
+	}
+	cx, cy := x/2, y/4
+	if g.priority >= g.priorities[cy][cx] {
+		g.styles[cy][cx] = g.style
+		g.priorities[cy][cx] = g.priority
+	}
+}
+
+func (g *colourGrid) line(ax, ay, bx, by float64) {
+	x0, y0 := int(math.Round(ax)), int(math.Round(ay))
+	x1, y1 := int(math.Round(bx)), int(math.Round(by))
+	dx := absi(x1 - x0)
+	dy := -absi(y1 - y0)
+	sx, sy := 1, 1
+	if x0 > x1 {
+		sx = -1
+	}
+	if y0 > y1 {
+		sy = -1
+	}
+	err := dx + dy
+	for {
+		g.setDot(x0, y0)
+		if x0 == x1 && y0 == y1 {
+			break
+		}
+		e2 := 2 * err
+		if e2 >= dy {
+			err += dy
+			x0 += sx
+		}
+		if e2 <= dx {
+			err += dx
+			y0 += sy
+		}
+	}
+}
+
+// putText writes a string into a (rune, style) grid, clipped to the width.
+func putText(rows [][]Cell, col, row int, text string, style string) {
+	if row < 0 || row >= len(rows) {
+		return
+	}
+	c := col
+	for _, r := range text {
+		if c >= 0 && c < len(rows[row]) {
+			rows[row][c] = Cell{Rune: r, Style: CellStyle(style)}
+		}
+		c++
+	}
+}
+
+// niceDistance picks a "round" scale distance ≤ v: 1/2/5 × 10^n.
+func niceDistance(v float64) float64 {
+	v = math.Max(v, 1e-12)
+	base := math.Pow(10, math.Floor(math.Log10(v)))
+	for _, n := range []float64{10, 5, 2, 1} {
+		if n*base <= v {
+			return n * base
+		}
+	}
+	return base
+}
+
+func distanceLabel(m float64) string {
+	if m >= 1000 {
+		return fmt.Sprintf("%g km", m/1000)
+	}
+	return fmt.Sprintf("%g m", m)
+}
+
+func contains(s []string, v string) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
