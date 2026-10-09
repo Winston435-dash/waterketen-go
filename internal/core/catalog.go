@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -133,6 +134,12 @@ func LoadCatalog(root string) (Catalog, error) {
 			}
 		}
 		if lib != nil {
+			// The area registry is a separate file, not a manifest.layers entry.
+			if l.ID == "gebieden" {
+				_, statErr := os.Stat(filepath.Join(lib.Root, "areas.gpkg"))
+				l.Local = append(l.Local, CatalogLocal{Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: statErr == nil, Count: lib.Manifest.AreaCount, FetchedAt: lib.Manifest.CreatedAt, CRS: lib.Manifest.CRS, SourceURL: lib.Manifest.BoundarySource, Status: "gebiedenregister; datum = publicatie, niet brondatum"})
+				continue
+			}
 			if rec, ok := lib.Manifest.Layers[l.ID]; ok {
 				_, statErr := os.Stat(lib.LayerPath(l.ID))
 				l.Local = append(l.Local, CatalogLocal{Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: statErr == nil, Count: rec.FeatureCount, FetchedAt: lib.Manifest.CreatedAt, SourceDate: rec.Source.Date, SourceURL: rec.Source.URL, License: rec.Source.License, CRS: lib.Manifest.CRS, Status: "snapshot; datum = publicatie, niet brondatum"})
