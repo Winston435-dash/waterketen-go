@@ -319,19 +319,19 @@ func gridStyleToCell(style string) CellStyle {
 // exists once so the screen never maps hexes itself.
 func ColourToStyle(hex string) CellStyle {
 	switch hex {
-	case "#b28cff":
+	case bobBands["very-deep"]:
 		return "bob:very-deep"
-	case "#589dff":
+	case bobBands["deep"]:
 		return "bob:deep"
-	case "#38d9ff":
+	case bobBands["mid"]:
 		// riool AND bob mid AND putten share this colour — resolve by priority:
 		// this hex as a CELL colour means "layer ink".
 		return StyleForLayer("riool")
-	case "#8ee6a8":
+	case bobBands["shallow"]:
 		return "bob:shallow"
-	case "#ffcc73":
+	case bobBands["above"]:
 		return "bob:above"
-	case "#73879d":
+	case bobBands["unknown"]:
 		return "bob:unknown"
 	}
 	for name, c := range layerColours {
@@ -348,23 +348,20 @@ func ColourToStyle(hex string) CellStyle {
 func featureColour(f Feature, mode string, scene *Scene) string {
 	if mode == "bob" && f.Layer == "riool" {
 		if math.IsNaN(f.BOB) {
-			return "#73879d"
+			return bobBands["unknown"]
 		}
-		for _, branch := range []struct {
-			threshold float64
-			colour    string
-		}{{-4, "#b28cff"}, {-2, "#589dff"}, {-1, "#38d9ff"}, {0, "#8ee6a8"}} {
-			if f.BOB < branch.threshold {
-				return branch.colour
+		for _, branch := range bobBandOrder {
+			if f.BOB < branch.below {
+				return bobBands[branch.band]
 			}
 		}
-		return "#ffcc73"
+		return bobBands["above"]
 	}
 	if mode == "materiaal" && f.Layer == "riool" {
 		if c, ok := scene.Materials[f.Properties["MATERIAAL1"]]; ok {
 			return c
 		}
-		return "#73879d"
+		return bobBands["unknown"]
 	}
 	if c, ok := layerColours[f.Layer]; ok {
 		return c

@@ -39,14 +39,39 @@ var materialPalette = []string{
 }
 
 const (
-	atlasBackground = "#0b1725"
-	hudBackground   = "#0c1927"
-	gridColour      = "#172b3e" // the reference RD grid
-	highlightStyle  = "bold #ffffff on #284a63"
-	labelStyle      = "bold #b9d5e7 on #0c1927"
-	northStyle      = "bold #a8c4df on #0b1725"
-	scaleStyle      = "bold #b3d3e9 on #0b1725"
+	gridColour   = "#172b3e" // the reference RD grid
+	highlightInk = "#ffffff"
+	labelInk     = "#b9d5e7"
+	northInk     = "#a8c4df"
+	scaleInk     = "#b3d3e9"
+	// materialInk is the fallback ink for a material legend swatch whose colour
+	// core cannot resolve without the scene's material map.
+	materialInk = "#9ddeda"
 )
+
+// bobBands are the sewer-invert depth bands the "bob" colour mode draws, in
+// metres NAP. The keys double as the CellStyle suffix ("bob:deep"), so the
+// renderer and CellColour share one table instead of repeating the palette.
+var bobBands = map[string]string{
+	"very-deep": "#b28cff",
+	"deep":      "#589dff",
+	"mid":       "#38d9ff",
+	"shallow":   "#8ee6a8",
+	"above":     "#ffcc73",
+	"unknown":   "#73879d",
+}
+
+// bobBandOrder maps a BOB threshold to a band: a pipe shallower than `below`
+// takes `band`. Ordered deepest-first, matching featureColour.
+var bobBandOrder = []struct {
+	below float64
+	band  string
+}{
+	{-4, "very-deep"},
+	{-2, "deep"},
+	{-1, "mid"},
+	{0, "shallow"},
+}
 
 // --- Scene: data the atlas draws --------------------------------------------
 
@@ -457,6 +482,45 @@ const (
 
 // StyleForLayer returns the style key for a layer drawn in the default mode.
 func StyleForLayer(name string) CellStyle { return StyleLayerPrefix + CellStyle(name) }
+
+// CellColour resolves a CellStyle to the concrete hex ink the map draws. This
+// is the single owner of data ink: the screen turns the hex into a terminal
+// colour and keeps no colour table of its own. Chrome styles are resolved here
+// too (grid, label, ...); the UI layer adds only bold/underline on top.
+func CellColour(s CellStyle) string {
+	str := string(s)
+	switch s {
+	case StyleBlank, StyleGrid:
+		return gridColour
+	case StyleNorth:
+		return northInk
+	case StyleScale:
+		return scaleInk
+	case StyleLabel:
+		return labelInk
+	case StyleHighlight:
+		return highlightInk
+	}
+	if name, ok := strings.CutPrefix(str, string(StyleLayerPrefix)); ok {
+		if c, ok := layerColours[name]; ok {
+			return c
+		}
+	}
+	if band, ok := strings.CutPrefix(str, "bob:"); ok {
+		if c, ok := bobBands[band]; ok {
+			return c
+		}
+	}
+	if hex, ok := strings.CutPrefix(str, "hex:"); ok {
+		return hex
+	}
+	if strings.HasPrefix(str, "material:") {
+		// core cannot resolve a material swatch without the scene's map; the TUI
+		// legend therefore draws every material in one ink (a known limitation).
+		return materialInk
+	}
+	return layerColours["riool"]
+}
 
 // LegendEntry is one legend item: label + which colour to draw it with.
 type LegendEntry struct {

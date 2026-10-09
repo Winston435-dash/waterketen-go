@@ -209,14 +209,19 @@ func readWKB(b []byte) (Geometry, int, error) {
 	}
 	raw := order.Uint32(b[1:5])
 	dims := 2
+	hasZ := false
 	base := raw
 	switch {
 	case raw >= 3000: // WKB ZM
 		dims, base = 4, raw-3000
-	case raw >= 2000: // WKB M (Z leeg: sla 1 ordinaat over)
+		hasZ = true
+	case raw >= 2000: // WKB M-only: the 3rd ordinate is a measure, not Z.
+		// The parser keeps Z = NaN for the whole geometry, so a measure can
+		// never be mistaken for an elevation.
 		dims, base = 3, raw-2000
 	case raw >= 1000: // WKB Z
 		dims, base = 3, raw-1000
+		hasZ = true
 	}
 	off := 5
 
@@ -228,7 +233,7 @@ func readWKB(b []byte) (Geometry, int, error) {
 		p.X = math.Float64frombits(order.Uint64(b[off:]))
 		p.Y = math.Float64frombits(order.Uint64(b[off+8:]))
 		p.Z = math.NaN()
-		if dims >= 3 {
+		if hasZ {
 			p.Z = math.Float64frombits(order.Uint64(b[off+16:]))
 		}
 		off += need
