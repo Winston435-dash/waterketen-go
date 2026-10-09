@@ -4,30 +4,114 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/glamour"
+	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
 )
 
-// CatalogDocument wraps before colouring, including long endpoint URLs, so the
-// reading viewport never silently clips explanatory text on a phone.
+// CatalogDocument translates the catalog's semantic lines to Markdown, then
+// renders it with Glamour at the viewport width. Styles use foreground ink only.
 func CatalogDocument(lines []core.CatalogLine, width int) string {
-	var rows []string
+	width = max(1, width)
+	renderer, err := glamour.NewTermRenderer(
+		glamour.WithStyles(catalogMarkdownStyles()),
+		glamour.WithColorProfile(lipgloss.ColorProfile()),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return catalogPlainDocument(lines, width)
+	}
+	rendered, err := renderer.Render(catalogMarkdown(lines))
+	if err != nil {
+		return catalogPlainDocument(lines, width)
+	}
+	return strings.TrimSpace(rendered)
+}
+
+func catalogMarkdown(lines []core.CatalogLine) string {
+	var markdown strings.Builder
+	headings := 0
 	for _, line := range lines {
-		text := ansi.Wrap(line.Text, max(1, width), "")
+		text := escapeMarkdownText(line.Text)
 		switch line.Kind {
 		case "heading":
-			rows = append(rows, "", Strong(text))
+			headings++
+			level := "###"
+			if headings == 1 {
+				level = "##"
+			}
+			fmt.Fprintf(&markdown, "%s %s\n\n", level, text)
 		case "warning":
-			rows = append(rows, lipgloss.NewStyle().Foreground(ui.ColorWarning).Render(text))
+			fmt.Fprintf(&markdown, "> **Let op:** %s\n\n", text)
 		case "meta":
-			rows = append(rows, Muted(text))
+			fmt.Fprintf(&markdown, "_%s_\n\n", text)
 		default:
-			rows = append(rows, text)
+			fmt.Fprintf(&markdown, "%s\n\n", text)
 		}
 	}
-	return strings.TrimLeft(strings.Join(rows, "\n"), "\n")
+	return markdown.String()
+}
+
+func escapeMarkdownText(text string) string {
+	var escaped strings.Builder
+	for _, r := range text {
+		if strings.ContainsRune("\\`*_{}[]<>()#+-.!|~", r) {
+			escaped.WriteRune('\\')
+		}
+		escaped.WriteRune(r)
+	}
+	return escaped.String()
+}
+
+func catalogMarkdownStyles() glamouransi.StyleConfig {
+	bold, italic := true, true
+	zero, one := uint(0), uint(1)
+	primary := adaptiveMarkdownColor(ui.ColorPrimary)
+	text := adaptiveMarkdownColor(ui.ColorText)
+	muted := adaptiveMarkdownColor(ui.ColorMuted)
+	warning := adaptiveMarkdownColor(ui.ColorWarning)
+	ok := adaptiveMarkdownColor(ui.ColorOK)
+	underline := true
+	return glamouransi.StyleConfig{
+		Document: glamouransi.StyleBlock{
+			StylePrimitive: glamouransi.StylePrimitive{Color: &text},
+			Margin:         &zero,
+		},
+		Heading: glamouransi.StyleBlock{
+			StylePrimitive: glamouransi.StylePrimitive{Color: &primary, Bold: &bold},
+		},
+		BlockQuote: glamouransi.StyleBlock{
+			StylePrimitive: glamouransi.StylePrimitive{Color: &warning},
+			Indent:         &one,
+			IndentToken:    stringValue("│ "),
+		},
+		Emph:   glamouransi.StylePrimitive{Color: &muted, Italic: &italic},
+		Strong: glamouransi.StylePrimitive{Bold: &bold},
+		Link:   glamouransi.StylePrimitive{Color: &primary, Underline: &underline},
+		Code: glamouransi.StyleBlock{
+			StylePrimitive: glamouransi.StylePrimitive{Color: &ok},
+		},
+	}
+}
+
+func adaptiveMarkdownColor(color lipgloss.AdaptiveColor) string {
+	if lipgloss.HasDarkBackground() {
+		return color.Dark
+	}
+	return color.Light
+}
+
+func stringValue(value string) *string { return &value }
+
+func catalogPlainDocument(lines []core.CatalogLine, width int) string {
+	rows := make([]string, 0, len(lines))
+	for _, line := range lines {
+		rows = append(rows, ansi.Wrap(line.Text, width, ""))
+	}
+	return strings.Join(rows, "\n")
 }
 
 // CatalogMenu returns the document and each entry's first row for selection-aware
