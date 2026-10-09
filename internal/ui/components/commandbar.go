@@ -16,8 +16,8 @@ const compactWidth = 72
 
 // CommandBar is the footer. The app's fixed anatomy is Header → Content →
 // CommandBar; this is the third element and every screen renders exactly one.
-// It renders ONLY the bindings the active screen handed it — the sidebar
-// already lists the panel keys, so duplicating them here would just overflow
+// It renders ONLY the bindings the active screen handed it — the
+// header already lists the panel keys, so duplicating them would just overflow
 // (the classic footer-mangling bug from the Textual app).
 //
 // ShortHelpView takes []key.Binding; screens pass their own subset.

@@ -15,10 +15,8 @@ import "github.com/charmbracelet/lipgloss"
 
 // --- Color tokens -----------------------------------------------------------
 
-// The palette matches the existing waterketen visuals (atlas deep blue with a
-// cyan accent) while staying legible on black terminals. The accent is the
-// Charm-pink from the Bubble Tea/Bubbles stack; the data-ink of the atlas
-// (layer colours) lives in core and stays its own thing.
+// Charm-pink marks the active UI; neutral secondary ink stays legible on dark
+// terminals. Atlas layer colours live in core and do not follow chrome tokens.
 //
 // SURFACES ARE TRANSPARENT. The UI never paints a background: only ink colours
 // and panel borders are set, so the terminal's own background shows through.
@@ -26,14 +24,14 @@ import "github.com/charmbracelet/lipgloss"
 // needs a fill, but nothing should reach for them by default.
 var (
 	ColorPrimary   = lipgloss.AdaptiveColor{Light: "#c81ec8", Dark: "#ff7bf5"} // Charm-pink accent (active UI, busy)
-	ColorMuted     = lipgloss.AdaptiveColor{Light: "#5a6b78", Dark: "#627d91"} // secondary text, street ink
+	ColorMuted     = lipgloss.AdaptiveColor{Light: "#536171", Dark: "#9aa8b8"} // secondary UI text
 	ColorText      = lipgloss.AdaptiveColor{Light: "#1a2530", Dark: "#d2e2ee"} // body text
 	ColorError     = lipgloss.AdaptiveColor{Light: "#b3261e", Dark: "#ff6d64"} // probe failures, impossible values
 	ColorWarning   = lipgloss.AdaptiveColor{Light: "#8c6d0b", Dark: "#ffa95c"} // drinkwater accent doubles as warning
 	ColorOK        = lipgloss.AdaptiveColor{Light: "#1e7d32", Dark: "#6fe38f"} // source up, probe healthy
 	ColorSurface   = lipgloss.AdaptiveColor{Light: "#f2f5f7", Dark: "#0b1725"} // reserved fill — NOT used by default
 	ColorSurfaceHi = lipgloss.AdaptiveColor{Light: "#e2eaef", Dark: "#102235"} // reserved fill — NOT used by default
-	ColorBorder    = lipgloss.AdaptiveColor{Light: "#8fb3c4", Dark: "#3a5f7a"} // calm border
+	ColorBorder    = lipgloss.AdaptiveColor{Light: "#8a99aa", Dark: "#475569"} // calm border
 	ColorActiveBg  = lipgloss.AdaptiveColor{Light: "#d0e4ee", Dark: "#173850"} // reserved fill — NOT used by default
 )
 
@@ -57,7 +55,7 @@ const (
 
 var (
 	BorderPanel  = lipgloss.RoundedBorder() // every content panel
-	BorderActive = lipgloss.ThickBorder()   // the focused panel only
+	BorderActive = lipgloss.RoundedBorder() // focus is accent ink, not a heavier line
 )
 
 // --- Busy-animation tokens --------------------------------------------------
@@ -80,6 +78,3 @@ func SpinnerFrame(n int) string {
 	frames := []rune(SpinnerFrames)
 	return string(frames[((n%len(frames))+len(frames))%len(frames)])
 }
-
-// SidebarWidth is the fixed width of the screen's panel-switcher column.
-const SidebarWidth = 24

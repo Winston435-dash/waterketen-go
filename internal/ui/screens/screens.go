@@ -5,7 +5,6 @@
 package screens
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -32,14 +31,14 @@ const (
 	ScreenProfiel
 )
 
-// ScreenInfo is the stable identity of one screen in the sidebar.
+// ScreenInfo is the stable identity of one screen in the header navigation.
 type ScreenInfo struct {
 	ID    ScreenID
 	Key   string // single keystroke ("1".."6")
 	Title string
 }
 
-// Screens is the canonical registry, in sidebar order.
+// Screens is the canonical registry, in navigation order.
 var Screens = []ScreenInfo{
 	{ScreenBronnen, "1", "Bronnen"},
 	{ScreenLagen, "2", "Lagen"},
@@ -57,7 +56,7 @@ type Screen interface {
 	SetSize(w, h int)      // OUTER panel size incl. border
 	Update(msg tea.Msg) (Screen, tea.Cmd)
 	View() string // Panel-ready content, no border
-	Info() string // sidebar footer info ("3 bedraad, 2 gedetecteerd")
+	Info() string // panel-title context ("3 bedraad, 2 gedetecteerd")
 }
 
 // New builds the initial screen set, given the loaded domain state.
@@ -72,30 +71,6 @@ func New(root string) []Screen {
 		NewKaart(root, lib, assets),
 		NewProfiel(root, assets),
 	}
-}
-
-// --- Sidebar ----------------------------------------------------------------
-
-// Sidebar renders the panel switcher. It IS the legend for panel keys, so
-// the CommandBar never repeats them.
-func Sidebar(active ScreenID, infos []ScreenInfo, infoText string, height int) string {
-	var b bytes.Buffer
-	for _, s := range infos {
-		label := fmt.Sprintf("[%s] %s", s.Key, s.Title)
-		if s.ID == active {
-			// Active panel is marked by ink + bold, not a filled bar, so the
-			// terminal background stays visible.
-			b.WriteString(components.Attention(label, ui.SidebarWidth-2))
-		} else {
-			b.WriteString(components.MutedWidth(label, ui.SidebarWidth-2))
-		}
-		b.WriteByte('\n')
-	}
-	body := b.String()
-	if infoText != "" {
-		body += "\n" + components.Muted(infoText)
-	}
-	return components.Panel("Panelen", body, ui.SidebarWidth, height, true)
 }
 
 // --- Bronnen ---------------------------------------------------------------

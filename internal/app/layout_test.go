@@ -56,12 +56,8 @@ func TestViewNeverExceedsTerminal(t *testing.T) {
 	}
 }
 
-// TestPanelBoxMatchesRenderedPanel guards the layout decision itself. The box a
-// screen is TOLD it has (SetSize via applySize) must be the box it is RENDERED
-// into (renderBody). Those two used to disagree: panelBox subtracted the 24-cell
-// sidebar at any width >= 44, while renderBody dropped the sidebar below 80 — so
-// at 72 columns the map was drawn 48 wide inside a 72-wide panel and a third of
-// the screen sat empty.
+// TestPanelBoxMatchesRenderedPanel keeps SetSize and rendering on the same
+// full-width box at every supported terminal geometry.
 func TestPanelBoxMatchesRenderedPanel(t *testing.T) {
 	for _, s := range mobile {
 		m := New("")
