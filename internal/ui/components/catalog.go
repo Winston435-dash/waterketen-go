@@ -58,6 +58,10 @@ func catalogMarkdown(lines []core.CatalogLine) string {
 func escapeMarkdownText(text string) string {
 	var escaped strings.Builder
 	for _, r := range text {
+		if r == '\n' || r == '\r' || r == '\t' {
+			escaped.WriteRune(' ')
+			continue
+		}
 		if strings.ContainsRune("\\`*_{}[]<>()#+-.!|~", r) {
 			escaped.WriteRune('\\')
 		}
