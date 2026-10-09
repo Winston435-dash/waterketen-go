@@ -95,8 +95,20 @@ func TestSelectAreaAmbiguity(t *testing.T) {
 	}
 }
 
-// TestFilterAreas: the picker's search. Delfshaven ranks first for "delf",
-// code search works, and an empty query returns everything.
+// TestAreaLabelLeadsWithCode: the label starts with the CBS code, which is the
+// unique identifier and the disambiguator ("Delfshaven" is both WK059903 and
+// BU05990320). A phone truncates the label's tail, so the tail must be the part
+// that is merely descriptive.
+func TestAreaLabelLeadsWithCode(t *testing.T) {
+	a := Area{Code: "WK059903", Name: "Delfshaven", Kind: KindWijk}
+	got := a.Label()
+	if !strings.HasPrefix(got, "WK059903") {
+		t.Errorf("label %q begint niet met de CBS-code", got)
+	}
+	if !strings.Contains(got, "Delfshaven") {
+		t.Errorf("label %q mist de naam", got)
+	}
+}
 func TestFilterAreas(t *testing.T) {
 	areas, err := LoadAreas(testLibrary(t))
 	if err != nil {

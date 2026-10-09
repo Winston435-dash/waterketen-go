@@ -215,26 +215,31 @@ func (p *Picker) toggle() {
 
 // View renders the overlay as a centered Panel. The caller decides what (if
 // anything) shows through: nothing is painted behind it.
+//
+// Every line is clipped to the dialog's inner width. Without that, a long area
+// label ("buurt · Bedrijvenpark Noord-West (BU05992459)") WRAPS onto a second row,
+// so each entry costs two rows, fewer entries fit, and the list stops looking like
+// a list — measured on a 48-column phone.
 func (p *Picker) View() string {
+	innerW := p.innerWidth()
+	rows := p.windowRows()
 	var b strings.Builder
 	if p.Searchable() {
 		b.WriteString(components.Strong("zoek: " + p.query))
-		b.WriteByte('\n')
 	} else {
 		b.WriteString(components.MutedText("lagen die de kaart tekent"))
-		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
+	b.WriteByte('\n')
 	if len(p.filtered) == 0 {
-		b.WriteString(components.MutedText("  geen treffers"))
+		b.WriteString(components.SingleLine(components.MutedText("  geen treffers"), innerW))
 		b.WriteByte('\n')
 	}
-	const window = 12
 	start := 0
-	if p.cursor >= window {
-		start = p.cursor - window + 1
+	if p.cursor >= rows {
+		start = p.cursor - rows + 1
 	}
-	for i := start; i < len(p.filtered) && i < start+window; i++ {
+	for i := start; i < len(p.filtered) && i < start+rows; i++ {
 		it := p.filtered[i]
 		line := "  " + it.label
 		if p.Toggling() {
@@ -245,14 +250,14 @@ func (p *Picker) View() string {
 			line = "  " + mark + " " + it.label
 		}
 		if i == p.cursor {
-			b.WriteString(components.Selected(line, max(20, p.w-14)))
+			b.WriteString(components.Selected(components.SingleLine(line, innerW), innerW))
 		} else {
-			b.WriteString(components.MutedText(line))
+			b.WriteString(components.SingleLine(components.MutedText(line), innerW))
 		}
 		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
-	b.WriteString(components.MutedText(p.hint))
+	b.WriteString(components.SingleLine(components.MutedText(p.hint), innerW))
 	title := p.title
 	if p.Searchable() && p.query != "" {
 		title = fmt.Sprintf("%s · %d van %d", p.title, len(p.filtered), len(p.all))
@@ -265,5 +270,47 @@ func (p *Picker) View() string {
 		}
 		title = fmt.Sprintf("%s · %d van %d aan", p.title, n, len(p.all))
 	}
-	return components.Modal("", title, b.String(), p.w, p.h, min(72, max(30, p.w-8)))
+	return components.Modal("", title, b.String(), p.w, p.h, p.dialogWidth())
+}
+
+// dialogWidth is the dialog's outer width. The cap is p.w-8, not p.w-2: the dialog
+// is placed INSIDE the panel's content area, which is already p.w minus the panel
+// border (2), its padding (2) and room for the dialog's own chrome. Asking for
+// p.w-2 rendered a dialog wider than its host, and lipgloss wrapped the PANEL
+// border instead — measured on a 48-column phone.
+func (p *Picker) dialogWidth() int {
+	w := 72
+	if p.w-8 < w {
+		w = p.w - 8
+	}
+	if w < 20 {
+		w = 20
+	}
+	if w > p.w {
+		w = p.w
+	}
+	return w
+}
+
+// innerWidth is the printable width inside the dialog.
+func (p *Picker) innerWidth() int { return maxPickerInt(8, p.dialogWidth()-4) }
+
+// windowRows is how many list rows fit in the host height, so the dialog's hint
+// and title are never pushed off the bottom of a phone screen.
+func (p *Picker) windowRows() int {
+	rows := p.h - 6
+	if rows > 12 {
+		rows = 12
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	return rows
+}
+
+func maxPickerInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

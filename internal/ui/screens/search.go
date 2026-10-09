@@ -71,38 +71,83 @@ func (s *StreetSearch) Update(msg tea.KeyMsg) (focus string, done, changed bool)
 }
 
 // View renders the search overlay: the query, the ranked matches, and the hint.
+// Like the picker, every line is clipped to the dialog width so a long street name
+// cannot wrap an entry onto two rows on a phone.
 func (s *StreetSearch) View() string {
+	innerW := s.innerWidth()
+	rows := s.windowRows()
 	var b strings.Builder
-	b.WriteString(components.Strong("straat: " + s.query))
+	b.WriteString(components.SingleLine(components.Strong("straat: "+s.query), innerW))
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	if s.busy {
-		b.WriteString(components.MutedText("  zoeken…"))
+		b.WriteString(components.SingleLine(components.MutedText("  zoeken…"), innerW))
 		b.WriteByte('\n')
 	} else if len(s.matches) == 0 {
-		if s.query == "" {
-			b.WriteString(components.MutedText("  typ een straatnaam"))
-		} else {
-			b.WriteString(components.MutedText("  geen straat gevonden"))
+		msg := "  typ een straatnaam"
+		if s.query != "" {
+			msg = "  geen straat gevonden"
 		}
+		b.WriteString(components.SingleLine(components.MutedText(msg), innerW))
 		b.WriteByte('\n')
 	}
 	for i, name := range s.matches {
+		if i >= rows {
+			break
+		}
 		line := "  " + name
 		if i == 0 {
-			b.WriteString(components.Selected(line, max(20, s.w-14)))
+			b.WriteString(components.Selected(components.SingleLine(line, innerW), innerW))
 		} else {
-			b.WriteString(components.MutedText(line))
+			b.WriteString(components.SingleLine(components.MutedText(line), innerW))
 		}
 		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
-	b.WriteString(components.MutedText("typ om te zoeken · enter focust · esc sluit"))
+	b.WriteString(components.SingleLine(
+		components.MutedText("typ om te zoeken · enter focust · esc sluit"), innerW))
 	title := "Straat zoeken"
 	if len(s.matches) > 0 {
 		title = "Straat zoeken · " + itoa(len(s.matches)) + " treffers"
 	}
-	return components.Modal("", title, b.String(), s.w, s.h, min(72, max(30, s.w-8)))
+	return components.Modal("", title, b.String(), s.w, s.h, s.dialogWidth())
+}
+
+// dialogWidth is the dialog's outer width. The cap is p.w-8 (see Picker.dialogWidth):
+// the dialog lives inside the panel's content area, so a dialog wider than its host
+// makes lipgloss wrap the panel border instead of the dialog.
+func (s *StreetSearch) dialogWidth() int {
+	w := 72
+	if s.w-8 < w {
+		w = s.w - 8
+	}
+	if w < 20 {
+		w = 20
+	}
+	if w > s.w {
+		w = s.w
+	}
+	return w
+}
+
+func (s *StreetSearch) innerWidth() int {
+	w := s.dialogWidth() - 4
+	if w < 8 {
+		w = 8
+	}
+	return w
+}
+
+// windowRows is how many match rows fit without pushing the hint off the bottom.
+func (s *StreetSearch) windowRows() int {
+	rows := s.h - 6
+	if rows > 8 {
+		rows = 8
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	return rows
 }
 
 func itoa(n int) string {

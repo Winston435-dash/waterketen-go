@@ -89,6 +89,40 @@ go build -o waterketen-tui ./cmd/waterketen-tui
 ./waterketen-tui
 ```
 
+## Mobiel (Termux / smalle terminals)
+
+De TUI is bruikbaar op een telefoon. Beneden ~76 kolommen of ~24 rijen wijkt de
+zijbalk voor de kaart — die is de inhoud, de zijbalk is comfort — en wat de
+zijbalk normaal vertelt, verhuist naar de twee vrije regels:
+
+- **header**: `waterketen — 4 Analyse ‹ 5 Kaart › 6 Profiel` (de paneeltoetsen,
+  want de zijbalk wás de legenda)
+- **paneltitel**: `Kaart · GM0599 · samen` (wat `Info()` op een breed scherm in de
+  zijbalk zet)
+- **commandobar**: alleen de toetsen, geen beschrijvingen (`← · → · ↑ · ↓ · + · - · f · [ · ] · o · l · /`)
+
+Drie regels die dit betaalbaar maakten, alle drie uit een echte capture:
+
+1. `components.SingleLine` is de ENIGE manier om een vaste één-regel-slot te
+   vullen (header, commandobar). `lipgloss.Width()` vult aan maar kapt niet af, en
+   `Padding` komt er bovenop — dus `Width(n).Padding(0,1)` rendert n+2 cellen en de
+   terminal wikkelt het naar een tweede rij. Gemeten op 30x12: header=2, bar=2,
+   totaal 14 rijen op een scherm van 12. Afkappen eindigt op `…`, zodat een
+   afgekapte CBS-code niet als typefout leest.
+2. `Model.layout()` is de ENIGE plek die de schermgeometrie bepaalt. `panelBox()`
+   en `renderBody()` lezen allebei die struct, zodat de box die een scherm
+   *krijgt* niet kan afwijken van de box waarin het *getekend* wordt. Dat verschil
+   was de mobiele bug: `panelBox` trok de zijbalk af vanaf 44 kolommen, terwijl
+   `renderBody` hem pas onder 80 liet vallen — dus op 72 kolommen tekende de kaart
+   48 breed in een paneel van 72 en bleef een derde van het scherm leeg.
+3. Overlays klemmen hun eigen dialoogbreedte. Een dialoog breder dan het paneel
+   laat lipgloss de PANEELRAND wikkelen in plaats van de dialoog, en een te hoge
+   dialoog duwt de hint van het scherm. Beide gemeten op 48 kolommen.
+
+De regressietests staan in `internal/app/layout_test.go` (geometrie op acht
+formaten) en `internal/ui/screens/overlay_mobile_test.go` (overlays op zes
+formaten).
+
 Je kunt ook meteen installeren:
 
 ```bash

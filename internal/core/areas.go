@@ -36,8 +36,12 @@ type Area struct {
 	Bounds BBox
 }
 
-// Label is the picker/list rendering: "wijk · Delfshaven (WK059903)".
-func (a Area) Label() string { return fmt.Sprintf("%s · %s (%s)", a.Kind, a.Name, a.Code) }
+// Label is the picker/list rendering. The CBS CODE comes first: it is the unique
+// identifier and the thing the user types, and it is short enough to survive the
+// truncation a phone screen forces. The name follows, so the list reads
+// "WK059903 · wijk Delfshaven" instead of burying the code after a long name.
+// This is the canonical contract — see TestAreaLabelLeadsWithCode.
+func (a Area) Label() string { return fmt.Sprintf("%s · %s %s", a.Code, a.Kind, a.Name) }
 
 // NormaliseName compares human names and codes without changing the
 // authoritative code itself: NFKC-ish casefold, '-' to space, collapse runs of
