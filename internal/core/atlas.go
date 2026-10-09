@@ -381,16 +381,51 @@ func (s *Scene) Candidates(layer string, bounds BBox) []Feature {
 	return out
 }
 
+// MatchStreetQuery tests one street name against a search query. It reports whether
+// the name matches, and whether the match is a PREFIX (which ranks first).
+//
+// A name matches on the raw substring OR on the space-collapsed form. People type
+// "west zeedijk" for "Westzeedijk" and "s gravendijkwal" for "'s-Gravendijkwal", so a
+// search that answers "geen straat gevonden" to the obvious spelling is broken — even
+// once the space key itself works. Collapsing only ever ADDS matches, so it cannot
+// hide a street that the raw query already found.
+func MatchStreetQuery(query, name string) (matched, prefix bool) {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if q == "" {
+		return false, false
+	}
+	lower := strings.ToLower(name)
+	cq, cn := collapseSpaces(q), collapseSpaces(lower)
+	switch {
+	case strings.Contains(lower, q):
+		return true, strings.HasPrefix(lower, q)
+	case strings.Contains(cn, cq):
+		return true, strings.HasPrefix(cn, cq)
+	}
+	return false, false
+}
+
+// collapseSpaces drops every space and separator-ish character so "west zeedijk"
+// and "westzeedijk" compare equal.
+func collapseSpaces(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch r {
+		case ' ', '	', '-', '\'':
+			return -1
+		}
+		return r
+	}, s)
+}
+
 // Search returns up to 8 street names matching the query (case-insensitive,
 // prefix-first), or the first 8 alphabetically when the query is empty.
 func (s *Scene) Search(query string) []string {
-	q := strings.ToLower(strings.TrimSpace(query))
 	names := make([]string, 0, len(s.Streets))
 	for n := range s.Streets {
 		names = append(names, n)
 	}
 	sort.Strings(names)
-	if q == "" {
+	if strings.TrimSpace(query) == "" {
 		if len(names) > 8 {
 			names = names[:8]
 		}
@@ -402,8 +437,8 @@ func (s *Scene) Search(query string) []string {
 	}
 	var hits []match
 	for _, n := range names {
-		if strings.Contains(strings.ToLower(n), q) {
-			hits = append(hits, match{n, strings.HasPrefix(strings.ToLower(n), q)})
+		if ok, prefix := MatchStreetQuery(query, n); ok {
+			hits = append(hits, match{n, prefix})
 		}
 	}
 	sort.SliceStable(hits, func(i, j int) bool {

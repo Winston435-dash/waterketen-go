@@ -128,3 +128,44 @@ func TestFilterAreas(t *testing.T) {
 		t.Errorf("onzin-query gaf %d treffers", len(got))
 	}
 }
+
+// TestMatchStreetQueryAcceptsSpaces is the guard for the reported bug's second half.
+// Fixing the space KEY alone is not enough: "west zeedijk" must actually FIND
+// "Westzeedijk", or the search answers "geen straat gevonden" to the obvious spelling.
+// The same collapse handles the leading apostrophe in "'s-Gravendijkwal".
+func TestMatchStreetQueryAcceptsSpaces(t *testing.T) {
+	cases := []struct {
+		query, name string
+		want        bool
+	}{
+		{"west zeedijk", "Westzeedijk", true},
+		{"westzeedijk", "Westzeedijk", true},
+		{"Westzeedijk", "Westzeedijk", true},
+		{"west", "Westzeedijk", true},
+		{"s gravendijkwal", "'s-Gravendijkwal", true},
+		{"s-gravendijkwal", "'s-Gravendijkwal", true},
+		{"  west  zeedijk  ", "Westzeedijk", true},
+		{"zeedijk", "Westzeedijk", true},
+		{"oostzeedijk", "Westzeedijk", false},
+		{"", "Westzeedijk", false},
+		{"   ", "Westzeedijk", false},
+	}
+	for _, c := range cases {
+		got, _ := MatchStreetQuery(c.query, c.name)
+		if got != c.want {
+			t.Errorf("MatchStreetQuery(%q, %q) = %v, verwacht %v", c.query, c.name, got, c.want)
+		}
+	}
+}
+
+// TestMatchStreetQueryRanksPrefixFirst: typing a name from the start must rank the
+// street above its own suffixes, or "west" would surface Westzeedijk's neighbours
+// before Westzeedijk itself.
+func TestMatchStreetQueryRanksPrefixFirst(t *testing.T) {
+	if _, prefix := MatchStreetQuery("west", "Westzeedijk"); !prefix {
+		t.Error("'west' op Westzeedijk hoort een prefix-treffer te zijn")
+	}
+	if _, prefix := MatchStreetQuery("zeedijk", "Westzeedijk"); prefix {
+		t.Error("'zeedijk' op Westzeedijk is geen prefix-treffer")
+	}
+}

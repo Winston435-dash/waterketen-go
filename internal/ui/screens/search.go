@@ -59,13 +59,22 @@ func (s *StreetSearch) Update(msg tea.KeyMsg) (focus string, done, changed bool)
 		if s.query == "" {
 			return "", false, false
 		}
-		s.query = s.query[:len(s.query)-1]
+		// Backspace removes one RUNE, not one byte: a street name may end in a
+		// multi-byte character, and s.query[:len-1] would split it and corrupt the
+		// query (and the search that runs on it).
+		runes := []rune(s.query)
+		s.query = string(runes[:len(runes)-1])
 		s.busy = true
 		return "", false, true
-	case msg.Type == tea.KeyRunes:
-		s.query += string(msg.Runes)
-		s.busy = true
-		return "", false, true
+	default:
+		// typedText, not `case tea.KeyRunes`: a SPACE arrives as KeySpace, so a
+		// KeyRunes-only handler silently dropped every space — you could not type
+		// "west zeedijk" in '/' at all.
+		if text := typedText(msg); text != "" {
+			s.query += text
+			s.busy = true
+			return "", false, true
+		}
 	}
 	return "", false, false
 }

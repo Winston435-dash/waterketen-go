@@ -181,21 +181,23 @@ func (p *Picker) Update(msg tea.KeyMsg) (PickerResult, bool) {
 	case key.Matches(msg, ui.Keys.Down), msg.String() == "ctrl+j":
 		p.move(1)
 		return PickerResult{}, false
-	case msg.String() == " " && p.Toggling():
-		p.toggle()
-		return PickerResult{}, false
 	case msg.Type == tea.KeyBackspace:
 		if p.Searchable() && p.query != "" {
-			p.query = p.query[:len(p.query)-1]
+			// One RUNE, not one byte: a multi-byte character would be split and the
+			// query corrupted (see StreetSearch.Update).
+			runes := []rune(p.query)
+			p.query = string(runes[:len(runes)-1])
 			p.refilter()
 		}
 		return PickerResult{}, false
-	case msg.Type == tea.KeyRunes:
-		if p.Searchable() {
-			p.query += string(msg.Runes)
+	case isSpace(msg) && p.Toggling():
+		p.toggle()
+		return PickerResult{}, false
+	default:
+		if text := typedText(msg); text != "" && p.Searchable() {
+			p.query += text
 			p.refilter()
 		}
-		return PickerResult{}, false
 	}
 	return PickerResult{}, false
 }

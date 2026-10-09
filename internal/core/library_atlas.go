@@ -293,8 +293,9 @@ func (la *LibraryAtlas) visibleNames(names []string) []string {
 
 // StreetNames searches local OSM street names inside the selected area. It reads
 // the name column only: no geometry is touched, so the search answers in ~160 ms
-// on a 58.748-row layer. Mirrors Scene.Search so the library and managed worlds
-// rank hits the same way (prefix first, then alphabetical, max 8).
+// on a 58.748-row layer. It uses core.MatchStreetQuery, the same matcher as the
+// managed world, so both rank hits the same way — and both accept "west zeedijk"
+// for "Westzeedijk".
 func (la *LibraryAtlas) StreetNames(query string) []string {
 	path := la.Library.LayerPath("straten")
 	if path == "" {
@@ -310,27 +311,38 @@ func (la *LibraryAtlas) StreetNames(query string) []string {
 		return nil
 	}
 	defer rows.Close()
-	q := strings.ToLower(strings.TrimSpace(query))
-	var names []string
+	empty := strings.TrimSpace(query) == ""
+	type hit struct {
+		name   string
+		prefix bool
+	}
+	var hits []hit
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			return nil
 		}
-		if q == "" || strings.Contains(strings.ToLower(name), q) {
-			names = append(names, name)
+		if empty {
+			hits = append(hits, hit{name: name})
+			continue
+		}
+		if ok, prefix := MatchStreetQuery(query, name); ok {
+			hits = append(hits, hit{name, prefix})
 		}
 	}
-	sort.Slice(names, func(i, j int) bool {
-		pi := strings.HasPrefix(strings.ToLower(names[i]), q)
-		pj := strings.HasPrefix(strings.ToLower(names[j]), q)
-		if pi != pj {
-			return pi
+	sort.SliceStable(hits, func(i, j int) bool {
+		if hits[i].prefix != hits[j].prefix {
+			return hits[i].prefix
 		}
-		return strings.ToLower(names[i]) < strings.ToLower(names[j])
+		return strings.ToLower(hits[i].name) < strings.ToLower(hits[j].name)
 	})
-	if len(names) > 8 {
-		names = names[:8]
+	limit := 8
+	if len(hits) < limit {
+		limit = len(hits)
+	}
+	names := make([]string, limit)
+	for i := range names {
+		names[i] = hits[i].name
 	}
 	return names
 }
