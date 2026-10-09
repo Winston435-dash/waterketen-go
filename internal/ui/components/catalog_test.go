@@ -18,13 +18,13 @@ func TestCatalogDocumentRendersMarkdownWithoutPaintingBackgrounds(t *testing.T) 
 
 	got := CatalogDocument([]core.CatalogLine{
 		{Text: "Riool onbekend", Kind: "heading"},
-		{Text: "Gebruik laag-id en controleer de bron.", Kind: "plain"},
+		{Text: "Gebruik laag-id; schrijf **plain** letterlijk.", Kind: "plain"},
 		{Text: "Controleer de bronvoorwaarden.", Kind: "warning"},
 		{Text: "Gepubliceerd op 09-10-2026.", Kind: "meta"},
 	}, 40)
 
 	plain := ansi.Strip(got)
-	for _, text := range []string{"Riool onbekend", "laag-id", "controleer", "Let op: Controleer de bronvoorwaarden"} {
+	for _, text := range []string{"Riool onbekend", "laag-id", "**plain**", "Let op: Controleer de bronvoorwaarden"} {
 		if !strings.Contains(plain, text) {
 			t.Errorf("rendered document lost %q: %q", text, plain)
 		}
