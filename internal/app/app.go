@@ -183,11 +183,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.SetData(msg)
 			}
 		}
-		// The Kaart needs its Scene built now that data exists.
+		// The Kaart always has a world to build: the library snapshot when one
+		// exists, else the managed assets.
 		if k := m.kaart(); k != nil {
 			return m, tea.Batch(m.startSpinner(), k.BuildSceneCmd())
 		}
 		return m, nil
+	case screens.LibraryOpenMsg, screens.LibraryLayerMsg:
+		// These belong to the Kaart even when another panel is active: the load
+		// was started before the user switched, and dropping it would leave the
+		// map spinning forever.
+		i, k := m.kaartEntry()
+		if k == nil {
+			return m, nil
+		}
+		next, cmd := k.Update(msg)
+		m.screens[i] = next
+		// A committed viewport is a NEW scene, so the draw must be dispatched
+		// here. Relying on afterScreenUpdate alone only triggers a draw for the
+		// ACTIVE panel, and it may run before the scene is set — which stranded
+		// the map on its spinner with the data already in memory.
+		if k.NeedsDraw() {
+			m.drawGen++
+			m.drawing = true
+			return m, tea.Batch(cmd, m.startSpinner(),
+				tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} }))
+		}
+		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	case screens.SceneMsg:
 		if k := m.kaart(); k != nil {
 			if msg.Err != nil {
@@ -221,6 +243,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyMsg:
+		// An open picker overlay owns EVERY key: without this, typing "gebied"
+		// in the area search would also switch panels on 'g' and quit on 'q'.
+		if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart &&
+			k.Picker() != nil {
+			next, cmd := k.Update(msg)
+			m.screens[m.active] = next
+			return m, tea.Batch(cmd, m.afterScreenUpdate())
+		}
 		// Global keys first — they work regardless of active screen.
 		switch {
 		case key.Matches(msg, ui.Keys.Quit):
@@ -294,12 +324,19 @@ type drawFrameMsg struct{ gen int }
 func (m Model) requestDraw() tea.Msg { return drawFrameMsg{gen: m.drawGen} }
 
 func (m *Model) kaart() *screens.Kaart {
-	for _, s := range m.screens {
+	_, k := m.kaartEntry()
+	return k
+}
+
+// kaartEntry returns the Kaart screen together with its index, so a message can
+// be routed to it without assuming it is the ACTIVE panel.
+func (m *Model) kaartEntry() (int, *screens.Kaart) {
+	for i, s := range m.screens {
 		if k, ok := s.(*screens.Kaart); ok {
-			return k
+			return i, k
 		}
 	}
-	return nil
+	return -1, nil
 }
 
 func kCurrentScene(k *screens.Kaart) *core.Scene {

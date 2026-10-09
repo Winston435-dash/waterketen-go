@@ -101,49 +101,61 @@ func (t *Table) Each(fn func(Row)) error {
 		return fmt.Errorf("lees %s: %w", t.name, err)
 	}
 	defer rows.Close()
-
 	for rows.Next() {
-		vals := make([]any, len(cols.names))
-		scan := make([]any, len(cols.names))
-		for i := range vals {
-			scan[i] = &vals[i]
+		r, ok, err := t.scanRow(cols, rows)
+		if err != nil {
+			return err
 		}
-		if err := rows.Scan(scan...); err != nil {
-			return fmt.Errorf("scan %s: %w", t.name, err)
+		if ok {
+			fn(r)
 		}
-		f := Row{Properties: map[string]string{}, Numbers: map[string]float64{}}
-		for i, name := range cols.names {
-			if name == t.geom {
-				blob, ok := vals[i].([]byte)
-				if !ok || len(blob) == 0 {
-					continue
-				}
-				geom, err := parseGeoPackageBinary(blob)
-				if err != nil {
-					continue // corrupt cell: skip the feature, never the table
-				}
-				f.Geometry = geom
-				continue
-			}
-			switch v := vals[i].(type) {
-			case int64:
-				f.Numbers[name] = float64(v)
-				f.Properties[name] = fmt.Sprintf("%d", v)
-			case float64:
-				f.Numbers[name] = v
-				f.Properties[name] = fmt.Sprintf("%g", v)
-			case string:
-				f.Properties[name] = v
-			case []byte:
-				f.Properties[name] = string(v)
-			}
-		}
-		if f.Geometry.Kind == "" {
-			continue
-		}
-		fn(f)
 	}
 	return rows.Err()
+}
+
+// scanRow converts one result row into a Row: geometry via the GeoPackageBinary
+// decoder, every other column into both a display string and, where numeric, a
+// float for analysis. ok=false means the row carries no usable geometry.
+func (t *Table) scanRow(cols columnInfo, rows *sql.Rows) (Row, bool, error) {
+	vals := make([]any, len(cols.names))
+	scan := make([]any, len(cols.names))
+	for i := range vals {
+		scan[i] = &vals[i]
+	}
+	if err := rows.Scan(scan...); err != nil {
+		return Row{}, false, fmt.Errorf("scan %s: %w", t.name, err)
+	}
+	f := Row{Properties: map[string]string{}, Numbers: map[string]float64{}}
+	for i, name := range cols.names {
+		if name == t.geom {
+			blob, ok := vals[i].([]byte)
+			if !ok || len(blob) == 0 {
+				continue
+			}
+			geom, err := parseGeoPackageBinary(blob)
+			if err != nil {
+				continue // corrupt cell: skip the feature, never the table
+			}
+			f.Geometry = geom
+			continue
+		}
+		switch v := vals[i].(type) {
+		case int64:
+			f.Numbers[name] = float64(v)
+			f.Properties[name] = fmt.Sprintf("%d", v)
+		case float64:
+			f.Numbers[name] = v
+			f.Properties[name] = fmt.Sprintf("%g", v)
+		case string:
+			f.Properties[name] = v
+		case []byte:
+			f.Properties[name] = string(v)
+		}
+	}
+	if f.Geometry.Kind == "" {
+		return Row{}, false, nil
+	}
+	return f, true, nil
 }
 
 type columnInfo struct{ names []string }
@@ -169,6 +181,55 @@ func (t *Table) columns() (columnInfo, error) {
 }
 
 // --- GeoPackageBinaryHeader + WKB ------------------------------------------
+
+// checkIndexed verifies the R-tree table this layer claims actually exists.
+// Without it a snapshot built by a tool that skipped indexing would fail with a
+// raw SQL error instead of a sentence that says what is wrong.
+func (t *Table) checkIndexed(tree string) error {
+	var name string
+	err := t.db.QueryRow(
+		`SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
+		strings.Trim(tree, `"`)).Scan(&name)
+	if err != nil {
+		return fmt.Errorf("%s heeft geen R-tree-index; viewports zijn niet leesbaar", t.name)
+	}
+	return nil
+}
+
+// Select streams ONLY the rows with the given rowids. This is the R-tree
+// viewport read: one query with an IN list, so a 87.146-row layer costs the
+// viewport and nothing more. Rows come back in rowid order.
+func (t *Table) Select(ids []int64, fn func(Row)) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	cols, err := t.columns()
+	if err != nil {
+		return err
+	}
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	query := `SELECT "` + strings.Join(cols.names, `","`) + `" FROM "` + t.name +
+		`" WHERE rowid IN (` + placeholders + `) ORDER BY rowid`
+	rows, err := t.db.Query(query, args...)
+	if err != nil {
+		return fmt.Errorf("lees %s viewport: %w", t.name, err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		r, ok, err := t.scanRow(cols, rows)
+		if err != nil {
+			return err
+		}
+		if ok {
+			fn(r)
+		}
+	}
+	return rows.Err()
+}
 
 var envelopeSize = [8]int{0, 32, 48, 48, 64, 64, 0, 0}
 

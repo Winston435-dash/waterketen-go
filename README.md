@@ -61,9 +61,19 @@ nooit randen, kleuren of spacing definiëren**.
   "onbekend". `go test` faalt als een bron die velden mist.
 - ✅ Renderer gebruikt dezelfde managed data als de Python-CLI
   (`~/.local/share/waterketen`).
+- ✅ **Kaartbibliotheek in de TUI.** Paneel 5 leest de gepubliceerde snapshot
+  rechtstreeks: net als in Python opent het op **heel Rotterdam** (`GM0599`,
+  45,5 × 18,4 km) en `g` zoomt naar een wijk of buurt (115 CBS-gebieden).
+  Viewports komen uit de R-tree-index van elke GeoPackage, dus een laag van
+  87.146 rioolbuizen kost alleen zijn venster. `t` kiest de zichtbare lagen in
+  DrawOrder. Wijkt bewust af van Python: **geen polygoon-clip en geen simplify**
+  per viewport — de snapshot is bij de bouw al op Rotterdam geclipt, en de
+  R-tree geeft de bbox. Waar dat tot sampling leidt (heel de stad op één scherm)
+  zegt de kaart dat met "overzicht N/M kandidaten; zoom in voor alle objecten".
 - ⏳ `fetch` (GWSW-paging + clip op CBS-grens) — nog in Python, zie
   `MIGRATION.md`.
-- ⏳ `bibliotheek bouw` (osmium-import van PBF) — nog Python.
+- ⏳ `bibliotheek bouw` (osmium-import van PBF) — nog Python. **Lezen** van de
+  snapshot is nu wel native.
 - ⏳ `kaart` SVG/PNG-export — nog Python.
 
 ## Gebruik

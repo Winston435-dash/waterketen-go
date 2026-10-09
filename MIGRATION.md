@@ -72,8 +72,14 @@ data tot de Go-fetch er is — beide tools praten hetzelfde opslagformaat.
 
 ## Open vragen voor later
 
-- `library/`-atlas (osmium-import) naar Go? Wss niet — `bibliotheek bouw` is
-  eenmalige import en mag Python blijven.
+- `library/`-atlas (osmium-import) naar Go? **Lezen is gedaan**, bouwen niet:
+  `core/library_atlas.go` leest viewports uit de snapshot (R-tree, geen cgo) met
+  het gebiedsregister uit `areas.gpkg`. `bibliotheek bouw` blijft Python — dat is
+  een eenmalige osmium+ogr2ogr-import. Twee bewuste afwijkingen van
+  `library_atlas.py`: geen polygoon-clip per viewport (de snapshot is al op
+  Rotterdam geclipt) en geen `simplify` (de renderer laat dots per cel vallen).
+  Gevolg: een viewport kan méér objecten tonen dan Python voor hetzelfde venster,
+  en dat staat als waarschuwing in de kaart.
 
 ## Bronnenregister: twee tools, één waarheid per bron
 

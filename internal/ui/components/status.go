@@ -62,6 +62,18 @@ func Strong(text string) string {
 	return lipgloss.NewStyle().Foreground(ui.ColorText).Bold(true).Render(text)
 }
 
+// Selected renders the one highlighted row of a list: pink + bold ink, never a
+// filled bar, so the terminal background stays visible. Screens cannot reach
+// for lipgloss themselves, so list selection lives here with the other ink.
+func Selected(text string, width int) string {
+	return lipgloss.NewStyle().Foreground(ui.ColorPrimary).Bold(true).Width(width).Render(text)
+}
+
+// MutedText renders a muted, non-padded line — for hint rows under a list.
+func MutedText(text string) string {
+	return lipgloss.NewStyle().Foreground(ui.ColorMuted).Render(text)
+}
+
 // Error renders a line in the error token. Prefer EmptyState for whole panels.
 func Error(text string) string {
 	return lipgloss.NewStyle().Foreground(ui.ColorError).Render(text)

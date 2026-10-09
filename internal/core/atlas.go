@@ -101,6 +101,31 @@ var allLayers = []string{
 	"riool", "drinkwaterleidingen", "drinkwater", "putten", "gemalen",
 }
 
+// DrawOrder is the painting order for the library map, matching the Python
+// kaart.DRAW_ORDER: background-ish layers first, networks on top, assets last.
+// It is also the order the layer picker lists them in, so the list and the map
+// agree about what is "under" what.
+var DrawOrder = []string{
+	"groen", "water", "gebouwen", "spoor", "straten", "drinkwater",
+	"riool", "drinkwaterleidingen", "putten", "gemalen",
+}
+
+// OrderLayers filters `names` to the known layers and sorts them into
+// DrawOrder. Unknown names are dropped rather than drawn blind.
+func OrderLayers(names []string) []string {
+	in := map[string]bool{}
+	for _, n := range names {
+		in[n] = true
+	}
+	var out []string
+	for _, n := range DrawOrder {
+		if in[n] {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 // Scene is a fully loaded multi-layer picture: features per layer, a spatial
 // index per layer, streets by name, the material→colour legend.
 type Scene struct {
@@ -112,6 +137,9 @@ type Scene struct {
 	StreetOf  map[int]string   // (layerCode<<32|pos) -> street — for stable keying
 	Materials map[string]string
 	Warnings  []string
+	// Display pins the visible layers explicitly (the library panel's chosen
+	// set). nil means "derive from overlay+active", the managed-asset default.
+	Display []string
 }
 
 // Frame is the current view rect at a given zoom, plus helpers to move
@@ -293,6 +321,9 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 // VisibleLayers answers the same question as the Python atlas: overlay draws
 // the networks plus (if active is not a network) the active layer.
 func (s *Scene) VisibleLayers(active string, overlay bool, display []string) []string {
+	if display == nil {
+		display = s.Display
+	}
 	if display != nil {
 		var out []string
 		for _, n := range display {

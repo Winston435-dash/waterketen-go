@@ -22,6 +22,7 @@ type KeyMap struct {
 	Redraw key.Binding
 	Back   key.Binding
 	Quit   key.Binding
+	Enter  key.Binding
 
 	// Atlas (kaart) only
 	PanLeft  key.Binding
@@ -32,6 +33,8 @@ type KeyMap struct {
 	Overlay  key.Binding
 	Labels   key.Binding
 	Search   key.Binding
+	Area     key.Binding
+	Layers   key.Binding
 }
 
 // Keys is the app-wide binding table. Descriptions are Dutch, matching the UI.
@@ -52,6 +55,10 @@ var Keys = KeyMap{
 	Redraw: key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "herteken")),
 	Back:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "terug")),
 	Quit:   key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "afsluiten")),
+	// Enter confirms a picker/overlay. It is NOT a global key: outside an
+	// overlay it does nothing, and a zero-value binding here would make every
+	// enter in the picker silently do nothing.
+	Enter: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
 
 	PanLeft:  key.NewBinding(key.WithKeys("left"), key.WithHelp("←", "west")),
 	PanRight: key.NewBinding(key.WithKeys("right"), key.WithHelp("→", "oost")),
@@ -61,4 +68,6 @@ var Keys = KeyMap{
 	Overlay:  key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "lagen samen")),
 	Labels:   key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "straatnamen")),
 	Search:   key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "straat zoeken")),
+	Area:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "gebied")),
+	Layers:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "lagen")),
 }
