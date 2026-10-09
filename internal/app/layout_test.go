@@ -72,35 +72,12 @@ func TestPanelBoxMatchesRenderedPanel(t *testing.T) {
 			t.Errorf("%s %dx%d: panelBox=(%d,%d), layout=(%d,%d)",
 				s.name, s.w, s.h, gotW, gotH, wantW, wantH)
 		}
-		// The sidebar is either fully shown or fully absent, and it never takes
-		// more than its token width.
-		if l.sidebar && l.panelW != s.w-sidebarWidth {
-			t.Errorf("%s: zijbalk aan maar paneel=%d, verwacht %d", s.name, l.panelW, s.w-sidebarWidth)
-		}
-		if !l.sidebar && l.panelW != s.w {
-			t.Errorf("%s: zijbalk uit maar paneel=%d, verwacht %d", s.name, l.panelW, s.w)
+		// Navigation lives in the header, so content owns every terminal column.
+		if l.panelW != s.w {
+			t.Errorf("%s: paneel=%d, verwacht volledige breedte %d", s.name, l.panelW, s.w)
 		}
 		if l.panelW < 1 || l.panelH < 1 {
 			t.Errorf("%s: paneelbox is niet-positief: %dx%d", s.name, l.panelW, l.panelH)
 		}
-	}
-}
-
-// TestSidebarHidesBeforeTheMapSuffers: the sidebar is a convenience, the map is
-// the content. It must disappear while the remaining map is still too narrow to
-// read — not stay until the terminal is 44 columns, which left a 20-cell map.
-func TestSidebarHidesBeforeTheMapSuffers(t *testing.T) {
-	m := New("")
-	m.width, m.height, m.ready = 118, 36, true
-	if !m.layout().sidebar {
-		t.Error("op 118 kolommen hoort de zijbalk zichtbaar te zijn")
-	}
-	m.width = 80
-	if m.layout().sidebar {
-		t.Error("op 80 kolommen (telefoon liggend) hoort de zijbalk te wijken voor de kaart")
-	}
-	m.width = 48
-	if m.layout().sidebar {
-		t.Error("op 48 kolommen hoort de zijbalk te wijken")
 	}
 }

@@ -2,7 +2,7 @@
 // every screen renders inside:
 //
 //	Header   — app title, screen title, current screen key hints
-//	Content  — sidebar + the active screen's Panel
+//	Content  — the active screen's full-width Panel
 //	CommandBar — bottom line of screen-scoped keys
 //
 // Screens never draw their own borders; they get `SetSize` with the OUTER
@@ -16,6 +16,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -365,73 +366,16 @@ func (m Model) applySize() Model {
 	return m
 }
 
-// sidebarWidth mirrors ui.SidebarWidth. It is repeated here only so the layout
-// arithmetic in this package has one local name; the token stays ui's.
-const sidebarWidth = 24
-
-// mobileWidth is the column count below which the sidebar yields to the map.
-//
-// It is NOT 44 (the old `width < 80` threshold's arithmetic): the sidebar is a
-// convenience and the map is the content, so the sidebar must go while the map
-// is still big enough to read. At 80 columns the map gets 80-24-4 = 52 cells
-// with the sidebar and 76 without; at 44 it would get 20 WITH and 40 without.
-// Measured on a phone in landscape (72x42 with the soft keyboard up): the old
-// threshold kept the sidebar and left a third of the screen empty, because the
-// sidebar was subtracted from a panel that was rendered full width.
-const mobileWidth = 76
-
-// layout is the ONE place that decides the screen's geometry. Everything that
-// needs to know a width — SetSize, the content box, the command bar — reads this
-// struct, so the box a screen is TOLD it has can never drift from the box it is
-// RENDERED into. That drift was the mobile bug: panelBox subtracted the sidebar
-// at any width >= 44 while renderBody dropped it below 80.
+// layout owns the OUTER content box used by both SetSize and rendering.
+// Navigation and commands each occupy one row; content gets all columns.
 type layout struct {
-	width   int // the terminal
-	height  int
-	sidebar bool // is the panel switcher shown?
-	panelW  int  // OUTER panel box (incl. border) for screens and the command bar
-	panelH  int
-	compact bool // phone-ish: short labels, no decorative chrome
-	tiny    bool // below which the sidebar is not even a question
+	panelW int
+	panelH int
 }
 
 func (m Model) layout() layout {
-	width, height := m.width, m.height
-	// A terminal can report 0x0 before the first WindowSizeMsg; never let that
-	// reach lipgloss as a negative box.
-	if width < 1 {
-		width = 1
-	}
-	if height < 1 {
-		height = 1
-	}
-	l := layout{width: width, height: height}
-	l.compact = width < 90 || height < 24
-	l.tiny = width < 40
-	l.sidebar = !l.compact && width >= mobileWidth
-
-	// Header + command bar are always one row each, and the panel gets the rest.
-	// The floor is 1, NOT 3: at a 12-row terminal a 3-row floor would push the
-	// view to 14 lines and the terminal scrolls, which scrolls the header away and
-	// the command bar off the bottom — the exact things a phone must not lose.
-	// A 1-row panel is ugly, but an overflowing screen is broken.
-	l.panelH = height - 2
-	if l.panelH < 1 {
-		l.panelH = 1
-	}
-	if l.sidebar {
-		l.panelW = width - sidebarWidth
-		if l.panelW < 34 {
-			l.sidebar = false
-			l.panelW = width
-		}
-	} else {
-		l.panelW = width
-	}
-	if l.panelW < 1 {
-		l.panelW = 1
-	}
-	return l
+	// Clamp the initial 0x0 size without reserving extra rows on short terminals.
+	return layout{panelW: max(m.width, 1), panelH: max(m.height-2, 1)}
 }
 
 // panelBox computes the content panel's OUTER size (incl. border).
@@ -454,50 +398,47 @@ func (m Model) renderBody() string {
 	screen := m.screens[m.active]
 	l := m.layout()
 	title := screenTitle(screen)
-	if !l.sidebar {
-		// The sidebar carried the screen's Info() ("GM0599 · samen"). With the
-		// sidebar hidden — the whole mobile case — that context would simply be
-		// GONE, and the user could not tell which area the map shows. Move it to
-		// the panel title, which is the one free line on a phone screen.
-		if info := screen.Info(); info != "" {
-			title += " · " + info
-		}
+	// Keep area, layer and source context next to the content at every size.
+	if info := screen.Info(); info != "" {
+		title += " · " + info
 	}
-	mainPanel := components.Panel(title, screen.View(), l.panelW, l.panelH, true)
-	if !l.sidebar {
-		// No sidebar: the map IS the screen. The active panel is named in the
-		// header and switchable with the number keys, so nothing is lost — and on
-		// a phone every cell counts.
-		return mainPanel
-	}
-	side := screens.Sidebar(screen.ID(), screens.Screens, screen.Info(), l.panelH)
-	return lipgloss.JoinHorizontal(lipgloss.Top, side, mainPanel)
+	return components.Panel(title, screen.View(), l.panelW, l.panelH, true)
 }
 
-// renderHeader renders EXACTLY one row: the app name and the active panel, or —
-// when the sidebar is hidden, which is the whole mobile case — the inline panel
-// switcher, because the sidebar IS the legend for the number keys.
-//
-// SingleLine, not lipgloss Width: Width pads but does not truncate, and padding
-// is added on top of it, so the old header rendered width+2 cells and the terminal
-// wrapped it onto a second row (measured: header=2 rows at 30x12).
+// renderHeader shows all panel keys when they fit, neighbouring panels on a
+// phone, and just the active panel on a very narrow terminal. Never sacrifice
+// the current panel's label to the app name or an inactive neighbour.
 func (m Model) renderHeader() string {
-	active := screens.Screens[m.active]
-	name := lipgloss.NewStyle().Foreground(ui.ColorPrimary).Bold(true).Render("waterketen")
-	var body string
-	if l := m.layout(); l.sidebar {
-		body = name + lipgloss.NewStyle().Foreground(ui.ColorText).Render(" — "+active.Title)
-	} else {
-		body = name + " — " + panelSwitcher(m.active)
+	accent := lipgloss.NewStyle().Foreground(ui.ColorPrimary).Bold(true)
+	muted := lipgloss.NewStyle().Foreground(ui.ColorMuted)
+	name := accent.Render("waterketen")
+	tabs := make([]string, 0, len(screens.Screens))
+	for i, entry := range screens.Screens {
+		style := muted
+		if i == m.active {
+			style = accent
+		}
+		tabs = append(tabs, style.Render(entry.Key+" "+entry.Title))
 	}
-	return components.SingleLine(" "+body, m.width)
+	full := " " + name + "  " + strings.Join(tabs, "   ")
+	if lipgloss.Width(full) <= m.width {
+		return components.SingleLine(full, m.width)
+	}
+	compact := " " + name + " — " + panelSwitcher(m.active)
+	if lipgloss.Width(compact) <= m.width {
+		return components.SingleLine(compact, m.width)
+	}
+	entry := screens.Screens[m.active]
+	current := accent.Render(entry.Key + " " + entry.Title)
+	compact = " " + name + " — " + current
+	if lipgloss.Width(compact) > m.width {
+		compact = " " + current
+	}
+	return components.SingleLine(compact, m.width)
 }
 
-// panelSwitcher is the inline number-key legend for a sidebar-less (mobile)
-// screen: "4 Analyse ‹ 5 Kaart › 6 Profiel". It names the current panel AND shows
-// the keys, because on a phone the sidebar — which was the only place the number
-// keys were ever written down — is gone. Titles come from screens.Screens; the
-// app never hardcodes a Dutch label.
+// panelSwitcher is the compact header legend: "4 Analyse ‹ 5 Kaart › 6 Profiel".
+// Titles and number keys come from the screen registry, never hardcoded labels.
 func panelSwitcher(active int) string {
 	if active < 0 || active >= len(screens.Screens) {
 		return ""
