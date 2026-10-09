@@ -52,17 +52,27 @@ func TestCatalogKeepsSnapshotSourceDateSeparateFromPublication(t *testing.T) {
 func TestCatalogRecognisesSeparateAreasFile(t *testing.T) {
 	root := t.TempDir()
 	dir := filepath.Join(root, "library", "snapshots", "fixture")
-	if err := os.MkdirAll(dir, 0700); err != nil { t.Fatal(err) }
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	for path, data := range map[string]string{
-		filepath.Join(root,"library","current.json"): `{"snapshot":"fixture"}`,
-		filepath.Join(dir,"manifest.json"): `{"area_count":7,"created_at":"2026-10-07T20:02:36Z","crs":"EPSG:28992","layers":{}}`,
-		filepath.Join(dir,"areas.gpkg"): "fixture: only file presence is inspected",
-	} { if err := os.WriteFile(path, []byte(data),0600); err != nil { t.Fatal(err) } }
+		filepath.Join(root, "library", "current.json"): `{"snapshot":"fixture"}`,
+		filepath.Join(dir, "manifest.json"):            `{"area_count":7,"created_at":"2026-10-07T20:02:36Z","crs":"EPSG:28992","layers":{}}`,
+		filepath.Join(dir, "areas.gpkg"):               "fixture: only file presence is inspected",
+	} {
+		if err := os.WriteFile(path, []byte(data), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	c, err := LoadCatalog(root)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, layer := range c.Layers {
 		if layer.ID == "gebieden" {
-			if len(layer.Local)!=1 || !layer.Local[0].OnDisk || layer.Local[0].Count!=7 { t.Fatalf("areas.gpkg is separate from manifest.layers: %+v",layer.Local) }
+			if len(layer.Local) != 1 || !layer.Local[0].OnDisk || layer.Local[0].Count != 7 {
+				t.Fatalf("areas.gpkg is separate from manifest.layers: %+v", layer.Local)
+			}
 			return
 		}
 	}
