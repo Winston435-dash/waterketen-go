@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodic wip checkpoint for waterketen-go (safety net)
+
+[Timer]
+# Frequent enough to protect work, rare enough not to fight clean commits:
+# when the tree is already clean the script is a no-op, so a busy agent that
+# commits properly produces no extra history.
+OnBootSec=5min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

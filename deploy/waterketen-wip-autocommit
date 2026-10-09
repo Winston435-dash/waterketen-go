@@ -1,0 +1,36 @@
+#!/bin/sh
+# waterketen-wip-autocommit — checkpoint uncommitted work as a `wip:` commit.
+#
+# This is the AUTOMATIC half of the `git wip` convention. The alias is the
+# deliberate "before I start" checkpoint; this runs unattended so that a tree
+# left dirty never survives into the next session. Git hooks cannot do this:
+# no hook fires on "the user started building" (that is an intention, not a
+# git event), so the trigger lives in the scheduler instead.
+#
+# Safe by construction: local only, never pushes, never rewrites history, makes
+# a new commit or nothing. It REFUSES to commit if any dirty path looks like a
+# credential — a missed checkpoint is harmless, a leaked key is not.
+#
+# Usage: waterketen-wip-autocommit [repo]
+#   repo defaults to $WATERKETEN_WIP_REPO, else ~/projects/waterketen-go.
+set -u
+
+repo=${1:-${WATERKETEN_WIP_REPO:-$HOME/projects/waterketen-go}}
+cd "$repo" 2>/dev/null || exit 0
+git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+
+# Nothing uncommitted (tracked or untracked)? Then there is nothing to do.
+[ -n "$(git status --porcelain)" ] || exit 0
+
+# Secret guard: an unattended `git add -A` must never sweep a credential into
+# history. If any dirty path looks sensitive, refuse and leave the tree alone.
+# (Paths are unquoted after stripping git's surrounding " for odd filenames.)
+if git status --porcelain | sed 's/^...//; s/^"//; s/"$//' | grep -Eq \
+   '(^|/)(\.env(\..*)?|id_(rsa|ed25519|ecdsa)|\.netrc|\.npmrc)$|\.(pem|key|p12|pfx)$|(^|/)[^/]*(credential|secret|token)[^/]*$'; then
+  echo "waterketen-wip: geweigerd — mogelijk geheim in de tree; niets gecommit" >&2
+  exit 0
+fi
+
+git add -A
+git -c user.name='wip autosave' -c user.email='wip@localhost' \
+    commit -q -m "wip: autosave $(date '+%Y-%m-%d %H:%M')" || exit 0

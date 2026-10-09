@@ -1,0 +1,9 @@
+[Unit]
+Description=Checkpoint uncommitted waterketen-go work as a wip commit
+Documentation=file:%h/projects/waterketen-go/AGENTS.md
+ConditionPathIsDirectory=%h/projects/waterketen-go
+
+[Service]
+Type=oneshot
+ExecStart=%h/projects/waterketen-go/deploy/waterketen-wip-autocommit
+Nice=10
