@@ -44,6 +44,16 @@ func pressText(m Model, text string) Model {
 	return m
 }
 
+func TestGlobalPaletteNavigationCommandChangesPanel(t *testing.T) {
+	m := paletteModel(t, screens.ScreenOntdek)
+	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = pressText(m, "Ga naar Kaart")
+	m = press(m, tea.KeyMsg{Type: tea.KeyEnter})
+	if got := m.screens[m.active].ID(); got != screens.ScreenKaart {
+		t.Fatalf("navigation command selected %v, want Kaart", got)
+	}
+}
+
 func TestGlobalPaletteSearchRunsPanelCommand(t *testing.T) {
 	m := paletteModel(t, screens.ScreenOntdek)
 	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
@@ -122,6 +132,17 @@ func TestEmptyPanelPaletteCanSwitchToGlobal(t *testing.T) {
 	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
 	if view := ansi.Strip(m.View()); !strings.Contains(view, "Ververs bronnen") {
 		t.Fatalf("ctrl+p did not expand to global commands:\n%s", view)
+	}
+}
+
+func TestGlobalPaletteBindingsStayVisibleOnNarrowTerminals(t *testing.T) {
+	m := paletteModel(t, screens.ScreenKaart)
+	m.width = 30
+	m = m.applySize()
+	lines := strings.Split(ansi.Strip(m.View()), "\n")
+	footer := lines[len(lines)-1]
+	if !strings.Contains(footer, "ctrl+p") || !strings.Contains(footer, "?") {
+		t.Fatalf("palette shortcuts disappeared from the narrow footer: %q", footer)
 	}
 }
 

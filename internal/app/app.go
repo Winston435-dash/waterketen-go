@@ -421,7 +421,7 @@ func (m Model) View() string {
 			bindings = append(bindings, ui.Keys.Palette)
 		}
 	} else {
-		bindings = append(append([]key.Binding(nil), bindings...), ui.Keys.Palette, ui.Keys.PanelPalette)
+		bindings = append([]key.Binding{ui.Keys.Palette, ui.Keys.PanelPalette}, bindings...)
 	}
 	bar := m.cmdBar.View(m.width, bindings)
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, bar)

@@ -326,7 +326,7 @@ func (p *commandPalette) View(width, height int) string {
 			command := commands[i]
 			label := command.group + " · " + command.label
 			if command.shortcut != "" {
-				label += "  [" + command.shortcut + "]"
+				label += "  · " + command.shortcut
 			}
 			if i == p.cursor {
 				lines = append(lines, components.SingleLine(components.Selected("› "+label, width), width))
