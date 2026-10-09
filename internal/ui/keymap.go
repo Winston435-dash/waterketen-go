@@ -20,9 +20,11 @@ type KeyMap struct {
 
 	Probe  key.Binding
 	Redraw key.Binding
-	Back   key.Binding
-	Quit   key.Binding
-	Enter  key.Binding
+	Back         key.Binding
+	Quit         key.Binding
+	Enter        key.Binding
+	Palette      key.Binding
+	PanelPalette key.Binding
 
 	// Explanatory catalog only.
 	NextTopic key.Binding
@@ -63,7 +65,9 @@ var Keys = KeyMap{
 	// Enter confirms a picker/overlay. It is NOT a global key: outside an
 	// overlay it does nothing, and a zero-value binding here would make every
 	// enter in the picker silently do nothing.
-	Enter: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
+	Enter:        key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
+	Palette:      key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("ctrl+p", "opdrachten")),
+	PanelPalette: key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "paneelopdrachten")),
 
 	NextTopic: key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "categorie →")),
 	PrevTopic: key.NewBinding(key.WithKeys("["), key.WithHelp("[", "← categorie")),

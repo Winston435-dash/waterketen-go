@@ -43,6 +43,7 @@ type Model struct {
 	drawGen int
 	data    []*screens.LayerData
 	cmdBar  components.CommandBar
+	palette *commandPalette
 	ready   bool
 }
 
@@ -117,6 +118,30 @@ func (m Model) probeRunning() bool {
 		}
 	}
 	return false
+}
+
+func (m *Model) beginProbe() tea.Cmd {
+	if m.probeRunning() {
+		return nil
+	}
+	cmds := []tea.Cmd{m.startSpinner(), screens.ProbeCmd()}
+	for _, s := range m.screens {
+		if b, ok := s.(*screens.Bronnen); ok {
+			cmds = append(cmds, b.BeginProbe())
+		}
+	}
+	return tea.Batch(cmds...)
+}
+
+func (m *Model) redrawMap() tea.Cmd {
+	if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
+		k.MarkDirty()
+		m.drawGen++
+		gen := m.drawGen
+		return tea.Batch(m.startSpinner(),
+			tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: gen} }))
+	}
+	return nil
 }
 
 func loadAllDataCmd(root string) tea.Cmd {
@@ -245,6 +270,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyMsg:
+		if m.palette != nil {
+			return m.updatePalette(msg)
+		}
+		if key.Matches(msg, ui.Keys.Palette) {
+			m.palette = newCommandPalette(m, paletteGlobal)
+			return m, nil
+		}
+		if key.Matches(msg, ui.Keys.PanelPalette) {
+			m.palette = newCommandPalette(m, palettePanel)
+			return m, nil
+		}
 		// An open overlay owns EVERY key: without this, typing a street name in
 		// the search would also switch panels on 'g', quit on 'q', and pan the
 		// map on the arrow keys.
