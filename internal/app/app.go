@@ -120,6 +120,8 @@ func (m Model) probeRunning() bool {
 	return false
 }
 
+// beginProbe resets the source panel and dispatches the probe together; calling
+// BeginProbe alone would leave the progress display running at zero.
 func (m *Model) beginProbe() tea.Cmd {
 	if m.probeRunning() {
 		return nil
@@ -133,6 +135,8 @@ func (m *Model) beginProbe() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// redrawMap marks the current map dirty and dispatches the normal draw path.
+// It never resets screen state or feeds a nil scene back into the map.
 func (m *Model) redrawMap() tea.Cmd {
 	if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
 		k.MarkDirty()
@@ -278,8 +282,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if key.Matches(msg, ui.Keys.PanelPalette) {
-			m.palette = newCommandPalette(m, palettePanel)
-			return m, nil
+			k := m.kaart()
+			if k == nil || m.screens[m.active].ID() != screens.ScreenKaart || !k.OverlayOpen() {
+				m.palette = newCommandPalette(m, palettePanel)
+				return m, nil
+			}
 		}
 		// An open overlay owns EVERY key: without this, typing a street name in
 		// the search would also switch panels on 'g', quit on 'q', and pan the
@@ -295,31 +302,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, ui.Keys.Quit):
 			return m, tea.Quit
 		case key.Matches(msg, ui.Keys.Probe):
-			if !m.probeRunning() {
-				// Reset the panel AND dispatch the probes. BeginProbe only
-				// resets state and starts the bar; without ProbeCmd here a
-				// refresh would spin forever at 0/3.
-				cmds := []tea.Cmd{m.startSpinner(), screens.ProbeCmd()}
-				for _, s := range m.screens {
-					if b, ok := s.(*screens.Bronnen); ok {
-						cmds = append(cmds, b.BeginProbe())
-					}
-				}
-				return m, tea.Batch(cmds...)
-			}
-			return m, nil
+			return m, m.beginProbe()
 		case key.Matches(msg, ui.Keys.Redraw):
-			if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
-				// Redraw means "draw the current view again". It must NOT call
-				// SetScene: that dereferences a scene, and the old kCurrentScene
-				// stub returned nil, so pressing 'r' panicked the whole app.
-				// needsDraw alone makes the app re-render what it already has.
-				k.MarkDirty()
-				m.drawGen++
-				return m, tea.Batch(m.startSpinner(),
-					tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} }))
-			}
-			return m, nil
+			// Redraw means "draw the current view again". It marks the map dirty
+			// and never feeds a nil scene back into the screen.
+			return m, m.redrawMap()
 		}
 		// j/k move between panels here, not inside screens — the screens never
 		// both scroll AND switch. Letters stay free for content keys otherwise.
@@ -427,13 +414,27 @@ func (m Model) View() string {
 	}
 	header := m.renderHeader()
 	body := m.renderBody()
-	bar := m.cmdBar.View(m.width, m.screens[m.active].KeyMap())
+	bindings := m.screens[m.active].KeyMap()
+	if m.palette != nil {
+		bindings = []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
+		if m.palette.scope == palettePanel {
+			bindings = append(bindings, ui.Keys.Palette)
+		}
+	} else {
+		bindings = append(append([]key.Binding(nil), bindings...), ui.Keys.Palette, ui.Keys.PanelPalette)
+	}
+	bar := m.cmdBar.View(m.width, bindings)
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, bar)
 }
 
 func (m Model) renderBody() string {
 	screen := m.screens[m.active]
 	l := m.layout()
+	if m.palette != nil {
+		title := "Opdrachten · " + m.palette.scopeName
+		body := m.palette.View(max(l.panelW-4, 1), max(l.panelH-2, 1))
+		return components.Panel(title, body, l.panelW, l.panelH, true)
+	}
 	title := screenTitle(screen)
 	// Keep area, layer and source context next to the content at every size.
 	if info := screen.Info(); info != "" {

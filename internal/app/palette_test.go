@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/x/ansi"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 
+	"waterketen/internal/core"
 	"waterketen/internal/ui/screens"
 )
 
@@ -19,6 +20,9 @@ func paletteModel(t *testing.T, active screens.ScreenID) Model {
 			m.active = i
 			break
 		}
+	}
+	if k := m.kaart(); k != nil {
+		k.SetScene(&core.Scene{})
 	}
 	return m.applySize()
 }
@@ -101,5 +105,40 @@ func TestPaletteEscapeClosesWithoutDispatchingToPanel(t *testing.T) {
 	}
 	if k := m.kaart(); k == nil || k.OverlayOpen() {
 		t.Fatal("escape leaked through to the map screen")
+	}
+}
+
+func TestEmptyPanelPaletteCanSwitchToGlobal(t *testing.T) {
+	m := paletteModel(t, screens.ScreenLagen)
+	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	view := ansi.Strip(m.View())
+	if !strings.Contains(view, "Geen paneelopdrachten") {
+		t.Fatalf("empty panel palette lacks an explanation:\n%s", view)
+	}
+	if strings.Contains(view, "Ververs bronnen") || !strings.Contains(view, "ctrl+p") {
+		t.Fatalf("panel palette has the wrong scope or no global hint:\n%s", view)
+	}
+
+	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	if view := ansi.Strip(m.View()); !strings.Contains(view, "Ververs bronnen") {
+		t.Fatalf("ctrl+p did not expand to global commands:\n%s", view)
+	}
+}
+
+func TestGlobalPaletteOwnsKeysAboveMapSearch(t *testing.T) {
+	m := paletteModel(t, screens.ScreenKaart)
+	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+	if k := m.kaart(); k == nil || !k.OverlayOpen() {
+		t.Fatal("test setup did not open map search")
+	}
+
+	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if view := ansi.Strip(m.View()); !strings.Contains(view, "Zoek · q") {
+		t.Fatalf("palette did not own the typed key:\n%s", view)
+	}
+	m = press(m, tea.KeyMsg{Type: tea.KeyEsc})
+	if k := m.kaart(); k == nil || !k.OverlayOpen() {
+		t.Fatal("closing the palette also closed the underlying map search")
 	}
 }

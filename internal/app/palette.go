@@ -39,11 +39,11 @@ type paletteCommand struct {
 }
 
 type commandPalette struct {
-	scope    paletteScope
+	scope     paletteScope
 	scopeName string
-	query    string
-	cursor   int
-	commands []paletteCommand
+	query     string
+	cursor    int
+	commands  []paletteCommand
 }
 
 func newCommandPalette(m Model, scope paletteScope) *commandPalette {
@@ -239,7 +239,7 @@ func (m Model) updatePalette(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if p.query != "" {
 			runes := []rune(p.query)
 			p.query = string(runes[:len(runes)-1])
-				p.cursor = 0
+			p.cursor = 0
 		}
 	default:
 		text := ""
@@ -316,7 +316,11 @@ func (p *commandPalette) View(width, height int) string {
 	lines := make([]string, 0, height)
 	lines = append(lines, components.SingleLine(prompt, width))
 	if len(commands) == 0 {
-		lines = append(lines, components.SingleLine(components.MutedText("Geen opdrachten gevonden"), width))
+		empty := "Geen opdrachten gevonden"
+		if len(p.commands) == 0 && p.scope == palettePanel {
+			empty = "Geen paneelopdrachten"
+		}
+		lines = append(lines, components.SingleLine(components.MutedText(empty), width))
 	} else {
 		for i := start; i < len(commands) && len(lines) < height-1; i++ {
 			command := commands[i]

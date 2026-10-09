@@ -18,8 +18,8 @@ type KeyMap struct {
 	NextLayer key.Binding
 	PrevLayer key.Binding
 
-	Probe  key.Binding
-	Redraw key.Binding
+	Probe        key.Binding
+	Redraw       key.Binding
 	Back         key.Binding
 	Quit         key.Binding
 	Enter        key.Binding
