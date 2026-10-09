@@ -1,4 +1,3 @@
-<!-- Promoten met: mv AGENTS.md.draft AGENTS.md -->
 # Agent instructions — waterketen-go
 
 Go rewrite of the Rotterdam waterketen TUI/CLI (Bubble Tea + Bubbles + Lip
