@@ -29,6 +29,7 @@ const (
 	ScreenAnalyse
 	ScreenKaart
 	ScreenProfiel
+	ScreenOntdek
 )
 
 // ScreenInfo is the stable identity of one screen in the header navigation.
@@ -46,6 +47,7 @@ var Screens = []ScreenInfo{
 	{ScreenAnalyse, "4", "Analyse"},
 	{ScreenKaart, "5", "Kaart"},
 	{ScreenProfiel, "6", "Profiel"},
+	{ScreenOntdek, "7", "Ontdek"},
 }
 
 // Screen is the contract every panel satisfies. `Update` returns the new
@@ -70,6 +72,7 @@ func New(root string) []Screen {
 		NewAnalyse(root, assets),
 		NewKaart(root, lib, assets),
 		NewProfiel(root, assets),
+		NewOntdek(root),
 	}
 }
 

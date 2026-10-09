@@ -24,6 +24,11 @@ type KeyMap struct {
 	Quit   key.Binding
 	Enter  key.Binding
 
+	// Explanatory catalog only.
+	NextTopic key.Binding
+	PrevTopic key.Binding
+	Technical key.Binding
+
 	// Atlas (kaart) only
 	PanLeft  key.Binding
 	PanRight key.Binding
@@ -59,6 +64,10 @@ var Keys = KeyMap{
 	// overlay it does nothing, and a zero-value binding here would make every
 	// enter in the picker silently do nothing.
 	Enter: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
+
+	NextTopic: key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "categorie →")),
+	PrevTopic: key.NewBinding(key.WithKeys("["), key.WithHelp("[", "← categorie")),
+	Technical: key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "techniek")),
 
 	PanLeft:  key.NewBinding(key.WithKeys("left"), key.WithHelp("←", "west")),
 	PanRight: key.NewBinding(key.WithKeys("right"), key.WithHelp("→", "oost")),

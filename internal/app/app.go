@@ -61,6 +61,7 @@ func New(root string) Model {
 	}
 	return Model{
 		root:    root,
+		active:  int(screens.ScreenOntdek),
 		screens: screens.New(root),
 		cmdBar:  components.NewCommandBar(),
 		spinner: components.NewSpinner(),
