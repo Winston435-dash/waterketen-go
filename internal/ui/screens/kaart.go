@@ -3,11 +3,9 @@ package screens
 import (
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -15,9 +13,9 @@ import (
 )
 
 // Kaart is panel 5: the live atlas. It renders the core.Render grid through
-// the style table — the ONLY place where core's semantic style keys become
-// lipgloss styles. All the colours come from theme tokens; per-layer ink
-// lives in the components package as a fixed map.
+// components.RenderAtlas — the ONE core→lipgloss translation point — so this
+// screen imports no lipgloss and holds no colour tables. The atlas data ink is
+// core's (core.CellColour); the kit adds chrome tokens and emphasis.
 type Kaart struct {
 	root      string
 	lib       *core.Library
@@ -271,106 +269,7 @@ func (s *Kaart) View() string {
 	if s.render == nil || s.needsDraw {
 		return components.Busy(s.spinner, "Kaart wordt getekend…")
 	}
-	return RenderGrid(s.render, s.w-4)
-}
-
-// RenderGrid is the only core→lipgloss translation point for atlas output.
-// The legend's colours live in the per-layer hex table in core's render
-// (geometry logic); here we turn each semantic style key into concrete
-// lipgloss styling using the UI tokens where they apply.
-func RenderGrid(r *core.Render, maxWidth int) string {
-	var b strings.Builder
-	for y, row := range r.Cells {
-		var cur string
-		var curStyle core.CellStyle
-		flush := func() {
-			if cur == "" {
-				return
-			}
-			b.WriteString(styleFor(curStyle).Render(cur))
-			cur = ""
-		}
-		for x, cell := range row {
-			if cell.Style != curStyle {
-				flush()
-				curStyle = cell.Style
-			}
-			cur += string(cell.Rune)
-			_ = x
-		}
-		flush()
-		if y < len(r.Cells)-1 {
-			b.WriteByte('\n')
-		}
-	}
-	_ = maxWidth
-	return b.String()
-}
-
-// layerInk is the map-ink hex per layer. This table is data — it's the
-// colour the ATLAS has established per layer, not UI chrome. It lives next
-// to the grid translation because that's the single place both views agree on.
-var layerInk = map[string]string{
-	"riool":               "#38d9ff",
-	"drinkwaterleidingen": "#ffa95c",
-	"drinkwater":          "#476c91",
-	"straten":             "#627d91",
-	"water":               "#416e91",
-	"spoor":               "#b19bbf",
-	"putten":              "#38d9ff",
-	"gemalen":             "#cc94ff",
-	"groen":               "#5a8f6f",
-	"gebouwen":            "#4a5a68",
-}
-
-var bobInk = map[string]string{
-	"very-deep": "#b28cff",
-	"deep":      "#589dff",
-	"mid":       "#38d9ff",
-	"shallow":   "#8ee6a8",
-	"above":     "#ffcc73",
-	"unknown":   "#73879d",
-}
-
-func styleFor(s core.CellStyle) lipgloss.Style {
-	str := string(s)
-	switch s {
-	case core.StyleBlank, core.StyleGrid:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("#172b3e"))
-	case core.StyleNorth:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("#a8c4df")).Bold(true)
-	case core.StyleScale:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("#b3d3e9")).Bold(true)
-	case core.StyleLabel:
-		// Transparent label: background stays the terminal's own.
-		return lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#b9d5e7")).
-			Bold(true)
-	case core.StyleHighlight:
-		// Highlight by ink + bold only — a filled box would fight the terminal
-		// background the rest of the UI now lets through.
-		return lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ffffff")).
-			Bold(true).Underline(true)
-	}
-	if strings.HasPrefix(str, "layer:") {
-		if hex, ok := layerInk[strings.TrimPrefix(str, "layer:")]; ok {
-			return lipgloss.NewStyle().Foreground(lipgloss.Color(hex))
-		}
-	}
-	if strings.HasPrefix(str, "bob:") {
-		if hex, ok := bobInk[strings.TrimPrefix(str, "bob:")]; ok {
-			return lipgloss.NewStyle().Foreground(lipgloss.Color(hex))
-		}
-	}
-	if strings.HasPrefix(str, "hex:") {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(strings.TrimPrefix(str, "hex:")))
-	}
-	if strings.HasPrefix(str, "material:") {
-		// materials share the fixed palette — resolve via any stable hash
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("#9ddeda"))
-	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("#8ee6a8"))
+	return components.RenderAtlas(s.render)
 }
 
 func thousandsShort(n int) string {

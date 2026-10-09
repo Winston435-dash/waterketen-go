@@ -14,7 +14,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -86,16 +85,9 @@ func Sidebar(active ScreenID, infos []ScreenInfo, infoText string, height int) s
 		if s.ID == active {
 			// Active panel is marked by ink + bold, not a filled bar, so the
 			// terminal background stays visible.
-			b.WriteString(lipgloss.NewStyle().
-				Foreground(ui.ColorPrimary).
-				Bold(true).
-				Width(ui.SidebarWidth - 2).
-				Render(label))
+			b.WriteString(components.Attention(label, ui.SidebarWidth-2))
 		} else {
-			b.WriteString(lipgloss.NewStyle().
-				Foreground(ui.ColorMuted).
-				Width(ui.SidebarWidth - 2).
-				Render(label))
+			b.WriteString(components.MutedWidth(label, ui.SidebarWidth-2))
 		}
 		b.WriteByte('\n')
 	}

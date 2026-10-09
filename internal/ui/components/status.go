@@ -45,6 +45,18 @@ func Muted(text string) string {
 	return lipgloss.NewStyle().Foreground(ui.ColorMuted).Render(text)
 }
 
+// Attention renders emphasised, non-text ink in a width — the sidebar's active
+// panel, an alert count. The token lives here, not in a screen, so a screen is
+// structurally unable to reach for lipgloss on its own.
+func Attention(text string, width int) string {
+	return lipgloss.NewStyle().Foreground(ui.ColorPrimary).Bold(true).Width(width).Render(text)
+}
+
+// MutedWidth renders secondary text padded to a fixed width.
+func MutedWidth(text string, width int) string {
+	return lipgloss.NewStyle().Foreground(ui.ColorMuted).Width(width).Render(text)
+}
+
 // Strong renders emphasized text (titles inside content, numbers that matter).
 func Strong(text string) string {
 	return lipgloss.NewStyle().Foreground(ui.ColorText).Bold(true).Render(text)

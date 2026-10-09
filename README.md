@@ -29,7 +29,9 @@ nooit randen, kleuren of spacing definiëren**.
 
 1. **Nooit** `lipgloss.NewStyle()` met een hex of AdaptiveColor in
    `internal/ui/screens/` of `cmd/` schrijven. Gebruik
-   `ui/components.Panel(...)`, `...StatusBadge(...)`, etc.
+   `ui/components.Panel(...)`, `...StatusBadge(...)`, etc. Dit is
+   **afgedwongen**: `internal/ui/screens/contract_test.go` faalt als een scherm
+   `lipgloss` importeert.
 2. **Gebruik alleen thema-tokens**: `ui.ColorPrimary`, `ui.SpacingSM`,
    `ui.BorderPanel`. Nieuwe kleuren of spacing horen in `internal/ui/theme.go`
    thuis als *named* token.
@@ -37,7 +39,10 @@ nooit randen, kleuren of spacing definiëren**.
    De `internal/app.Model` regelt dit; screens leveren alleen hun `View()`.
 4. **Core is puur**: `internal/core/` mag NOOIT `lipgloss`, `bubbletea` of
    `bubbles` importeren. Strings voor het scherm komen uit
-   `internal/ui/screens/` (of in de toekomst een `report.go`).
+   `internal/ui/screens/` (of in de toekomst een `report.go`). Core bezit wél de
+   **data-ink**: `core.CellColour` is de enige kleurtabel voor de kaart;
+   `ui/components.RenderAtlas` zet die om naar lipgloss en voegt alleen
+   bold/underline toe. De kaart rendert daardoor byte-identiek na de refactor.
 5. **Sidebar is de legenda** voor paneel-keys. De `CommandBar` herhaalt
    alleen wat het actuele scherm zelf niet al zichtbaar maakt.
 
