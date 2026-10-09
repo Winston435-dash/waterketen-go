@@ -189,7 +189,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(m.startSpinner(), k.BuildSceneCmd())
 		}
 		return m, nil
-	case screens.LibraryOpenMsg, screens.LibraryLayerMsg:
+	case screens.LibraryOpenMsg, screens.LibraryLayerMsg, screens.SearchQueryMsg:
 		// These belong to the Kaart even when another panel is active: the load
 		// was started before the user switched, and dropping it would leave the
 		// map spinning forever.
@@ -243,10 +243,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyMsg:
-		// An open picker overlay owns EVERY key: without this, typing "gebied"
-		// in the area search would also switch panels on 'g' and quit on 'q'.
+		// An open overlay owns EVERY key: without this, typing a street name in
+		// the search would also switch panels on 'g', quit on 'q', and pan the
+		// map on the arrow keys.
 		if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart &&
-			k.Picker() != nil {
+			k.OverlayOpen() {
 			next, cmd := k.Update(msg)
 			m.screens[m.active] = next
 			return m, tea.Batch(cmd, m.afterScreenUpdate())
@@ -271,7 +272,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case key.Matches(msg, ui.Keys.Redraw):
 			if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
-				k.SetScene(kCurrentScene(k))
+				// Redraw means "draw the current view again". It must NOT call
+				// SetScene: that dereferences a scene, and the old kCurrentScene
+				// stub returned nil, so pressing 'r' panicked the whole app.
+				// needsDraw alone makes the app re-render what it already has.
+				k.MarkDirty()
 				m.drawGen++
 				return m, tea.Batch(m.startSpinner(),
 					tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} }))
@@ -337,13 +342,6 @@ func (m *Model) kaartEntry() (int, *screens.Kaart) {
 		}
 	}
 	return -1, nil
-}
-
-func kCurrentScene(k *screens.Kaart) *core.Scene {
-	// redraw after a manual 'r' — keep the last scene, just mark dirty.
-	return nil // signal: re-running BuildSceneCmd is wasted; SetScene(nil→nil)
-	// is a no-op but the drawGen bump above retriggers a draw of the existing
-	// view. The Kaart already owns drawing on NeedsDraw.
 }
 
 func (m *Model) maybeTriggerDraw() tea.Cmd {

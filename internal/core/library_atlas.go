@@ -163,6 +163,7 @@ func (la *LibraryAtlas) Load(view View, width, height int, names []string, limit
 	width, height = max(1, width), max(1, height)
 	frame := view.Frame(la.Area.Bounds, width, height)
 	window := frame.Bounds
+	names = la.visibleNames(names)
 
 	var sources []SceneSource
 	var warnings []string
@@ -279,9 +280,21 @@ func bobOf(numbers map[string]float64) float64 {
 
 // --- street search (no geometry loaded) -------------------------------------
 
-// StreetNames searches local OSM street names inside the selected area. It
-// reads the name column only: no geometry is touched, so the search stays
-// instant on a 58.748-row layer.
+// visibleNames answers what `waterketen kaart`/`bibliotheek` already answer: a
+// NIL or EMPTY layer set means "the networks on top of nothing", NOT "every layer
+// in the snapshot". Loading all ten (gebouwen is 226.272 objects) for an empty
+// picker result would be both slow and a lie about what the user asked for.
+func (la *LibraryAtlas) visibleNames(names []string) []string {
+	if len(names) > 0 {
+		return OrderLayers(names)
+	}
+	return la.Library.HasLayers("riool", "drinkwaterleidingen")
+}
+
+// StreetNames searches local OSM street names inside the selected area. It reads
+// the name column only: no geometry is touched, so the search answers in ~160 ms
+// on a 58.748-row layer. Mirrors Scene.Search so the library and managed worlds
+// rank hits the same way (prefix first, then alphabetical, max 8).
 func (la *LibraryAtlas) StreetNames(query string) []string {
 	path := la.Library.LayerPath("straten")
 	if path == "" {
@@ -292,8 +305,7 @@ func (la *LibraryAtlas) StreetNames(query string) []string {
 		return nil
 	}
 	defer db.Close()
-	rows, err := db.Query(`SELECT DISTINCT name FROM straten JOIN ` +
-		`"rtree_straten_geom" r ON straten.rowid = r.id WHERE name IS NOT NULL`)
+	rows, err := db.Query(`SELECT DISTINCT name FROM straten WHERE name IS NOT NULL`)
 	if err != nil {
 		return nil
 	}

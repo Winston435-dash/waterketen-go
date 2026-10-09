@@ -126,6 +126,14 @@ func OrderLayers(names []string) []string {
 	return out
 }
 
+// StreetRef points at ONE feature that carries a street name. The layer is part
+// of the reference because indices are per-layer: reusing a riool index against
+// the straten slice would frame a random street, and no test would notice.
+type StreetRef struct {
+	Layer string
+	Index int
+}
+
 // Scene is a fully loaded multi-layer picture: features per layer, a spatial
 // index per layer, streets by name, the material→colour legend.
 type Scene struct {
@@ -133,8 +141,7 @@ type Scene struct {
 	Bounds    BBox
 	Layers    map[string][]Feature
 	Index     map[string]GridIndex
-	Streets   map[string][]int // street name -> indices into Layers[layer]
-	StreetOf  map[int]string   // (layerCode<<32|pos) -> street — for stable keying
+	Streets   map[string][]StreetRef // street name -> the features that carry it
 	Materials map[string]string
 	Warnings  []string
 	// Display pins the visible layers explicitly (the library panel's chosen
@@ -230,8 +237,7 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 		Area:      area,
 		Layers:    map[string][]Feature{},
 		Index:     map[string]GridIndex{},
-		Streets:   map[string][]int{},
-		StreetOf:  map[int]string{},
+		Streets:   map[string][]StreetRef{},
 		Materials: map[string]string{},
 		Warnings:  warnings,
 	}
@@ -269,7 +275,7 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 		for i, f := range layer.Features {
 			geoms[i] = f.Geometry
 			if f.Street != "" {
-				scene.Streets[f.Street] = append(scene.Streets[f.Street], i)
+				scene.Streets[f.Street] = append(scene.Streets[f.Street], StreetRef{layer.Name, i})
 			}
 			if m := f.Properties["MATERIAAL1"]; m != "" {
 				materialNames[m] = struct{}{}
@@ -437,32 +443,33 @@ func (s *Scene) Nearest(x, y, radius float64, active string, overlay bool, displ
 }
 
 // StreetView focuses a view on all features of one street, with a 40 m margin.
+// References carry their own layer, so a street known from riool and from straten
+// contributes both geometries instead of one layer's indices being read against
+// the other's slice.
 func (s *Scene) StreetView(name string, width, height int) (View, bool) {
-	ids, ok := s.Streets[name]
+	refs, ok := s.Streets[name]
 	if !ok {
 		return View{}, false
 	}
 	var b BBox
 	started := false
-	for layer, feats := range s.Layers {
-		_ = layer
-		for _, i := range ids {
-			if i < 0 || i >= len(feats) {
-				continue
-			}
-			gb, ok := feats[i].Geometry.Bounds()
-			if !ok {
-				continue
-			}
-			if !started {
-				b, started = gb, true
-				continue
-			}
-			b.MinX = math.Min(b.MinX, gb.MinX)
-			b.MinY = math.Min(b.MinY, gb.MinY)
-			b.MaxX = math.Max(b.MaxX, gb.MaxX)
-			b.MaxY = math.Max(b.MaxY, gb.MaxY)
+	for _, ref := range refs {
+		feats := s.Layers[ref.Layer]
+		if ref.Index < 0 || ref.Index >= len(feats) {
+			continue
 		}
+		gb, ok := feats[ref.Index].Geometry.Bounds()
+		if !ok {
+			continue
+		}
+		if !started {
+			b, started = gb, true
+			continue
+		}
+		b.MinX = math.Min(b.MinX, gb.MinX)
+		b.MinY = math.Min(b.MinY, gb.MinY)
+		b.MaxX = math.Max(b.MaxX, gb.MaxX)
+		b.MaxY = math.Max(b.MaxY, gb.MaxY)
 	}
 	if !started {
 		return View{}, false

@@ -42,9 +42,15 @@ type Kaart struct {
 	scene *core.Scene
 	view  core.View
 
-	hasView   bool
-	active    string
-	overlay   bool
+	hasView bool
+	active  string
+	overlay bool
+	// solo narrows the library map to the ACTIVE layer only. It exists because
+	// the library world pins its drawn set via 't', which made the advertised
+	// 'o samen/solo' and '['/']' keys change nothing visible: 'o' toggled a flag
+	// no code read. Now 'o' is the samen/solo switch and '['/']' select a layer
+	// (and implicitly go solo), so every advertised key repaints something.
+	solo      bool
 	mode      string
 	labels    bool
 	selected  *core.Feature
@@ -54,14 +60,22 @@ type Kaart struct {
 	needsDraw bool
 	spinner   string
 	err       string
-	picker    *Picker // open overlay, nil when closed
+	picker    *Picker       // open overlay, nil when closed
+	search    *StreetSearch // open street search ('/'), nil when closed
+	// epoch is the area generation. A street search result that lands after the
+	// user switched area carries an old epoch and must be dropped, or the map
+	// jumps to a street the user already navigated away from.
+	epoch int
 }
 
 // SetSpinner receives the app's current busy-spinner frame.
 func (s *Kaart) SetSpinner(frame string) { s.spinner = frame }
 
-// Busy reports bounded work in flight: a viewport read, or a pending draw.
-func (s *Kaart) Busy() bool { return s.opening || s.loads > 0 || s.needsDraw }
+// Busy reports bounded work in flight: a viewport read, a street search, or a
+// pending draw.
+func (s *Kaart) Busy() bool {
+	return s.opening || s.loads > 0 || s.needsDraw || (s.search != nil && s.search.Busy())
+}
 
 // NewKaart initialises the atlas screen. Loading happens through the loader
 // commands off the event loop; the screen stays responsive while reading.
@@ -77,6 +91,9 @@ func (s *Kaart) ID() ScreenID { return ScreenKaart }
 func (s *Kaart) KeyMap() []key.Binding {
 	if s.picker != nil {
 		return []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
+	}
+	if s.search != nil {
+		return []key.Binding{ui.Keys.Enter, ui.Keys.Back}
 	}
 	bindings := []key.Binding{
 		ui.Keys.PanLeft, ui.Keys.PanRight, ui.Keys.Up, ui.Keys.Down,
@@ -101,14 +118,18 @@ func (s *Kaart) SetSize(w, h int) {
 }
 
 func (s *Kaart) Info() string {
-	if s.picker != nil {
+	if s.picker != nil || s.search != nil {
 		return "overlay open"
 	}
 	if s.atlas != nil {
 		if s.err != "" {
 			return s.err
 		}
-		return fmt.Sprintf("%s · %d lagen", s.atlas.Area.Code, len(s.layers))
+		mode := "samen"
+		if s.solo {
+			mode = "solo · " + s.active
+		}
+		return fmt.Sprintf("%s · %s", s.atlas.Area.Code, mode)
 	}
 	if s.scene == nil {
 		return s.err
@@ -189,7 +210,8 @@ func (s *Kaart) LibraryLayerCmd() tea.Cmd {
 	if s.atlas == nil {
 		return nil
 	}
-	atlas, view, names := s.atlas, s.view, s.layers
+	atlas, view := s.atlas, s.view
+	names := s.visibleLayerNames()
 	w, h := s.innerSize()
 	return func() tea.Msg {
 		scene, err := atlas.Load(view, w, h, names, 0)
@@ -198,6 +220,15 @@ func (s *Kaart) LibraryLayerCmd() tea.Cmd {
 		}
 		return LibraryLayerMsg{Scene: scene}
 	}
+}
+
+// visibleLayerNames resolves what the map should draw: the chosen set, or just
+// the active layer when the map is in solo mode.
+func (s *Kaart) visibleLayerNames() []string {
+	if s.solo && s.active != "" {
+		return []string{s.active}
+	}
+	return s.layers
 }
 
 // SetAtlas commits an opened library atlas: it adopts the area, the layer set
@@ -229,7 +260,9 @@ func (s *Kaart) SetArea(code string) tea.Cmd {
 	return s.SetAtlas(next)
 }
 
-// SetLayers replaces the visible layer set and reloads.
+// SetLayers replaces the visible layer set and reloads. An EMPTY set is legal:
+// "draw no data layers" is a real answer from the picker, and forcing riool back
+// in would silently override what the user just chose.
 func (s *Kaart) SetLayers(names []string) tea.Cmd {
 	s.layers = core.OrderLayers(names)
 	if len(s.layers) > 0 && !containsString(s.layers, s.active) {
@@ -280,6 +313,11 @@ func (s *Kaart) FailLoad(err error) tea.Cmd {
 
 // Picker returns the open overlay, if any.
 func (s *Kaart) Picker() *Picker { return s.picker }
+
+// OverlayOpen reports whether ANY overlay (area/layer picker or street search)
+// currently owns the keyboard. The app needs the union: routing a key to the map
+// while an overlay is open would let 'g' or 'q' fire behind it.
+func (s *Kaart) OverlayOpen() bool { return s.picker != nil || s.search != nil }
 
 // OpenAreaPicker opens the 'g' overlay over the snapshot's areas.
 func (s *Kaart) OpenAreaPicker() {
@@ -345,13 +383,22 @@ func (s *Kaart) Commit(r *core.Render) { s.render = r; s.needsDraw = false }
 // NeedsDraw reports whether the current view has no committed render yet.
 func (s *Kaart) NeedsDraw() bool { return s.needsDraw }
 
+// MarkDirty asks for the current view to be drawn again without reloading data.
+// 'r' uses it; a redraw must never touch the scene pointer, or a nil scene turns
+// a harmless key into a crash.
+func (s *Kaart) MarkDirty() { s.needsDraw = true }
+
 func (s *Kaart) innerSize() (int, int) {
 	return max2(1, s.w-4), max2(1, s.h-8)
 }
 
-// ActiveLayerChoices returns the cycle order for [ and ].
+// ActiveLayerChoices returns the cycle order for [ and ]. The CHOSEN layer set
+// wins whenever there is one: in the library world that is what 't' selected, and
+// deriving the cycle from the loaded scene instead would list layers in a
+// different order than the picker — and would be empty for a solo frame that
+// loaded one layer.
 func (s *Kaart) ActiveLayerChoices() []string {
-	if s.atlas != nil {
+	if len(s.layers) > 0 {
 		return append([]string(nil), s.layers...)
 	}
 	if s.scene == nil {
@@ -360,9 +407,10 @@ func (s *Kaart) ActiveLayerChoices() []string {
 	return append([]string(nil), s.scene.VisibleLayers(s.active, true, nil)...)
 }
 
-// cycleLayer walks the layer cycle. In the library world this only changes the
-// ACTIVE layer — narrowing the drawn set is 't', which is a deliberate choice
-// rather than a toggle away from the whole point of the map.
+// cycleLayer walks the layer cycle. It only changes the ACTIVE layer; use 'o'
+// for samen/solo and 't' to choose the set. When the map is in samen mode, cycling
+// the active layer would change no ink — so cycling implies solo, which is what
+// "cycle the layer" means to anyone pressing it.
 func (s *Kaart) cycleLayer(step int) {
 	choices := s.ActiveLayerChoices()
 	if len(choices) < 2 {
@@ -377,6 +425,8 @@ func (s *Kaart) cycleLayer(step int) {
 	}
 	s.active = choices[(i+step+len(choices))%len(choices)]
 	s.selected = nil
+	s.solo = true
+	s.overlay = false
 	s.needsDraw = true
 }
 
@@ -384,6 +434,9 @@ func (s *Kaart) cycleLayer(step int) {
 
 func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
+	case SearchQueryMsg:
+		s.ApplySearch(m)
+		return s, nil
 	case LibraryOpenMsg:
 		if m.Err != nil {
 			// No usable snapshot: fall back to the managed assets rather than
@@ -392,6 +445,8 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			s.err = m.Err.Error()
 			return s, s.managedSceneCmd()
 		}
+		// A new area is a new generation of street searches.
+		s.epoch++
 		return s, s.SetAtlas(m.Atlas)
 	case LibraryLayerMsg:
 		if m.Err != nil {
@@ -399,6 +454,17 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		}
 		return s, s.CommitLoad(m.Scene)
 	case tea.KeyMsg:
+		if s.search != nil {
+			focus, done, changed := s.search.Update(m)
+			if done {
+				s.search = nil
+				return s, s.FocusStreetCmd(focus)
+			}
+			if changed {
+				return s, s.SearchCmd(s.search.query)
+			}
+			return s, nil
+		}
 		if s.picker != nil {
 			result, done := s.picker.Update(m)
 			if !done {
@@ -415,7 +481,7 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		}
 		return s, s.handleKey(m)
 	case tea.MouseMsg:
-		if s.picker != nil {
+		if s.picker != nil || s.search != nil {
 			return s, nil
 		}
 		return s, s.handleMouse(m)
@@ -457,6 +523,7 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 		return nil
 	case key.Matches(m, ui.Keys.Overlay):
 		s.overlay = !s.overlay
+		s.solo = !s.solo
 		s.selected = nil
 	case key.Matches(m, ui.Keys.Labels):
 		s.labels = !s.labels
@@ -466,13 +533,21 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 	case key.Matches(m, ui.Keys.Layers):
 		s.OpenLayerPicker()
 		return nil
+	case key.Matches(m, ui.Keys.Search):
+		s.OpenSearch()
+		return nil
 	case key.Matches(m, ui.Keys.NextLayer):
 		s.cycleLayer(1)
 		return nil
 	case key.Matches(m, ui.Keys.PrevLayer):
 		s.cycleLayer(-1)
 		return nil
+	default:
+		return nil
 	}
+	// Falling through here means the case only toggled a flag: the map must
+	// be redrawn, or 'o' and 'l' would be advertised keys that repaint nothing.
+	s.needsDraw = true
 	return nil
 }
 
@@ -535,6 +610,9 @@ func (s *Kaart) handleMouse(m tea.MouseMsg) tea.Cmd {
 // --- view ------------------------------------------------------------------
 
 func (s *Kaart) View() string {
+	if s.search != nil {
+		return s.search.View()
+	}
 	if s.picker != nil {
 		return s.picker.View()
 	}
