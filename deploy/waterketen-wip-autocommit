@@ -17,7 +17,12 @@ set -u
 
 repo=${1:-${WATERKETEN_WIP_REPO:-$HOME/projects/waterketen-go}}
 cd "$repo" 2>/dev/null || exit 0
-git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+gitdir=$(git rev-parse --git-dir 2>/dev/null) || exit 0
+
+# Never fight an in-progress git operation. If another process (an agent's
+# commit, a rebase) holds the index lock, skip this cycle: racing it stamps
+# this script's identity onto someone else's commit and makes theirs fail.
+[ -e "$gitdir/index.lock" ] && exit 0
 
 # Nothing uncommitted (tracked or untracked)? Then there is nothing to do.
 [ -n "$(git status --porcelain)" ] || exit 0
