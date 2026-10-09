@@ -48,6 +48,12 @@ nooit randen, kleuren of spacing definiëren**.
 - ✅ GeoPackage-lezing **zonder cgo** (pure-Go `modernc.org/sqlite` + eigen
   GeoPackageBinary/WKB-decoder).
 - ✅ Live WFS/ArcGIS-probes (hits-only) via `net/http`.
+- ✅ **Bronnenregister met licentie per bron.** Zes bedrade bronnen (GWSW, DAMO,
+  Vewin, RIONED-OGC, Zuid-Holland drinkwater, RWS regiogebieden) met hun eigen
+  `TypeName` en `License`, plus vijf gedetecteerde-niet-bedrade bronnen met
+  reden. Licentie is een beslissing, geen detail: CC0, CC BY-SA 4.0 en publiek
+  domein zijn verschillende rechten, en een dienst zonder licentieveld zegt
+  "onbekend". `go test` faalt als een bron die velden mist.
 - ✅ Renderer gebruikt dezelfde managed data als de Python-CLI
   (`~/.local/share/waterketen`).
 - ⏳ `fetch` (GWSW-paging + clip op CBS-grens) — nog in Python, zie

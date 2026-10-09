@@ -48,13 +48,13 @@ func sourcesCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			type sourceOut struct {
 				core.Source
-				Status     string `json:"status,omitempty"`
-				Count      int    `json:"count,omitempty"`
-				LatencyMS  int    `json:"latency_ms,omitempty"`
-				Error      string `json:"error,omitempty"`
-				ProbeKind  string `json:"probe_kind"`
-				Wired      bool   `json:"wired"`
-				Note       string `json:"note,omitempty"`
+				Status    string `json:"status,omitempty"`
+				Count     int    `json:"count,omitempty"`
+				LatencyMS int    `json:"latency_ms,omitempty"`
+				Error     string `json:"error,omitempty"`
+				ProbeKind string `json:"probe_kind"`
+				Wired     bool   `json:"wired"`
+				Note      string `json:"note,omitempty"`
 			}
 			var out []sourceOut
 			health := map[string]core.SourceHealth{}
@@ -75,7 +75,7 @@ func sourcesCmd() *cobra.Command {
 			}
 			for _, u := range core.UnwiredSources {
 				out = append(out, sourceOut{
-					Source: core.Source{ID: u.ID, Label: u.Label, URL: u.URL},
+					Source: core.Source{ID: u.ID, Label: u.Label, URL: u.URL, License: u.License},
 					Wired:  false, Note: u.Note,
 					Status: string(core.HealthNotWired),
 				})
@@ -99,9 +99,10 @@ func sourcesCmd() *cobra.Command {
 					} else if live && s.Error != "" {
 						line += fmt.Sprintf("  ·  DOWN: %s", s.Error)
 					}
+					line += "  ·  " + s.License
 					fmt.Println(components.Badge(style, line))
 				} else {
-					fmt.Println(components.Badge(components.StatusIdle, s.Label+" — "+s.Note))
+					fmt.Println(components.Badge(components.StatusIdle, s.Label+" — "+s.Note+"  ·  "+s.License))
 				}
 			}
 			return nil
@@ -235,7 +236,7 @@ func analyseCmd() *cobra.Command {
 					"area": d.Area, "layer": d.Layer,
 					"features": len(d.Features),
 					"lines":    lines, "polygons": polys, "points": pts,
-					"total_m":  totalLen,
+					"total_m": totalLen,
 				}
 				if len(bobs) > 0 {
 					out["bob_measured"] = len(bobs)

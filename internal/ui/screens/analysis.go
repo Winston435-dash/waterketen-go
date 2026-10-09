@@ -100,10 +100,12 @@ type AnalysisLine struct {
 
 // AnalyseScreen renders the analysis of all loaded layers as a scrollable list.
 type AnalyseScreen struct {
-	assets []core.AssetMeta
-	data   []*LayerData
-	w, h   int
-	scroll int
+	assets  []core.AssetMeta
+	data    []*LayerData
+	busy    bool   // the initial managed-data load is in flight
+	spinner string // current app busy-spinner frame
+	w, h    int
+	scroll  int
 }
 
 func NewAnalyse(root string, assets []core.AssetMeta) *AnalyseScreen {
@@ -127,8 +129,17 @@ func LoadDataCmd(assets []core.AssetMeta) tea.Cmd {
 	return func() tea.Msg { return DataMsg(LoadAssets(assets)) }
 }
 
-// SetData stores the loaded assets and resets the scroll.
-func (s *AnalyseScreen) SetData(d []*LayerData) { s.data, s.scroll = d, 0 }
+// SetData stores the loaded assets, clears the busy flag and resets the scroll.
+func (s *AnalyseScreen) SetData(d []*LayerData) { s.data, s.scroll, s.busy = d, 0, false }
+
+// Busy reports bounded work in flight: the managed assets are being read.
+func (s *AnalyseScreen) Busy() bool { return s.busy }
+
+// SetBusy marks the initial managed-data load as in flight.
+func (s *AnalyseScreen) SetBusy(v bool) { s.busy = v }
+
+// SetSpinner receives the app's current busy-spinner frame.
+func (s *AnalyseScreen) SetSpinner(frame string) { s.spinner = frame }
 
 func (s *AnalyseScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
@@ -154,6 +165,9 @@ func (s *AnalyseScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 }
 
 func (s *AnalyseScreen) View() string {
+	if s.busy {
+		return components.Busy(s.spinner, "Lagen worden gelezen…")
+	}
 	if len(s.data) == 0 {
 		return components.EmptyState(
 			"Geen managed data",

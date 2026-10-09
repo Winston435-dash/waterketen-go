@@ -31,7 +31,6 @@ func NewCommandBar() CommandBar {
 func (c CommandBar) View(width int, bindings []key.Binding) string {
 	c.help.Width = width
 	return lipgloss.NewStyle().
-		Background(ui.ColorSurfaceHi).
 		Foreground(ui.ColorText).
 		Width(width).
 		MaxWidth(width).

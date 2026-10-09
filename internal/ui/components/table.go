@@ -38,9 +38,8 @@ func NewTable(cols []Column, height int) TableModel {
 		Foreground(ui.ColorMuted).
 		Bold(true)
 	s.Selected = s.Selected.
-		Foreground(ui.ColorText).
-		Background(ui.ColorActiveBg).
-		Bold(false)
+		Foreground(ui.ColorPrimary).
+		Bold(true)
 	s.Cell = s.Cell.Foreground(ui.ColorText)
 	t.SetStyles(s)
 	return TableModel{Model: t}
@@ -77,8 +76,7 @@ func EmptyState(headline, hint string, width int) string {
 		"",
 		Muted(hint),
 	)
-	return lipgloss.Place(width, 5, lipgloss.Left, lipgloss.Top, body,
-		lipgloss.WithWhitespaceBackground(ui.ColorSurface))
+	return lipgloss.Place(width, 5, lipgloss.Left, lipgloss.Top, body)
 }
 
 var _ = strings.TrimSpace // keep strings import honest for future table work

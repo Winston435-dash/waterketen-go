@@ -26,6 +26,7 @@ type SourceHealth struct {
 	SourceID  string
 	Label     string
 	URL       string
+	License   string
 	Status    HealthStatus
 	LatencyMS int
 	Count     int // -1 = not available
@@ -44,15 +45,46 @@ func probeURL(src Source) string {
 	switch src.ProbeKind {
 	case "arcgis":
 		return src.URL + "/query?where=1%3D1&returnCountOnly=true&f=json"
+	case "ogc":
+		// OGC API Features: /collections/<id>/items. The collection id comes
+		// from the source (TypeName), so a new OGC source needs no code change.
+		return fmt.Sprintf("%s/collections/%s/items?limit=1&f=json", src.URL, src.TypeName)
 	case "wfs":
+		// GeoServer's typeName is per source. `beheer_leiding` is the pipeline's
+		// network layer; fall back to it only when a source did not name one.
+		name := src.TypeName
+		if name == "" {
+			name = "Rotterdam-beheer:beheer_leiding"
+		}
 		return src.URL + sep + "service=WFS&version=2.0.0&request=GetFeature" +
-			"&typeNames=Rotterdam-beheer:beheer_leiding&resultType=hits"
+			"&typeNames=" + name + "&resultType=hits"
 	case "wfs_damo":
 		// DAMO has its own workspace; the GWSW layer name is invalid here (HTTP 400).
+		name := src.TypeName
+		if name == "" {
+			name = "waterschappen-waterketen-damo:leiding"
+		}
 		return src.URL + sep + "service=WFS&version=2.0.0&request=GetFeature" +
-			"&typeNames=waterschappen-waterketen-damo:leiding&resultType=hits"
+			"&typeNames=" + name + "&resultType=hits"
 	}
 	return src.URL
+}
+
+// checkOGC validates that an OGC API Features items response is real JSON with
+// a features array — a liveness check only. It deliberately returns no count:
+// PDOK's OGC services omit numberMatched, and a probe that requests limit=1
+// would report a meaningless "1". Unknown is reported as -1, shown as "—".
+func checkOGC(text string) (int, error) {
+	var payload struct {
+		Features *[]json.RawMessage `json:"features"`
+	}
+	if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		return -1, fmt.Errorf("geen geldige JSON in OGC-antwoord: %.80s", text)
+	}
+	if payload.Features == nil {
+		return -1, fmt.Errorf("geen features in OGC-antwoord: %.80s", text)
+	}
+	return -1, nil // alive, total unknown
 }
 
 // countFromText extracts the feature count from JSON (ArcGIS) or XML (WFS:
@@ -66,6 +98,9 @@ func countFromText(text string, kind string) (int, error) {
 			return -1, fmt.Errorf("geen geldige JSON in probe-antwoord: %.80s", text)
 		}
 		return payload.Count, nil
+	}
+	if kind == "ogc" {
+		return checkOGC(text)
 	}
 	m := numberMatchedRe.FindStringSubmatch(text)
 	if m == nil {
@@ -106,6 +141,7 @@ func ProbeSource(src Source) SourceHealth {
 		SourceID:  src.ID,
 		Label:     src.Label,
 		URL:       src.URL,
+		License:   src.License,
 		Status:    HealthUp,
 		LatencyMS: int(time.Since(started).Milliseconds()),
 		Count:     count,
@@ -121,11 +157,39 @@ func down(src Source, started time.Time, err error) SourceHealth {
 		SourceID:  src.ID,
 		Label:     src.Label,
 		URL:       src.URL,
+		License:   src.License,
 		Status:    HealthDown,
 		LatencyMS: int(time.Since(started).Milliseconds()),
 		Count:     -1,
 		Error:     msg,
 	}
+}
+
+// UnwiredHealth returns the display-only records for the detected-but-not-wired
+// sources. No network access; Count is always -1. Both ProbeAll and the TUI's
+// incremental probe go through this, so the two cannot drift.
+func UnwiredHealth() []SourceHealth {
+	out := make([]SourceHealth, 0, len(UnwiredSources))
+	for _, u := range UnwiredSources {
+		out = append(out, SourceHealth{
+			SourceID: u.ID,
+			Label:    u.Label,
+			URL:      u.URL,
+			License:  u.License,
+			Status:   HealthNotWired,
+			Count:    -1,
+			Note:     u.Note,
+		})
+	}
+	return out
+}
+
+// AssembleHealth orders the per-source probe results and appends the unwired
+// records — the single definition of "the health list", shared by ProbeAll and
+// the TUI (which collects the wired probes one message at a time).
+func AssembleHealth(wired []SourceHealth) []SourceHealth {
+	out := append([]SourceHealth(nil), wired...)
+	return append(out, UnwiredHealth()...)
 }
 
 // ProbeAll probes every wired source in parallel; order in the result follows
@@ -148,15 +212,5 @@ func ProbeAll() []SourceHealth {
 		r := <-done
 		results[r.i] = r.h
 	}
-	for _, u := range UnwiredSources {
-		results = append(results, SourceHealth{
-			SourceID: u.ID,
-			Label:    u.Label,
-			URL:      u.URL,
-			Status:   HealthNotWired,
-			Count:    -1,
-			Note:     u.Note,
-		})
-	}
-	return results
+	return AssembleHealth(results)
 }

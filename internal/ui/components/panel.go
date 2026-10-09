@@ -19,11 +19,11 @@ func Panel(title, body string, width, height int, active bool) string {
 		border = ui.BorderActive
 		borderColor = ui.ColorPrimary
 	}
+	// No background: the terminal's own background shows through, so a panel is
+	// a floating outline rather than a filled card. Never paint a surface here.
 	style := lipgloss.NewStyle().
 		Border(border, true).
 		BorderForeground(borderColor).
-		BorderBackground(ui.ColorSurface).
-		Background(ui.ColorSurface).
 		Foreground(ui.ColorText).
 		Padding(0, ui.SpacingXS).
 		Width(width - border.GetLeftSize() - border.GetRightSize()).
@@ -50,7 +50,7 @@ func withBorderTitle(rendered, title string, color lipgloss.TerminalColor) strin
 	if !found {
 		return rendered
 	}
-	label := lipgloss.NewStyle().Foreground(color).Background(ui.ColorSurface).
+	label := lipgloss.NewStyle().Foreground(color).
 		Render(" " + title + " ")
 	width := lipgloss.Width(first)
 	labelWidth := lipgloss.Width(label)

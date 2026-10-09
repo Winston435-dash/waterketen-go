@@ -19,26 +19,33 @@ import (
 // lipgloss styles. All the colours come from theme tokens; per-layer ink
 // lives in the components package as a fixed map.
 type Kaart struct {
-	root     string
-	lib      *core.Library
-	assets   []core.AssetMeta
-	data     []*LayerData
-	scene    *core.Scene
-	view     core.View
-	hasView  bool
-	active   string
-	overlay  bool
-	mode     string
-	labels   bool
-	selected *core.Feature
-	street   string
-	w, h     int
-	render   *core.Render
+	root      string
+	lib       *core.Library
+	assets    []core.AssetMeta
+	data      []*LayerData
+	scene     *core.Scene
+	view      core.View
+	hasView   bool
+	active    string
+	overlay   bool
+	mode      string
+	labels    bool
+	selected  *core.Feature
+	street    string
+	w, h      int
+	render    *core.Render
 	needsDraw bool
-	err      string
-	search   string
+	spinner   string
+	err       string
+	search    string
 	searching bool
 }
+
+// Busy reports bounded work in flight: the atlas is being drawn.
+func (s *Kaart) Busy() bool { return s.scene != nil && (s.render == nil || s.needsDraw) }
+
+// SetSpinner receives the app's current busy-spinner frame.
+func (s *Kaart) SetSpinner(frame string) { s.spinner = frame }
 
 // NewKaart initialises the atlas screen. Loads via the loader commands off
 // the event loop; the screen stays responsive while reading.
@@ -262,7 +269,7 @@ func (s *Kaart) View() string {
 		)
 	}
 	if s.render == nil || s.needsDraw {
-		return components.Muted("Kaart wordt getekend…")
+		return components.Busy(s.spinner, "Kaart wordt getekend…")
 	}
 	return RenderGrid(s.render, s.w-4)
 }
@@ -335,15 +342,16 @@ func styleFor(s core.CellStyle) lipgloss.Style {
 	case core.StyleScale:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("#b3d3e9")).Bold(true)
 	case core.StyleLabel:
+		// Transparent label: background stays the terminal's own.
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#b9d5e7")).
-			Background(lipgloss.Color("#0c1927")).
 			Bold(true)
 	case core.StyleHighlight:
+		// Highlight by ink + bold only — a filled box would fight the terminal
+		// background the rest of the UI now lets through.
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#ffffff")).
-			Background(lipgloss.Color("#284a63")).
-			Bold(true)
+			Bold(true).Underline(true)
 	}
 	if strings.HasPrefix(str, "layer:") {
 		if hex, ok := layerInk[strings.TrimPrefix(str, "layer:")]; ok {
