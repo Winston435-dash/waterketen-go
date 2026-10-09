@@ -24,7 +24,7 @@ func main() {
 		Use:   "waterketen",
 		Short: "Betrouwbare workflow voor Rotterdamse waterketen-geodata.",
 	}
-	root.AddCommand(sourcesCmd(), statusCmd(), analyseCmd(), brailleCmd())
+	root.AddCommand(discoverCmd(), sourcesCmd(), statusCmd(), analyseCmd(), brailleCmd())
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "waterketen:", err)
 		os.Exit(1)
