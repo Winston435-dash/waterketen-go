@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 // Catalog is explanatory, not a fetch registry. Reading it never probes a service
@@ -34,17 +35,18 @@ type CatalogSource struct {
 }
 
 type CatalogLayer struct {
-	ID       string         `json:"id"`
-	Label    string         `json:"label"`
-	Official string         `json:"official_name"`
-	Summary  string         `json:"summary"`
-	Question string         `json:"question"`
-	Geometry string         `json:"geometry"`
-	SourceID string         `json:"source_id"`
-	Limit    string         `json:"limit"`
-	Use      string         `json:"use"`
-	Terms    []string       `json:"terms"`
-	Local    []CatalogLocal `json:"local"`
+	ID           string         `json:"id"`
+	Label        string         `json:"label"`
+	Official     string         `json:"official_name"`
+	RequestLayer string         `json:"request_layer,omitempty"` // representative layer for a grouped catalog entry
+	Summary      string         `json:"summary"`
+	Question     string         `json:"question"`
+	Geometry     string         `json:"geometry"`
+	SourceID     string         `json:"source_id"`
+	Limit        string         `json:"limit"`
+	Use          string         `json:"use"`
+	Terms        []string       `json:"terms"`
+	Local        []CatalogLocal `json:"local"`
 }
 
 // Counts and dates are explicitly metadata, not claims of physical completeness.
@@ -56,6 +58,8 @@ type CatalogLocal struct {
 	SourceDate string `json:"source_date"`
 	CRS        string `json:"crs"`
 	Status     string `json:"status"`
+	SourceURL  string `json:"source_url"`
+	License    string `json:"license"`
 }
 
 type CatalogTerm struct {
@@ -76,7 +80,11 @@ const (
 
 var CatalogSections = []string{"Vragen", "Bronnen", "Lagen", "Begrippen"}
 
-type CatalogEntry struct{ ID, Title, Summary string }
+type CatalogEntry struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Summary string `json:"summary"`
+}
 type CatalogLine struct {
 	Text string `json:"text"`
 	Kind string `json:"kind"` // heading, warning, meta, or plain
@@ -121,13 +129,13 @@ func LoadCatalog(root string) (Catalog, error) {
 		l.Local = []CatalogLocal{}
 		for _, a := range assets {
 			if a.Layer == l.ID {
-				l.Local = append(l.Local, CatalogLocal{Area: a.Area, OnDisk: a.ProcessedExists(), Count: a.FeatureCount, FetchedAt: a.FetchedAt, CRS: a.CRS, Status: a.Status})
+				l.Local = append(l.Local, CatalogLocal{Area: a.Area, OnDisk: a.ProcessedExists(), Count: a.FeatureCount, FetchedAt: a.FetchedAt, SourceURL: a.SourceURL, License: a.SourceLicense, CRS: a.CRS, Status: a.Status})
 			}
 		}
 		if lib != nil {
 			if rec, ok := lib.Manifest.Layers[l.ID]; ok {
 				_, statErr := os.Stat(lib.LayerPath(l.ID))
-				l.Local = append(l.Local, CatalogLocal{Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: statErr == nil, Count: rec.FeatureCount, FetchedAt: lib.Manifest.CreatedAt, CRS: lib.Manifest.CRS, Status: "snapshot; datum = publicatie, niet brondatum"})
+				l.Local = append(l.Local, CatalogLocal{Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: statErr == nil, Count: rec.FeatureCount, FetchedAt: lib.Manifest.CreatedAt, SourceDate: rec.Source.Date, SourceURL: rec.Source.URL, License: rec.Source.License, CRS: lib.Manifest.CRS, Status: "snapshot; datum = publicatie, niet brondatum"})
 			}
 		}
 	}
@@ -196,8 +204,12 @@ func (c Catalog) Explain(section CatalogSection, id string, technical bool) ([]C
 					state = "bestand aanwezig"
 				}
 				add(fmt.Sprintf("%s: %s; %d objecten volgens metadata", local.Area, state, local.Count), "plain")
-				add("Opgehaald/gepubliceerd: "+known(local.FetchedAt)+"; brondatum: "+known(local.SourceDate)+"; CRS: "+known(local.CRS), "meta")
+				add("Opgehaald/gepubliceerd: "+catalogDate(local.FetchedAt)+"; brondatum: "+catalogDate(local.SourceDate)+"; CRS: "+known(local.CRS), "meta")
 				add("Verwerking: "+known(local.Status)+". Dit bewijst geen volledig fysiek netwerk.", "meta")
+				add("Licentie lokale levering: "+known(local.License), "meta")
+				if technical && local.SourceURL != "" {
+					add("Herkomstadres lokale levering: "+local.SourceURL, "meta")
+				}
 			}
 			addTerms(l.Terms)
 			if technical {
@@ -208,6 +220,10 @@ func (c Catalog) Explain(section CatalogSection, id string, technical bool) ([]C
 					source := s.Source
 					if source.ProbeKind == "wfs" || source.ProbeKind == "wfs_damo" || source.ProbeKind == "ogc" {
 						source.TypeName = l.Official
+						if l.RequestLayer != "" {
+							source.TypeName = l.RequestLayer
+							add("Voorbeeldlaag in deze aanvraag: "+l.RequestLayer, "meta")
+						}
 					}
 					out = append(out, catalogRequestLines(source)...)
 				}
@@ -255,6 +271,19 @@ func known(s string) string {
 		return "onbekend"
 	}
 	return s
+}
+
+// Preserve raw dates in JSON; render timestamps in the user's Amsterdam timezone.
+func catalogDate(value string) string {
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return known(value)
+	}
+	zone, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		return value
+	}
+	return parsed.In(zone).Format("02-01-2006 15:04 MST")
 }
 
 func licenseExplanation(s string) string {

@@ -295,7 +295,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.active = (m.active - 1 + len(m.screens)) % len(m.screens)
 			return m, m.afterScreenUpdate()
 		}
-		// Number keys 1-6 select the panel directly.
+		// Number keys select the panel directly; the registry owns the range.
 		for i, info := range screens.Screens {
 			if msg.String() == info.Key {
 				m.active = i

@@ -144,6 +144,11 @@ type LibraryManifest struct {
 		File               string `json:"file"`
 		FeatureCount       int    `json:"feature_count"`
 		SourceFeatureCount int    `json:"source_feature_count"`
+		Source             struct {
+			URL     string `json:"url"`
+			License string `json:"license"`
+			Date    string `json:"source_date"`
+		} `json:"source"`
 	} `json:"layers"`
 }
 

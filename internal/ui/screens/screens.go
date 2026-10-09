@@ -1,5 +1,5 @@
-// Package screens holds the canonical app panels: Bronnen, Lagen, Gebieden,
-// Analyse, Kaart, Profiel. Each screen renders via ui/components only —
+// Package screens holds the canonical app panels, including the question-driven
+// Ontdek catalog. Each screen renders via ui/components only —
 // it never draws its own borders, padding or colors, and it renders through
 // the fixed anatomy Header → Content → CommandBar via the App in app.go.
 package screens
@@ -19,7 +19,7 @@ import (
 	"waterketen/internal/ui/components"
 )
 
-// ScreenID identifies one of the six canonical panels.
+// ScreenID identifies one of the canonical panels.
 type ScreenID int
 
 const (
@@ -35,7 +35,7 @@ const (
 // ScreenInfo is the stable identity of one screen in the header navigation.
 type ScreenInfo struct {
 	ID    ScreenID
-	Key   string // single keystroke ("1".."6")
+	Key   string // single keystroke from the registry
 	Title string
 }
 

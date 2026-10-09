@@ -22,8 +22,8 @@ nooit randen, kleuren of spacing definiëren**.
   - `keymap.go` — alle toetsen.
   - `components/` — `Panel`, `CommandBar`, `StatusBadge`, `EmptyState`,
     `DataTable`, `Modal`.
-  - `screens/` — de zes panelen (Bronnen, Lagen, Gebieden, Analyse, Kaart,
-    Profiel).
+  - `screens/` — zeven panelen: Ontdek, Bronnen, Lagen, Gebieden, Analyse,
+    Kaart en Profiel. Bestaande paneeltoetsen 1–6 blijven gelijk; Ontdek is 7.
 
 ## Regels voor uitbreidingen (de contracten)
 
@@ -48,8 +48,8 @@ nooit randen, kleuren of spacing definiëren**.
 
 ## Status
 
-- ✅ Zes panelen in de TUI (Bronnen live, Kaart met atlas, Profiel, etc.).
-- ✅ CLI: `sources`, `status`, `analyse`, `braille`.
+- ✅ Zeven panelen in de TUI, met Ontdek als vraaggestuurde startpagina.
+- ✅ CLI: `ontdek`, `sources`, `status`, `analyse`, `braille`.
 - ✅ GeoPackage-lezing **zonder cgo** (pure-Go `modernc.org/sqlite` + eigen
   GeoPackageBinary/WKB-decoder).
 - ✅ Live WFS/ArcGIS-probes (hits-only) via `net/http`.
@@ -87,6 +87,53 @@ go build -o waterketen-tui ./cmd/waterketen-tui
 ./waterketen  status
 ./waterketen  analyse --gebied delfshaven --laag riool
 ./waterketen-tui
+```
+
+## Ontdek: eerst je vraag, daarna de techniek
+
+De TUI opent met **Ontdek** (toets `7`). Kies een vraag met `↑`/`↓` en druk
+`Enter` om te lezen. Op een brede terminal staat het antwoord ook naast de lijst;
+op een telefoon krijgt het antwoord een eigen leesweergave. `Esc` brengt je terug.
+Met `[`/`]` wissel je tussen **Vragen**, **Bronnen**, **Lagen** en **Begrippen**.
+Tijdens lezen scrollen `↑`/`↓`, `PgUp`/`PgDown`, `Home` en `End`; `t` schakelt de
+technische verdieping in of uit. Geen animaties of downloads in deze catalogus.
+De bestaande app-startup blijft bronnen controleren; dat is geen catalogusactie.
+
+```bash
+./waterketen ontdek
+./waterketen ontdek --vraag drinkwater
+./waterketen ontdek --laag riool --technisch
+./waterketen ontdek --overzicht bronnen
+./waterketen ontdek --bron damo_leiding --technisch
+./waterketen ontdek --begrip bob
+./waterketen ontdek --json
+./waterketen ontdek --markdown --technisch
+```
+
+Officiële namen blijven naast de uitleg staan. Iedere laag vertelt wat het is,
+wat de kaartvorm betekent, welke vraag je ermee beantwoordt en wat je er **niet**
+uit kunt afleiden. Herkomst, licentie, lokale bestandstatus en actualiteit staan
+apart: metadata-aantallen zijn geen bewijs van een compleet fysiek netwerk.
+BOB is niet automatisch straatdiepte; een verzorgingsgebied is geen leidingnet;
+de gemeentelijke Evides-levering is gedeeltelijk. Onbekende rechten of
+brondatums worden niet ingevuld met aannames. Tijdstempels worden in
+Amsterdam-tijd getoond; JSON bewaart de oorspronkelijke waarden.
+
+API-adressen en de volledige voorbeeldaanvraag staan achter `t` / `--technisch`,
+met uitleg per parameter. De catalogus voert deze aanvragen niet uit. Zij
+beschrijft het bestaande bronnenregister en bekende lagen, **niet alle lagen van
+elke externe dienst**. Een bron die hier uitgelegd wordt, is niet automatisch
+bedraad, gedownload of op de kaart zichtbaar.
+
+De inhoud woont uitsluitend in `internal/core/catalog*.go`. TUI, CLI, JSON en
+Markdown gebruiken dezelfde catalogus en dezelfde uitlegfunctie. De
+[gegenereerde catalogus](docs/catalogus.md) bevat ook API-voorbeelden. Regenereer
+zonder lokale snapshotinformatie met een lege datastore:
+
+```bash
+empty=$(mktemp -d "${TMPDIR:-$HOME/.hermes/cache/scratch}/waterketen-docs.XXXXXX")
+./waterketen ontdek --markdown --technisch --data-root "$empty" > docs/catalogus.md
+rmdir "$empty"
 ```
 
 ## Mobiel (Termux / smalle terminals)
