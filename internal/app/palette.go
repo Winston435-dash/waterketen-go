@@ -175,7 +175,7 @@ func keyMessage(name string) (tea.KeyMsg, bool) {
 	if keyType, ok := keys[name]; ok {
 		return tea.KeyMsg{Type: keyType}, true
 	}
-	if runes := []rune(name); len(runes) > 0 && !strings.Contains(name, "+") {
+	if runes := []rune(name); len(runes) == 1 {
 		return tea.KeyMsg{Type: tea.KeyRunes, Runes: runes}, true
 	}
 	return tea.KeyMsg{}, false

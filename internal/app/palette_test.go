@@ -54,6 +54,29 @@ func TestGlobalPaletteNavigationCommandChangesPanel(t *testing.T) {
 	}
 }
 
+func TestGlobalPaletteRefreshStartsProbeWithoutChangingPanel(t *testing.T) {
+	m := paletteModel(t, screens.ScreenOntdek)
+	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = pressText(m, "Ververs bronnen")
+	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = next.(Model)
+	if cmd == nil {
+		t.Fatal("refresh command did not dispatch source probes")
+	}
+	if got := m.screens[m.active].ID(); got != screens.ScreenOntdek {
+		t.Fatalf("refresh changed the active panel to %v", got)
+	}
+	for _, screen := range m.screens {
+		if sources, ok := screen.(*screens.Bronnen); ok {
+			if !sources.Busy() {
+				t.Fatal("refresh command did not start the source panel")
+			}
+			return
+		}
+	}
+	t.Fatal("source panel was not registered")
+}
+
 func TestGlobalPaletteSearchRunsPanelCommand(t *testing.T) {
 	m := paletteModel(t, screens.ScreenOntdek)
 	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
@@ -132,6 +155,16 @@ func TestEmptyPanelPaletteCanSwitchToGlobal(t *testing.T) {
 	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
 	if view := ansi.Strip(m.View()); !strings.Contains(view, "Ververs bronnen") {
 		t.Fatalf("ctrl+p did not expand to global commands:\n%s", view)
+	}
+}
+
+func TestPanelPaletteIncludesZoomCommands(t *testing.T) {
+	m := paletteModel(t, screens.ScreenKaart)
+	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	m = pressText(m, "zoom in")
+	view := ansi.Strip(m.View())
+	if !strings.Contains(view, "Kaart · zoom in") {
+		t.Fatalf("panel palette omitted an advertised map action:\n%s", view)
 	}
 }
 
