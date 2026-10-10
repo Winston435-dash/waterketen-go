@@ -6,23 +6,30 @@
 # VHS heeft ttyd + ffmpeg + Chromium nodig. De demo leest de echte managed data
 # op ~/.local/share/waterketen en doet bij het starten echte broncontroles.
 #
-# Op 1100x800 met FontSize 16 is het venster 107x41 — breed genoeg voor de
+# Draai deze tape vanuit demo/ (`vhs waterketen-tui.tape`): het pad in Output is
+# relatief. De GIF komt uit de mp4 via demo/render.sh — VHS's eigen .gif-pad
+# buffert de hele rgba-stream in RAM (split/palettegen/paletteuse) en is op een
+# kleine machine niet te doen, terwijl de mp4 streamt.
+#
+# Op 1000x700 met FontSize 16 is het venster 97x36 — breed genoeg voor de
 # zijbalk. De smalle (telefoon)layout staat in demo/waterketen-tui-mobiel.tape:
 # VHS kan het venster NIET halverwege een tape veranderen (gemeten: de GIF
-# bleef 1100x800 nadat Set Width/Height halverwege wijzigde).
+# bleef 1000x700 nadat Set Width/Height halverwege wijzigde).
+#
+# GEEN Set WindowBar en GEEN Set BorderRadius. Die voegen elk een `loop=-1`-input
+# plus een overlay/alphamerge-stap aan de ffmpeg-filtergraph toe; op een kleine
+# machine liep dat uit op een encode van 20+ minuten en een ffmpeg van 2,2 GB.
+# Zonder die twee is dezelfde tape in seconden klaar.
 #
 # Afdrukbare toetsen gaan door Type "..." — een kale `]` is geen VHS-commando.
 
-Output waterketen-tui.gif
+Output waterketen-tui.mp4
 
 Set Shell "bash"
 Set FontSize 16
-Set Width 1100
-Set Height 800
-Set Padding 16
-Set BorderRadius 10
-Set WindowBar Colorful
-Set WindowBarSize 28
+Set Width 1000
+Set Height 700
+Set Padding 14
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
 Set PlaybackSpeed 1.5

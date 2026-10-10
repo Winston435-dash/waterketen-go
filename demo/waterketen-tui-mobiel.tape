@@ -8,16 +8,13 @@
 # leesweergave. Dit staat in een aparte tape omdat VHS het venster niet
 # halverwege een tape kan veranderen (gemeten: de GIF bleef 1100x800).
 
-Output waterketen-tui-mobiel.gif
+Output waterketen-tui-mobiel.mp4
 
 Set Shell "bash"
 Set FontSize 16
 Set Width 460
 Set Height 620
 Set Padding 12
-Set BorderRadius 10
-Set WindowBar Colorful
-Set WindowBarSize 24
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
 Set PlaybackSpeed 1.25
