@@ -25,84 +25,90 @@ Set WindowBar Colorful
 Set WindowBarSize 28
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 45ms
-Set PlaybackSpeed 1.25
+Set PlaybackSpeed 1.5
 
 Type "cd ~/projects/waterketen-go && ./waterketen-tui"
 Enter
-Sleep 8s
+Sleep 7s
 
 # --- Ontdek (7): de vraaggestuurde catalogus, het startscherm ---------------
-Sleep 2s
+Sleep 1500ms
 Down
-Sleep 1s
+Sleep 800ms
 Down
-Sleep 1s
+Sleep 800ms
 Enter
-Sleep 3s
+Sleep 2500ms
 PageDown
-Sleep 2s
+Sleep 1500ms
 Escape
-Sleep 1s
+Sleep 800ms
 Type "]"
-Sleep 3s
+Sleep 2s
 Type "]"
-Sleep 3s
+Sleep 2s
 Type "t"
-Sleep 3s
+Sleep 2500ms
 Type "t"
-Sleep 1s
+Sleep 800ms
 Type "["
-Sleep 1s
+Sleep 800ms
 
 # --- Bronnen (1): live broncontrole met echte voortgangsbalk -----------------
 Type "1"
-Sleep 3s
+Sleep 2s
 Type "v"
-Sleep 6s
+Sleep 5s
 
 # --- Lagen (2) en Gebieden (3) ----------------------------------------------
 Type "2"
-Sleep 3s
+Sleep 2s
 Type "3"
-Sleep 3s
+Sleep 2s
 
 # --- Analyse (4): echte metingen, scrollbaar ---------------------------------
 Type "4"
-Sleep 2s
+Sleep 1500ms
 Down
-Sleep 500ms
+Sleep 400ms
 Down
-Sleep 500ms
+Sleep 400ms
 PageDown
-Sleep 2s
+Sleep 1500ms
 
 # --- Kaart (5): braille-atlas van heel Rotterdam -----------------------------
 Type "5"
-Sleep 7s
+Sleep 6s
 Type "+"
-Sleep 2s
+Sleep 1500ms
 Type "+"
-Sleep 2s
+Sleep 1500ms
+
+# gebied kiezen: Delfshaven
 Type "g"
-Sleep 2s
+Sleep 1500ms
 Type "delfshaven"
 Sleep 1s
 Enter
-Sleep 6s
+Sleep 5s
+
+# straat zoeken
 Type "/"
 Sleep 1s
 Type "westzeedijk"
 Sleep 1s
 Enter
-Sleep 5s
+Sleep 4s
+
+# straatnamen aan/uit
 Type "l"
-Sleep 3s
+Sleep 2s
 Type "l"
-Sleep 1s
+Sleep 800ms
 
 # lagen aan/uit: putten en gemalen erbij (spatie schakelt, enter past toe)
 Type "t"
-Sleep 2s
+Sleep 1500ms
 Down
 Down
 Down
@@ -114,43 +120,43 @@ Space
 Down
 Space
 Enter
-Sleep 6s
+Sleep 5s
 
-# solo-laag, laag wisselen, weer samen, dan passend maken
+# solo-laag (o): riool → drinkwaterleidingen → straten, dan weer samen
 Type "o"
-Sleep 4s
+Sleep 3s
 Type "]"
-Sleep 4s
+Sleep 3s
 Type "["
 Sleep 1s
 Type "o"
-Sleep 3s
+Sleep 2s
 Type "f"
-Sleep 3s
+Sleep 2500ms
 
 # --- Profiel (6): dwarsdoorsnede, laag per laag ------------------------------
 Type "6"
-Sleep 3s
+Sleep 2s
 Type "]"
-Sleep 3s
+Sleep 2s
 Type "]"
-Sleep 3s
+Sleep 2s
 
 # --- Opdrachten: ctrl+p (globaal) en ? (paneel) ------------------------------
 Ctrl+P
-Sleep 3s
+Sleep 2500ms
 Escape
-Sleep 1s
+Sleep 800ms
 Type "?"
-Sleep 3s
+Sleep 2500ms
 Escape
-Sleep 1s
+Sleep 800ms
 
 # --- j/k wisselt van paneel --------------------------------------------------
 Type "k"
-Sleep 2s
+Sleep 1500ms
 Type "k"
-Sleep 2s
+Sleep 1500ms
 
 Type "q"
-Sleep 2s
+Sleep 1500ms
