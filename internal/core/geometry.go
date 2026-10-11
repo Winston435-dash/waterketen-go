@@ -218,15 +218,15 @@ func (g Geometry) RepresentativePoint() Point {
 
 // GridIndex is a spatial index over the features' bounding boxes.
 type GridIndex struct {
-	entries []giEntry // sorted by minX
+	entries    []giEntry // sorted by minX
+	prefixMaxX []float64 // monotonic maxima, so old long intervals are not skipped
 }
 
-// giEntry is one feature's bbox. float32 keeps the whole index 24 bytes per
-// feature so the scan window fits a few cache lines; RD coordinates in
-// metres need ~1 mm precision, far inside float32's ~7 digits.
+// giEntry is one feature's bbox. Keep coordinates at full precision so a
+// query touching an edge cannot become a false miss through float rounding.
 type giEntry struct {
-	minX, minY, maxX, maxY float32
-	id                     int32
+	minX, minY, maxX, maxY float64
+	id                     int
 }
 
 // NewGridIndex builds the index over the features' bounding boxes. The type
@@ -238,31 +238,34 @@ func NewGridIndex(geoms []Geometry) GridIndex {
 		if !ok {
 			continue
 		}
-		entries = append(entries, giEntry{
-			float32(b.MinX), float32(b.MinY), float32(b.MaxX), float32(b.MaxY), int32(i),
-		})
+		entries = append(entries, giEntry{b.MinX, b.MinY, b.MaxX, b.MaxY, i})
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].minX < entries[j].minX })
-	return GridIndex{entries: entries}
+	prefixMaxX := make([]float64, len(entries))
+	for i, e := range entries {
+		prefixMaxX[i] = e.maxX
+		if i > 0 && prefixMaxX[i-1] > prefixMaxX[i] {
+			prefixMaxX[i] = prefixMaxX[i-1]
+		}
+	}
+	return GridIndex{entries: entries, prefixMaxX: prefixMaxX}
 }
 
 // Query returns the ascending indices of features whose bbox intersects `b`.
-// Binary-search the first entry that can intersect on x, then scan until an
-// entry starts past the query. NOT safe for concurrent use — scenes own their
-// index and the render/nearest paths are single-goroutine.
+// Search the monotonic prefix maximum for the first possible x-overlap, then
+// scan entries by minX until the query's right edge. NOT safe for concurrent
+// use — scenes own their index and render/nearest paths are single-goroutine.
 func (idx *GridIndex) Query(b BBox) []int {
 	es := idx.entries
-	minX, maxX := float32(b.MinX), float32(b.MaxX)
-	lo := sort.Search(len(es), func(i int) bool { return es[i].maxX >= minX })
+	lo := sort.Search(len(es), func(i int) bool { return idx.prefixMaxX[i] >= b.MinX })
 	var out []int
-	minY, maxY := float32(b.MinY), float32(b.MaxY)
 	for i := lo; i < len(es); i++ {
 		e := &es[i]
-		if e.minX > maxX {
-			break // sorted by minX: nothing further can match
+		if e.minX > b.MaxX {
+			break
 		}
-		if e.minY <= maxY && e.maxY >= minY {
-			out = append(out, int(e.id))
+		if e.maxX >= b.MinX && e.minY <= b.MaxY && e.maxY >= b.MinY {
+			out = append(out, e.id)
 		}
 	}
 	sort.Ints(out)
