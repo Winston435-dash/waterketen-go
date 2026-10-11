@@ -166,6 +166,58 @@ returnCountOnly=true — true vraagt alleen een telling
 
 where=1=1 — 1=1 selecteert alle objecten
 
+### Waar liggen gemalen voor oppervlaktewater? (`oppervlaktewatergemalen`)
+
+#### Waar liggen gemalen voor oppervlaktewater?
+
+Deze gemeentelijke laag registreert oppervlaktewatergemalen; rioolgemalen staan apart.
+
+#### Oppervlaktewatergemalen
+
+Laag-ID: oppervlaktewatergemalen · officieel: Gemalen_derde_ronde / FeatureServer/0
+
+Wat is het? Geregistreerde pompinstallaties voor oppervlaktewater, niet rioolgemalen.
+
+Beantwoordt: Waar liggen oppervlaktewatergemalen?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? De gemeentelijke dienst leverde bij controle 23 punten van dit type in Rotterdam, waarvan één in de wijk Delfshaven. De dienst vermeldt geen licentie of volledigheid.
+
+In de tool: Go-kaartlaag zodra opgenomen in een lokale bibliotheeksnapshot via Python bibliotheekbouw met --waterketen.
+
+Herkomst: Gemeente Rotterdam → Gemeente Rotterdam — oppervlaktewatergemalen
+
+Licentie: onbekend — geen licentieveld in de dienst — gebruiksrechten niet vastgesteld; controleer de voorwaarden bij de bron
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+Feature — kaartobject — Een object met geometrie (kaartvorm) en eigenschappen, zoals een buis, put of gebied.
+
+ArcGIS REST — FeatureServer / MapServer — Een webinterface van ArcGIS. Een FeatureServer publiceert objecten; sommige MapServer-lagen ondersteunen ook objectvragen.
+
+Oppervlaktewatergemaal — Een installatie die water in het oppervlaktewatersysteem verplaatst voor peil- of waterbeheer; geen afvalwaterpomp.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0
+
+Volledige aanvraag: https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0/query?where=1%3D1&returnCountOnly=true&f=json
+
+Antwoord: JSON met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+returnCountOnly=true — true vraagt alleen een telling
+
+where=1=1 — 1=1 selecteert alle objecten
+
 ### Waar wordt afvalwater gepompt of gezuiverd? (`afvalwater`)
 
 #### Waar wordt afvalwater gepompt of gezuiverd?
@@ -278,11 +330,11 @@ Beantwoordt: Welke aanvullende waterketengegevens zijn gepubliceerd?
 
 Op de kaart: punten
 
-> Wat vertelt het niet? Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS.
+> Wat vertelt het niet? 2.815 gemeten. Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS.
 
 In de tool: Afzonderlijke downloadlaag in Python; niet automatisch geïntegreerd in de Go-kaart of analyses.
 
-Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO waterketen
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO rioolgemalen
 
 Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
 
@@ -368,9 +420,429 @@ typeNames=waterschappen-waterketen-damo:zuiveringseenheid — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
 
+#### DAMO RWZI's
+
+Laag-ID: damo-rwzi · officieel: waterschappen-waterketen-damo:rwzi
+
+Wat is het? Rioolwaterzuiveringsinstallaties als puntobject.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 317 gemeten: één punt per installatie, zonder capaciteit of prestatie.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO RWZI's
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:rwzi&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:rwzi — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### DAMO lozingspunten
+
+Laag-ID: damo-lozingspunt · officieel: waterschappen-waterketen-damo:lozingspunt
+
+Wat is het? Lozingen op oppervlaktewater, inclusief overstorten.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 3.236 gemeten. Een lozingspunt bewijst geen overstortwerking.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO lozingspunten
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:lozingspunt&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:lozingspunt — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### RIONED rioolgemalen
+
+Laag-ID: rioned-rioolgemaal · officieel: waterschap_rioolgemaal
+
+Wat is het? Rioolgemalen als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Alleen liveness: PDOK geeft geen totaaltelling.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED rioolgemalen
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rioolgemaal/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rioolgemaal/items: objecten uit deze collectie (gegevenslaag).
+
+#### RIONED RWZI's
+
+Laag-ID: rioned-rwzi · officieel: waterschap_rwzi
+
+Wat is het? RWZI's als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Alleen liveness; procesgegevens staan niet in deze collectie.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED RWZI's
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rwzi/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rwzi/items: objecten uit deze collectie (gegevenslaag).
+
 #### Begrippen bij dit antwoord
 
 RWZI — rioolwaterzuiveringsinstallatie — Een installatie die afvalwater zuivert. Een zuiveringseenheid als gebied is niet hetzelfde als een RWZI-punt.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+### Welk water, welke kering en welk peilgebied liggen bij dit gebied? (`watercontext`)
+
+#### Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Oppervlaktewater, keringen en peilgebieden beschrijven de omgeving van het netwerk; ze zijn geen registratie van de buizen zelf.
+
+#### Oppervlaktewaterlichaam (IMWA)
+
+Laag-ID: hwh-oppervlaktewaterlichaam · officieel: waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam
+
+Wat is het? Landelijke laag van oppervlaktewaterlichamen volgens IMWA.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? 1.430.861 gemeten: beheerssemantiek, geen topografie. Geen debiet of waterstand.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Oppervlaktewateren IMWA
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### Waterkering (IMWA)
+
+Laag-ID: hwh-waterkering · officieel: waterschappen-keringen-imwa:waterkering
+
+Wat is het? Waterkeringen zoals dijken, dammen en kades.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: lijnen en vlakken
+
+> Wat vertelt het niet? 28.396 gemeten. Registratie is geen actuele toetsstatus.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Keringen IMWA
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-keringen-imwa:waterkering&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-keringen-imwa:waterkering — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### Peilgebied (IMWA)
+
+Laag-ID: hwh-peilgebied · officieel: waterschappen-waterbeheergebieden-imwa:peilgebied
+
+Wat is het? Gebieden met één afgesproken waterpeil.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? 37.418 gemeten. Grenzen vallen niet samen met waterschapsgrenzen.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Waterbeheergebieden IMWA (peilgebied)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### Kunstwerken IMWA — gemalen
+
+Laag-ID: hwh-kunstwerken-gemaal · officieel: waterschappen-kunstwerken-imwa:gemaal
+
+Wat is het? Door waterschappen beheerde gemalen in het watersysteem.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:gemaal&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:gemaal — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
 
 ### Hoe hoog of diep liggen de buizen? (`diepte`)
 
@@ -658,11 +1130,15 @@ Laag: DAMO leidingen (damo-leiding) — Geregistreerde waterketenleidingen van w
 
 Laag: DAMO putten (damo-put) — Waterschapsputten als afzonderlijke levering.
 
-Laag: DAMO rioolgemalen (damo-rioolgemaal) — Geregistreerde rioolgemalen van waterschappen.
-
 Laag: DAMO rioleringsgebieden (damo-rioleringsgebied) — Gebieden die de afvoer van afvalwater beschrijven.
 
 Laag: DAMO zuiveringseenheden (damo-zuiveringseenheid) — Gebieden die als zuiveringseenheid zijn geregistreerd.
+
+Laag: DAMO mantelbuizen (damo-mantelbuis) — Beschermbuis rond een leiding, bijvoorbeeld bij een kruising.
+
+Laag: DAMO ontluchters (damo-ontluchter) — Ontluchting op een transportleiding.
+
+Laag: DAMO leidingsegmenten (damo-leidingsegment) — Segmenten van waterketenleidingen, los van het leidingobject.
 
 #### Technische verdieping
 
@@ -681,6 +1157,158 @@ resultType=hits — hits telt alleen, zonder de objecten te downloaden
 service=WFS — standaard waarmee we de dienst aanspreken
 
 typeNames=waterschappen-waterketen-damo:leiding — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO rioolgemalen (`damo_rioolgemaal`)
+
+#### DAMO rioolgemalen
+
+Bron-ID: damo_rioolgemaal · aanbieder: Het Waterschapshuis / waterschappen via PDOK
+
+Rioolgemalen die waterschappen volgens DAMO registreren.
+
+> Beperking: Losse pomp-onderdelen staan niet in deze WFS. Kan hetzelfde fysieke object zijn als een GWSW-gemaal.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: DAMO rioolgemalen (damo-rioolgemaal) — Geregistreerde rioolgemalen van waterschappen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:rioolgemaal&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:rioolgemaal — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO RWZI's (`damo_rwzi`)
+
+#### DAMO RWZI's
+
+Bron-ID: damo_rwzi · aanbieder: Het Waterschapshuis / waterschappen via PDOK
+
+Rioolwaterzuiveringsinstallaties als puntobject.
+
+> Beperking: Eén punt per installatie; capaciteit of prestatie staat er niet in. Niet optellen bij de CBS-statistiek.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: DAMO RWZI's (damo-rwzi) — Rioolwaterzuiveringsinstallaties als puntobject.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:rwzi&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:rwzi — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO lozingspunten (`damo_lozingspunt`)
+
+#### DAMO lozingspunten
+
+Bron-ID: damo_lozingspunt · aanbieder: Het Waterschapshuis / waterschappen via PDOK
+
+Punten waar afvalwater op het oppervlaktewater loost, inclusief overstorten.
+
+> Beperking: Een lozingspunt is geen bewezen overstortwerking; de bron beschrijft de lozing, niet het gedrag.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: DAMO lozingspunten (damo-lozingspunt) — Lozingen op oppervlaktewater, inclusief overstorten.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:lozingspunt&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:lozingspunt — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO overnamepunten (`damo_overnamepunt`)
+
+#### DAMO overnamepunten
+
+Bron-ID: damo_overnamepunt · aanbieder: Het Waterschapshuis / waterschappen via PDOK
+
+Punten waar gemeentelijk riool overgaat naar het waterschapssysteem.
+
+> Beperking: Markeert de ketenoverdracht, niet de volledige route van het water daarna.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: DAMO overnamepunten (damo-overnamepunt) — Overdracht van gemeentelijk riool naar het waterschapssysteem.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:overnamepunt&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:overnamepunt — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
 
@@ -736,6 +1364,12 @@ Licentie: CC0 — vrij hergebruik; bewaar de herkomst
 
 Laag: RIONED waterschapsleidingen (rioned-leiding) — Een afzonderlijke collectie van waterschapsleidingen volgens GWSW.
 
+Laag: RIONED putten (rioned-put) — Putten als eigen GWSW-collectie.
+
+Laag: RIONED lozingspunten (rioned-lozingspunt) — Lozingen als eigen GWSW-collectie.
+
+Laag: RIONED overnamepunten (rioned-overnamepunt) — Overnamepunten als eigen GWSW-collectie.
+
 #### Technische verdieping
 
 Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
@@ -751,6 +1385,108 @@ f=json — formaat van het antwoord
 limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
 
 /collections/waterschap_leiding/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED rioolgemalen (`rioned_rioolgemaal`)
+
+#### RIONED rioolgemalen
+
+Bron-ID: rioned_rioolgemaal · aanbieder: Stichting RIONED via PDOK
+
+Rioolgemalen als eigen GWSW-collectie.
+
+> Beperking: Lost wat de GWSW beheer_pomp-laag vermengt: die telt gemalen en putconstructies bij elkaar op.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: RIONED rioolgemalen (rioned-rioolgemaal) — Rioolgemalen als eigen GWSW-collectie.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rioolgemaal/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rioolgemaal/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED RWZI's (`rioned_rwzi`)
+
+#### RIONED RWZI's
+
+Bron-ID: rioned_rwzi · aanbieder: Stichting RIONED via PDOK
+
+RWZI's als eigen GWSW-collectie.
+
+> Beperking: Alleen de installatie; procesgegevens staan in de CBS-tabellen, niet hier.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: RIONED RWZI's (rioned-rwzi) — RWZI's als eigen GWSW-collectie.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rwzi/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rwzi/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED IBA's (`rioned_iba`)
+
+#### RIONED IBA's
+
+Bron-ID: rioned_iba · aanbieder: Stichting RIONED via PDOK
+
+Individuele behandeling afvalwater: kleinschalige systemen buiten het riool.
+
+> Beperking: Een IBA is geen rioolaansluiting; dekking hangt af van wat de bronhouder aanlevert.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: RIONED IBA's (rioned-iba) — Kleinschalige afvalwaterbehandeling buiten het riool.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_iba/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_iba/items: objecten uit deze collectie (gegevenslaag).
 
 ### Zuid-Holland drinkwater (WFS) (`zh_drinkwater`)
 
@@ -795,6 +1531,170 @@ resultType=hits — hits telt alleen, zonder de objecten te downloaden
 service=WFS — standaard waarmee we de dienst aanspreken
 
 typeNames=water:DRINKWATER_BEDRIJVEN — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterschappen Kunstwerken IMWA (gemaal) (`hwh_kunstwerken_imwa`)
+
+#### Waterschappen Kunstwerken IMWA (gemaal)
+
+Bron-ID: hwh_kunstwerken_imwa · aanbieder: Het Waterschapshuis via PDOK
+
+Door waterschappen beheerde kunstwerken volgens IMWA: gemalen, stuwen, sluizen, duikers.
+
+> Beperking: De probe telt alleen de gemaal-laag; de dienst bevat 18 objectsoorten. Registratie zegt niets over actuele bediening of toestand.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: Kunstwerken IMWA — gemalen (hwh-kunstwerken-gemaal) — Door waterschappen beheerde gemalen in het watersysteem.
+
+Laag: Kunstwerken IMWA — stuwen (hwh-kunstwerken-stuw) — Stuwen die het waterpeil in een watergang regelen.
+
+Laag: Kunstwerken IMWA — sluizen (hwh-kunstwerken-sluis) — Sluizen in het waterbeheer en de scheepvaart.
+
+Laag: Kunstwerken IMWA — duikers (hwh-kunstwerken-duiker) — Duikers: watergangen die onder een weg of kering door kruisen.
+
+Laag: Kunstwerken IMWA — vispassages (hwh-kunstwerken-vispassage) — Voorzieningen die vismigratie langs een kunstwerk mogelijk maken.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:gemaal&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:gemaal — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterschappen Oppervlaktewateren IMWA (`hwh_oppervlaktewateren_imwa`)
+
+#### Waterschappen Oppervlaktewateren IMWA
+
+Bron-ID: hwh_oppervlaktewateren_imwa · aanbieder: Het Waterschapshuis via PDOK
+
+Landelijke laag van oppervlaktewaterlichamen en oevers volgens IMWA.
+
+> Beperking: Beheerssemantiek, geen topografie: de BGT-waterdelen zijn geen duplicaat. Geen debiet of waterstand.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: Oppervlaktewaterlichaam (IMWA) (hwh-oppervlaktewaterlichaam) — Landelijke laag van oppervlaktewaterlichamen volgens IMWA.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterschappen Keringen IMWA (`hwh_keringen_imwa`)
+
+#### Waterschappen Keringen IMWA
+
+Bron-ID: hwh_keringen_imwa · aanbieder: Het Waterschapshuis via PDOK
+
+Waterkeringen en waterkeringsecties van de waterschappen.
+
+> Beperking: Een geregistreerde kering is geen actuele toetsstatus; gebruik de legger voor juridische uitspraken.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: Waterkering (IMWA) (hwh-waterkering) — Waterkeringen zoals dijken, dammen en kades.
+
+Laag: Waterkeringsectie (IMWA) (hwh-waterkeringsectie) — Secties waarin een waterkering is opgedeeld.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-keringen-imwa:waterkering&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-keringen-imwa:waterkering — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterschappen Waterbeheergebieden IMWA (peilgebied) (`hwh_waterbeheergebieden_imwa`)
+
+#### Waterschappen Waterbeheergebieden IMWA (peilgebied)
+
+Bron-ID: hwh_waterbeheergebieden_imwa · aanbieder: Het Waterschapshuis via PDOK
+
+Peilgebieden, peilbesluitgebieden en afvoer-/aanvoergebieden.
+
+> Beperking: De probe telt de peilgebiedlaag. Grenzen verschillen van bestuurlijke waterschapsgrenzen.
+
+Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: Peilgebied (IMWA) (hwh-peilgebied) — Gebieden met één afgesproken waterpeil.
+
+Laag: Peilbesluitgebied (IMWA) (hwh-peilbesluitgebied) — Het deel waarvoor formeel een peilbesluit geldt.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
 
@@ -970,6 +1870,28 @@ Basisadres (parameters zijn nog nodig): https://geo.rijkswaterstaat.nl/arcgis/re
 
 Geen objectaanvraag vastgelegd; dit is broninformatie, geen beloofde downloadactie.
 
+### Waterschappen Waterschapsgrenzen IMSO (alleen WMS) (`hwh_waterschapsgrenzen_imso`)
+
+#### Waterschappen Waterschapsgrenzen IMSO (alleen WMS)
+
+Bron-ID: hwh_waterschapsgrenzen_imso · aanbieder: Het Waterschapshuis via PDOK
+
+Bestuurlijke waterschapsgrenzen volgens IMSO.
+
+> Beperking: Alleen als WMS beschikbaar: wel te tekenen, niet als objecten op te vragen.
+
+Toegang in de tool: Geen live broncontrole aangesloten: alleen WMS, geen WFS: geen objectvraag; attributie loopt via GWSW/DAMO
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterschapsgrenzen-imso/wms/v2_0
+
+Geen objectaanvraag vastgelegd; dit is broninformatie, geen beloofde downloadactie.
+
 ### Gemeentelijke Evides-publicatie (`evides`)
 
 #### Gemeentelijke Evides-publicatie
@@ -1097,6 +2019,40 @@ service=WFS — standaard waarmee we de dienst aanspreken
 typeNames=wijkenbuurten:wijken — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
+
+### Gemeente Rotterdam — oppervlaktewatergemalen (`rotterdam_oppervlaktewatergemalen`)
+
+#### Gemeente Rotterdam — oppervlaktewatergemalen
+
+Bron-ID: rotterdam_oppervlaktewatergemalen · aanbieder: Gemeente Rotterdam
+
+Punten van oppervlaktewatergemalen, apart van rioolgemalen.
+
+> Beperking: De dienst specificeert geen licentie of volledigheid; gebruik de bronmetadata en beschouw de telling niet als compleetheidsbewijs.
+
+Toegang in de tool: Wordt als aparte laag opgenomen bij Python bibliotheekbouw met --waterketen; Go leest daarna de nieuwe snapshot.
+
+Licentie: onbekend — geen licentieveld in de dienst — gebruiksrechten niet vastgesteld; controleer de voorwaarden bij de bron
+
+> Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
+
+Laag: Oppervlaktewatergemalen (oppervlaktewatergemalen) — Geregistreerde pompinstallaties voor oppervlaktewater, niet rioolgemalen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0
+
+Volledige aanvraag: https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0/query?where=1%3D1&returnCountOnly=true&f=json
+
+Antwoord: JSON met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+returnCountOnly=true — true vraagt alleen een telling
+
+where=1=1 — 1=1 selecteert alle objecten
 
 ## Lagen
 
@@ -1830,11 +2786,11 @@ Beantwoordt: Welke aanvullende waterketengegevens zijn gepubliceerd?
 
 Op de kaart: punten
 
-> Wat vertelt het niet? Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS.
+> Wat vertelt het niet? 2.815 gemeten. Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS.
 
 In de tool: Afzonderlijke downloadlaag in Python; niet automatisch geïntegreerd in de Go-kaart of analyses.
 
-Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO waterketen
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO rioolgemalen
 
 Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
 
@@ -2182,6 +3138,1218 @@ typeNames=water:HHDELFLAND_LEIDINGSEGMENT — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
 
+### Kunstwerken IMWA — gemalen (`hwh-kunstwerken-gemaal`)
+
+#### Kunstwerken IMWA — gemalen
+
+Laag-ID: hwh-kunstwerken-gemaal · officieel: waterschappen-kunstwerken-imwa:gemaal
+
+Wat is het? Door waterschappen beheerde gemalen in het watersysteem.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:gemaal&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:gemaal — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Kunstwerken IMWA — stuwen (`hwh-kunstwerken-stuw`)
+
+#### Kunstwerken IMWA — stuwen
+
+Laag-ID: hwh-kunstwerken-stuw · officieel: waterschappen-kunstwerken-imwa:stuw
+
+Wat is het? Stuwen die het waterpeil in een watergang regelen.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 53.142 gemeten: de grootste groep. Een stuw regelt peil, geen afvalwatertransport.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:stuw&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:stuw — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Kunstwerken IMWA — sluizen (`hwh-kunstwerken-sluis`)
+
+#### Kunstwerken IMWA — sluizen
+
+Laag-ID: hwh-kunstwerken-sluis · officieel: waterschappen-kunstwerken-imwa:sluis
+
+Wat is het? Sluizen in het waterbeheer en de scheepvaart.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 889 gemeten. Geen zuivering of gemaal; een eigen objecttype.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:sluis&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:sluis — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Kunstwerken IMWA — duikers (`hwh-kunstwerken-duiker`)
+
+#### Kunstwerken IMWA — duikers
+
+Laag-ID: hwh-kunstwerken-duiker · officieel: waterschappen-kunstwerken-imwa:duiker
+
+Wat is het? Duikers: watergangen die onder een weg of kering door kruisen.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Een duiker is geen rioolbuis, ook al ligt hij ondergronds.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:duiker&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:duiker — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Kunstwerken IMWA — vispassages (`hwh-kunstwerken-vispassage`)
+
+#### Kunstwerken IMWA — vispassages
+
+Laag-ID: hwh-kunstwerken-vispassage · officieel: waterschappen-kunstwerken-imwa:vispassage
+
+Wat is het? Voorzieningen die vismigratie langs een kunstwerk mogelijk maken.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Ecologische inrichting; geen waterketenobject.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-kunstwerken-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-kunstwerken-imwa:vispassage&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-kunstwerken-imwa:vispassage — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Oppervlaktewaterlichaam (IMWA) (`hwh-oppervlaktewaterlichaam`)
+
+#### Oppervlaktewaterlichaam (IMWA)
+
+Laag-ID: hwh-oppervlaktewaterlichaam · officieel: waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam
+
+Wat is het? Landelijke laag van oppervlaktewaterlichamen volgens IMWA.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? 1.430.861 gemeten: beheerssemantiek, geen topografie. Geen debiet of waterstand.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Oppervlaktewateren IMWA
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-oppervlaktewateren-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterkering (IMWA) (`hwh-waterkering`)
+
+#### Waterkering (IMWA)
+
+Laag-ID: hwh-waterkering · officieel: waterschappen-keringen-imwa:waterkering
+
+Wat is het? Waterkeringen zoals dijken, dammen en kades.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: lijnen en vlakken
+
+> Wat vertelt het niet? 28.396 gemeten. Registratie is geen actuele toetsstatus.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Keringen IMWA
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-keringen-imwa:waterkering&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-keringen-imwa:waterkering — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Waterkeringsectie (IMWA) (`hwh-waterkeringsectie`)
+
+#### Waterkeringsectie (IMWA)
+
+Laag-ID: hwh-waterkeringsectie · officieel: waterschappen-keringen-imwa:waterkeringsectie
+
+Wat is het? Secties waarin een waterkering is opgedeeld.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: lijnen
+
+> Wat vertelt het niet? 21.825 gemeten: een sectie hoort bij één kering, dus niet optellen als extra kering.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Keringen IMWA
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-keringen-imwa/wfs/v3_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-keringen-imwa:waterkeringsectie&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-keringen-imwa:waterkeringsectie — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Peilgebied (IMWA) (`hwh-peilgebied`)
+
+#### Peilgebied (IMWA)
+
+Laag-ID: hwh-peilgebied · officieel: waterschappen-waterbeheergebieden-imwa:peilgebied
+
+Wat is het? Gebieden met één afgesproken waterpeil.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? 37.418 gemeten. Grenzen vallen niet samen met waterschapsgrenzen.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Waterbeheergebieden IMWA (peilgebied)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterbeheergebieden-imwa:peilgebied — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### Peilbesluitgebied (IMWA) (`hwh-peilbesluitgebied`)
+
+#### Peilbesluitgebied (IMWA)
+
+Laag-ID: hwh-peilbesluitgebied · officieel: waterschappen-waterbeheergebieden-imwa:peilbesluitgebied
+
+Wat is het? Het deel waarvoor formeel een peilbesluit geldt.
+
+Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? 3.937 gemeten: het besluitdeel, geen groter peilgebied.
+
+In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+
+Herkomst: Het Waterschapshuis via PDOK → Waterschappen Waterbeheergebieden IMWA (peilgebied)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+IMWA — Informatiemodel Water — Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Kering — waterkering — Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Peilgebied — Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+WFS — Web Feature Service — Een standaard om kaartobjecten en hun eigenschappen op te vragen.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterbeheergebieden-imwa/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterbeheergebieden-imwa:peilbesluitgebied&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterbeheergebieden-imwa:peilbesluitgebied — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO RWZI's (`damo-rwzi`)
+
+#### DAMO RWZI's
+
+Laag-ID: damo-rwzi · officieel: waterschappen-waterketen-damo:rwzi
+
+Wat is het? Rioolwaterzuiveringsinstallaties als puntobject.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 317 gemeten: één punt per installatie, zonder capaciteit of prestatie.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO RWZI's
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:rwzi&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:rwzi — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO lozingspunten (`damo-lozingspunt`)
+
+#### DAMO lozingspunten
+
+Laag-ID: damo-lozingspunt · officieel: waterschappen-waterketen-damo:lozingspunt
+
+Wat is het? Lozingen op oppervlaktewater, inclusief overstorten.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 3.236 gemeten. Een lozingspunt bewijst geen overstortwerking.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO lozingspunten
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:lozingspunt&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:lozingspunt — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO overnamepunten (`damo-overnamepunt`)
+
+#### DAMO overnamepunten
+
+Laag-ID: damo-overnamepunt · officieel: waterschappen-waterketen-damo:overnamepunt
+
+Wat is het? Overdracht van gemeentelijk riool naar het waterschapssysteem.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 2.024 gemeten: het koppelpunt, niet de route daarna.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO overnamepunten
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:overnamepunt&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:overnamepunt — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO mantelbuizen (`damo-mantelbuis`)
+
+#### DAMO mantelbuizen
+
+Laag-ID: damo-mantelbuis · officieel: waterschappen-waterketen-damo:mantelbuis
+
+Wat is het? Beschermbuis rond een leiding, bijvoorbeeld bij een kruising.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: lijnen
+
+> Wat vertelt het niet? 3.603 gemeten. Een mantelbuis is geen transportleiding.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO waterketen
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:mantelbuis&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:mantelbuis — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO ontluchters (`damo-ontluchter`)
+
+#### DAMO ontluchters
+
+Laag-ID: damo-ontluchter · officieel: waterschappen-waterketen-damo:ontluchter
+
+Wat is het? Ontluchting op een transportleiding.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? 4.257 gemeten. Onderdeel van het transportsysteem, geen rioolput.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO waterketen
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:ontluchter&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:ontluchter — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### DAMO leidingsegmenten (`damo-leidingsegment`)
+
+#### DAMO leidingsegmenten
+
+Laag-ID: damo-leidingsegment · officieel: waterschappen-waterketen-damo:leidingsegment
+
+Wat is het? Segmenten van waterketenleidingen, los van het leidingobject.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: lijnen
+
+> Wat vertelt het niet? 28.221 gemeten. Segment en leiding beschrijven deels dezelfde buis; niet optellen.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Het Waterschapshuis / waterschappen via PDOK → DAMO waterketen
+
+Licentie: CC BY-SA 4.0 — naamsvermelding en gelijk delen bij afgeleide werken
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0
+
+Volledige aanvraag: https://service.pdok.nl/hwh/waterschappen-waterketen-damo/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeNames=waterschappen-waterketen-damo:leidingsegment&resultType=hits
+
+Antwoord: XML met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+request=GetFeature — soort vraag aan de dienst
+
+resultType=hits — hits telt alleen, zonder de objecten te downloaden
+
+service=WFS — standaard waarmee we de dienst aanspreken
+
+typeNames=waterschappen-waterketen-damo:leidingsegment — officiële laag-ID
+
+version=2.0.0 — versie van die standaard
+
+### RIONED rioolgemalen (`rioned-rioolgemaal`)
+
+#### RIONED rioolgemalen
+
+Laag-ID: rioned-rioolgemaal · officieel: waterschap_rioolgemaal
+
+Wat is het? Rioolgemalen als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Alleen liveness: PDOK geeft geen totaaltelling.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED rioolgemalen
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rioolgemaal/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rioolgemaal/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED RWZI's (`rioned-rwzi`)
+
+#### RIONED RWZI's
+
+Laag-ID: rioned-rwzi · officieel: waterschap_rwzi
+
+Wat is het? RWZI's als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Alleen liveness; procesgegevens staan niet in deze collectie.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED RWZI's
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_rwzi/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_rwzi/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED IBA's (`rioned-iba`)
+
+#### RIONED IBA's
+
+Laag-ID: rioned-iba · officieel: waterschap_iba
+
+Wat is het? Kleinschalige afvalwaterbehandeling buiten het riool.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Dekking hangt af van wat de bronhouder aanlevert.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED IBA's
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_iba/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_iba/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED putten (`rioned-put`)
+
+#### RIONED putten
+
+Laag-ID: rioned-put · officieel: waterschap_put
+
+Wat is het? Putten als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Alleen liveness; nabijheid van een buis bewijst geen verbinding.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED Waterketen GWSW (OGC)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_put/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_put/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED lozingspunten (`rioned-lozingspunt`)
+
+#### RIONED lozingspunten
+
+Laag-ID: rioned-lozingspunt · officieel: waterschap_lozingspunt
+
+Wat is het? Lozingen als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Losse objecten; geen bewijs van overstortgedrag.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED Waterketen GWSW (OGC)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_lozingspunt/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_lozingspunt/items: objecten uit deze collectie (gegevenslaag).
+
+### RIONED overnamepunten (`rioned-overnamepunt`)
+
+#### RIONED overnamepunten
+
+Laag-ID: rioned-overnamepunt · officieel: waterschap_overnamepunt
+
+Wat is het? Overnamepunten als eigen GWSW-collectie.
+
+Beantwoordt: Welke objectsoorten publiceren de waterschappen en RIONED?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? Koppelpunt in de keten, geen volledige route.
+
+In de tool: Broncontrole in Go; niet automatisch op de kaart of in analyses.
+
+Herkomst: Stichting RIONED via PDOK → RIONED Waterketen GWSW (OGC)
+
+Licentie: CC0 — vrij hergebruik; bewaar de herkomst
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+DAMO — Datamodel van de waterschappen — Een model waarmee waterschappen objecten en hun eigenschappen beschrijven; geen aanbieder of downloadformaat.
+
+Stichting RIONED — Een organisatie voor stedelijk waterbeheer, betrokken bij GWSW; geen kaartlaag of protocol.
+
+Overstort — Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+IBA — individuele behandeling afvalwater — Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0
+
+Volledige aanvraag: https://api.pdok.nl/rioned/waterschappen-waterketen-gwsw/ogc/v1_0/collections/waterschap_overnamepunt/items?limit=1&f=json
+
+Antwoord: JSON met maximaal één kaartobject; totaalaantal onbekend
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+limit=1 — maximum aantal objecten in dit antwoord, niet het totaalaantal
+
+/collections/waterschap_overnamepunt/items: objecten uit deze collectie (gegevenslaag).
+
+### Oppervlaktewatergemalen (`oppervlaktewatergemalen`)
+
+#### Oppervlaktewatergemalen
+
+Laag-ID: oppervlaktewatergemalen · officieel: Gemalen_derde_ronde / FeatureServer/0
+
+Wat is het? Geregistreerde pompinstallaties voor oppervlaktewater, niet rioolgemalen.
+
+Beantwoordt: Waar liggen oppervlaktewatergemalen?
+
+Op de kaart: punten
+
+> Wat vertelt het niet? De gemeentelijke dienst leverde bij controle 23 punten van dit type in Rotterdam, waarvan één in de wijk Delfshaven. De dienst vermeldt geen licentie of volledigheid.
+
+In de tool: Go-kaartlaag zodra opgenomen in een lokale bibliotheeksnapshot via Python bibliotheekbouw met --waterketen.
+
+Herkomst: Gemeente Rotterdam → Gemeente Rotterdam — oppervlaktewatergemalen
+
+Licentie: onbekend — geen licentieveld in de dienst — gebruiksrechten niet vastgesteld; controleer de voorwaarden bij de bron
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+Feature — kaartobject — Een object met geometrie (kaartvorm) en eigenschappen, zoals een buis, put of gebied.
+
+ArcGIS REST — FeatureServer / MapServer — Een webinterface van ArcGIS. Een FeatureServer publiceert objecten; sommige MapServer-lagen ondersteunen ook objectvragen.
+
+Oppervlaktewatergemaal — Een installatie die water in het oppervlaktewatersysteem verplaatst voor peil- of waterbeheer; geen afvalwaterpomp.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0
+
+Volledige aanvraag: https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0/query?where=1%3D1&returnCountOnly=true&f=json
+
+Antwoord: JSON met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+returnCountOnly=true — true vraagt alleen een telling
+
+where=1=1 — 1=1 selecteert alle objecten
+
 ## Begrippen
 
 ### GWSW — Gegevenswoordenboek Stedelijk Water (`gwsw`)
@@ -2336,6 +4504,14 @@ Een installatie die afvalwater zuivert. Een zuiveringseenheid als gebied is niet
 
 Voorbeeld: Een vlak dat het aangesloten gebied beschrijft, markeert niet de locatie van de zuiveringsinstallatie.
 
+### Oppervlaktewatergemaal (`oppervlaktewatergemaal`)
+
+#### Oppervlaktewatergemaal
+
+Een installatie die water in het oppervlaktewatersysteem verplaatst voor peil- of waterbeheer; geen afvalwaterpomp.
+
+Voorbeeld: De gemeentelijke kaartlaag typeert oppervlaktewatergemalen apart van rioolgemalen.
+
 ### KLIC — Kabels en Leidingen Informatie Centrum (`klic`)
 
 #### KLIC — Kabels en Leidingen Informatie Centrum
@@ -2351,3 +4527,43 @@ Voorbeeld: Deze openbare kaartcatalogus vervangt geen vereiste KLIC-melding.
 Een bewaarde versie van gegevens op een bepaald moment. De ophaaldatum hoeft niet de meet- of brondatum te zijn.
 
 Voorbeeld: Een recent opgehaald bestand kan oude metingen bevatten.
+
+### IMWA — Informatiemodel Water (`imwa`)
+
+#### IMWA — Informatiemodel Water
+
+Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.
+
+Voorbeeld: Een waterkering en een peilgebied zijn IMWA-objecttypen.
+
+### Kering — waterkering (`kering`)
+
+#### Kering — waterkering
+
+Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.
+
+Voorbeeld: Een geregistreerde kering is geen actuele toetsstatus.
+
+### Peilgebied (`peilgebied`)
+
+#### Peilgebied
+
+Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.
+
+Voorbeeld: Het peilgebied vertelt welk peil hoort bij de sloot naast een rioolbuis.
+
+### Overstort (`overstort`)
+
+#### Overstort
+
+Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.
+
+Voorbeeld: Een DAMO-lozingspunt kan een overstort zijn, maar de bron beschrijft het gedrag niet.
+
+### IBA — individuele behandeling afvalwater (`iba`)
+
+#### IBA — individuele behandeling afvalwater
+
+Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.
+
+Voorbeeld: Een IBA is geen rioolaansluiting.

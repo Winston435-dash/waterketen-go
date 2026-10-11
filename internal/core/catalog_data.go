@@ -9,7 +9,8 @@ func NewCatalog() Catalog {
 			{"drinkwater", "Wie levert hier drinkwater?", "Een verzorgingsgebied vertelt wie er levert, niet waar de buizen liggen.", []string{"drinkwater"}, nil},
 			{"drinkwaterleidingen", "Waar liggen drinkwaterleidingen?", "De gemeentelijke Evides-publicatie toont een deel van de leidinggeometrie.", []string{"drinkwaterleidingen"}, nil},
 			{"oppervlaktewatergemalen", "Waar liggen gemalen voor oppervlaktewater?", "Deze gemeentelijke laag registreert oppervlaktewatergemalen; rioolgemalen staan apart.", []string{"oppervlaktewatergemalen"}, nil},
-			{"afvalwater", "Waar wordt afvalwater gepompt of gezuiverd?", "Putten, gemalen en afvoergebieden vertellen verschillende delen van het verhaal. Nabijheid is geen bewezen verbinding.", []string{"putten", "gemalen", "damo-rioolgemaal", "damo-zuiveringseenheid"}, []string{"rwzi"}},
+			{"afvalwater", "Waar wordt afvalwater gepompt of gezuiverd?", "Putten, gemalen en afvoergebieden vertellen verschillende delen van het verhaal. Nabijheid is geen bewezen verbinding.", []string{"putten", "gemalen", "damo-rioolgemaal", "damo-zuiveringseenheid", "damo-rwzi", "damo-lozingspunt", "rioned-rioolgemaal", "rioned-rwzi"}, []string{"rwzi", "overstort"}},
+			{"watercontext", "Welk water, welke kering en welk peilgebied liggen bij dit gebied?", "Oppervlaktewater, keringen en peilgebieden beschrijven de omgeving van het netwerk; ze zijn geen registratie van de buizen zelf.", []string{"hwh-oppervlaktewaterlichaam", "hwh-waterkering", "hwh-peilgebied", "hwh-kunstwerken-gemaal"}, []string{"imwa"}},
 			{"diepte", "Hoe hoog of diep liggen de buizen?", "BOB is buisbodemhoogte ten opzichte van NAP. Voor diepte onder een straat is ook het maaiveld nodig.", []string{"riool", "hoogte"}, []string{"maaiveld"}},
 			{"omgeving", "Wat ligt er boven en rond het netwerk?", "Straten, water en wijkgrenzen geven context; ze zijn geen registratie van ondergrondse leidingen.", []string{"straten", "water", "gebieden"}, []string{"bbox"}},
 		},
@@ -36,6 +37,12 @@ func NewCatalog() Catalog {
 			{"oppervlaktewatergemaal", "Oppervlaktewatergemaal", "Een installatie die water in het oppervlaktewatersysteem verplaatst voor peil- of waterbeheer; geen afvalwaterpomp.", "De gemeentelijke kaartlaag typeert oppervlaktewatergemalen apart van rioolgemalen."},
 			{"klic", "KLIC — Kabels en Leidingen Informatie Centrum", "Informatie-uitwisseling via het Kadaster over kabels en leidingen, onder meer voor graafwerk.", "Deze openbare kaartcatalogus vervangt geen vereiste KLIC-melding."},
 			{"snapshot", "Snapshot — vastgelegde levering", "Een bewaarde versie van gegevens op een bepaald moment. De ophaaldatum hoeft niet de meet- of brondatum te zijn.", "Een recent opgehaald bestand kan oude metingen bevatten."},
+			// Added 12 okt '26 with the IMWA/DAMO/RIONED object types.
+			{"imwa", "IMWA — Informatiemodel Water", "Het informatiemodel waarmee waterschappen hun waterobjecten, kunstwerken en beheergebieden beschrijven.", "Een waterkering en een peilgebied zijn IMWA-objecttypen."},
+			{"kering", "Kering — waterkering", "Een constructie die water tegenhoudt, zoals een dijk, dam of kade; een waterkeringsectie is een deel daarvan.", "Een geregistreerde kering is geen actuele toetsstatus."},
+			{"peilgebied", "Peilgebied", "Een gebied met één afgesproken waterpeil; het peilbesluitgebied is het deel waarvoor formeel een peilbesluit geldt.", "Het peilgebied vertelt welk peil hoort bij de sloot naast een rioolbuis."},
+			{"overstort", "Overstort", "Een punt waar rioolwater bij hevige regen of verstopping op het oppervlaktewater komt.", "Een DAMO-lozingspunt kan een overstort zijn, maar de bron beschrijft het gedrag niet."},
+			{"iba", "IBA — individuele behandeling afvalwater", "Een kleinschalig systeem dat afvalwater van één of enkele woningen behandelt, buiten het riool om.", "Een IBA is geen rioolaansluiting."},
 		},
 	}
 	// Provider, purpose and limitations are editorial; operational fields remain
@@ -52,6 +59,20 @@ func NewCatalog() Catalog {
 		"klic_rotterdam":     {"Persoonlijk/Hogeschool-account op ArcGIS", "Een KLIC-afgeleide rioolpublicatie met andere herkomst dan de primaire bron.", "Fallback, niet de primaire gemeentelijke registratie. Rechten en herkomst eerst beoordelen."},
 		"gws_aanvullend":     {"GWSW-publicatie Rotterdam", "Aanvullende Rotterdamse lagen, waaronder putten en pompconstructies.", "De pompconstructielaag kan zowel rioolgemalen als putconstructies bevatten."},
 		"rws_nwp_drinkwater": {"Rijkswaterstaat", "Drinkwaterinnamepunten en beschermingsinformatie.", "Geen volledig leidingnet; licentie eerst verifiëren."},
+		// Added 12 okt '26. Provider/purpose/limit are editorial; URL, licence
+		// and probe layer stay owned by sources.go.
+		"damo_rioolgemaal":             {"Het Waterschapshuis / waterschappen via PDOK", "Rioolgemalen die waterschappen volgens DAMO registreren.", "Losse pomp-onderdelen staan niet in deze WFS. Kan hetzelfde fysieke object zijn als een GWSW-gemaal."},
+		"damo_rwzi":                    {"Het Waterschapshuis / waterschappen via PDOK", "Rioolwaterzuiveringsinstallaties als puntobject.", "Eén punt per installatie; capaciteit of prestatie staat er niet in. Niet optellen bij de CBS-statistiek."},
+		"damo_lozingspunt":             {"Het Waterschapshuis / waterschappen via PDOK", "Punten waar afvalwater op het oppervlaktewater loost, inclusief overstorten.", "Een lozingspunt is geen bewezen overstortwerking; de bron beschrijft de lozing, niet het gedrag."},
+		"damo_overnamepunt":            {"Het Waterschapshuis / waterschappen via PDOK", "Punten waar gemeentelijk riool overgaat naar het waterschapssysteem.", "Markeert de ketenoverdracht, niet de volledige route van het water daarna."},
+		"rioned_rioolgemaal":           {"Stichting RIONED via PDOK", "Rioolgemalen als eigen GWSW-collectie.", "Lost wat de GWSW beheer_pomp-laag vermengt: die telt gemalen en putconstructies bij elkaar op."},
+		"rioned_rwzi":                  {"Stichting RIONED via PDOK", "RWZI's als eigen GWSW-collectie.", "Alleen de installatie; procesgegevens staan in de CBS-tabellen, niet hier."},
+		"rioned_iba":                   {"Stichting RIONED via PDOK", "Individuele behandeling afvalwater: kleinschalige systemen buiten het riool.", "Een IBA is geen rioolaansluiting; dekking hangt af van wat de bronhouder aanlevert."},
+		"hwh_kunstwerken_imwa":         {"Het Waterschapshuis via PDOK", "Door waterschappen beheerde kunstwerken volgens IMWA: gemalen, stuwen, sluizen, duikers.", "De probe telt alleen de gemaal-laag; de dienst bevat 18 objectsoorten. Registratie zegt niets over actuele bediening of toestand."},
+		"hwh_oppervlaktewateren_imwa":  {"Het Waterschapshuis via PDOK", "Landelijke laag van oppervlaktewaterlichamen en oevers volgens IMWA.", "Beheerssemantiek, geen topografie: de BGT-waterdelen zijn geen duplicaat. Geen debiet of waterstand."},
+		"hwh_keringen_imwa":            {"Het Waterschapshuis via PDOK", "Waterkeringen en waterkeringsecties van de waterschappen.", "Een geregistreerde kering is geen actuele toetsstatus; gebruik de legger voor juridische uitspraken."},
+		"hwh_waterbeheergebieden_imwa": {"Het Waterschapshuis via PDOK", "Peilgebieden, peilbesluitgebieden en afvoer-/aanvoergebieden.", "De probe telt de peilgebiedlaag. Grenzen verschillen van bestuurlijke waterschapsgrenzen."},
+		"hwh_waterschapsgrenzen_imso":  {"Het Waterschapshuis via PDOK", "Bestuurlijke waterschapsgrenzen volgens IMSO.", "Alleen als WMS beschikbaar: wel te tekenen, niet als objecten op te vragen."},
 	}
 	for _, s := range WiredSources {
 		d := descriptions[s.ID]
@@ -105,7 +126,7 @@ func NewCatalog() Catalog {
 	}
 	for _, extra := range []struct{ id, label, official, summary, geometry, source, limit string }{
 		{"damo-put", "DAMO putten", "waterschappen-waterketen-damo:put", "Waterschapsputten als afzonderlijke levering.", "punten", "damo_leiding", "Mogelijke overlap met GWSW; niet automatisch samenvoegen."},
-		{"damo-rioolgemaal", "DAMO rioolgemalen", "waterschappen-waterketen-damo:rioolgemaal", "Geregistreerde rioolgemalen van waterschappen.", "punten", "damo_leiding", "Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS."},
+		{"damo-rioolgemaal", "DAMO rioolgemalen", "waterschappen-waterketen-damo:rioolgemaal", "Geregistreerde rioolgemalen van waterschappen.", "punten", "damo_rioolgemaal", "2.815 gemeten. Gemalen zijn geen losse pomp-onderdelen; pomp staat niet in deze WFS."},
 		{"damo-rioleringsgebied", "DAMO rioleringsgebieden", "waterschappen-waterketen-damo:rioleringsgebied", "Gebieden die de afvoer van afvalwater beschrijven.", "vlakken", "damo_leiding", "Geen buizennetwerk; een afvoergebied is een vlak."},
 		{"damo-zuiveringseenheid", "DAMO zuiveringseenheden", "waterschappen-waterketen-damo:zuiveringseenheid", "Gebieden die als zuiveringseenheid zijn geregistreerd.", "vlakken", "damo_leiding", "Geen RWZI-punten en geen bewezen route van een individuele buis."},
 		{"zh-drinkwater-productieketen", "ZH drinkwaterproductieketen", "water:DRINKWATER_PRODUCTIEKETEN", "Productie- en winningslocaties voor drinkwater.", "punten", "zh_drinkwater", "Geen drinkwaterleidingen; PDM geldt voor deze beschreven dataset, niet automatisch voor alle dienstlagen."},
@@ -114,6 +135,44 @@ func NewCatalog() Catalog {
 		{"zh-delfland-transport", "ZH Delfland leidingsegmenten", "water:HHDELFLAND_LEIDINGSEGMENT", "Een afzonderlijke publicatie van transportleidingsegmenten.", "lijnen", "zh_drinkwater", "Spaarzame levering met mogelijke overlap; geen nieuw drinkwaternet. Bbox-matches kunnen buiten de wijk liggen."},
 	} {
 		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welke aanvullende waterketengegevens zijn gepubliceerd?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Afzonderlijke downloadlaag in Python; niet automatisch geïntegreerd in de Go-kaart of analyses.", Terms: []string{"wfs", "damo", "bbox"}})
+	}
+	// The IMWA services carry many object types per dataset, and the probe
+	// counts exactly one layer. Every probed layer needs its own entry here
+	// (catalog_test.go fails on an unexplained probe layer); the other types a
+	// waterketen question asks about are added alongside so the register does
+	// not silently hide them.
+	for _, extra := range []struct{ id, label, official, summary, geometry, source, limit string }{
+		{"hwh-kunstwerken-gemaal", "Kunstwerken IMWA — gemalen", "waterschappen-kunstwerken-imwa:gemaal", "Door waterschappen beheerde gemalen in het watersysteem.", "punten", "hwh_kunstwerken_imwa", "8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal."},
+		{"hwh-kunstwerken-stuw", "Kunstwerken IMWA — stuwen", "waterschappen-kunstwerken-imwa:stuw", "Stuwen die het waterpeil in een watergang regelen.", "punten", "hwh_kunstwerken_imwa", "53.142 gemeten: de grootste groep. Een stuw regelt peil, geen afvalwatertransport."},
+		{"hwh-kunstwerken-sluis", "Kunstwerken IMWA — sluizen", "waterschappen-kunstwerken-imwa:sluis", "Sluizen in het waterbeheer en de scheepvaart.", "punten", "hwh_kunstwerken_imwa", "889 gemeten. Geen zuivering of gemaal; een eigen objecttype."},
+		{"hwh-kunstwerken-duiker", "Kunstwerken IMWA — duikers", "waterschappen-kunstwerken-imwa:duiker", "Duikers: watergangen die onder een weg of kering door kruisen.", "punten", "hwh_kunstwerken_imwa", "Een duiker is geen rioolbuis, ook al ligt hij ondergronds."},
+		{"hwh-kunstwerken-vispassage", "Kunstwerken IMWA — vispassages", "waterschappen-kunstwerken-imwa:vispassage", "Voorzieningen die vismigratie langs een kunstwerk mogelijk maken.", "punten", "hwh_kunstwerken_imwa", "Ecologische inrichting; geen waterketenobject."},
+		{"hwh-oppervlaktewaterlichaam", "Oppervlaktewaterlichaam (IMWA)", "waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam", "Landelijke laag van oppervlaktewaterlichamen volgens IMWA.", "vlakken", "hwh_oppervlaktewateren_imwa", "1.430.861 gemeten: beheerssemantiek, geen topografie. Geen debiet of waterstand."},
+		{"hwh-waterkering", "Waterkering (IMWA)", "waterschappen-keringen-imwa:waterkering", "Waterkeringen zoals dijken, dammen en kades.", "lijnen en vlakken", "hwh_keringen_imwa", "28.396 gemeten. Registratie is geen actuele toetsstatus."},
+		{"hwh-waterkeringsectie", "Waterkeringsectie (IMWA)", "waterschappen-keringen-imwa:waterkeringsectie", "Secties waarin een waterkering is opgedeeld.", "lijnen", "hwh_keringen_imwa", "21.825 gemeten: een sectie hoort bij één kering, dus niet optellen als extra kering."},
+		{"hwh-peilgebied", "Peilgebied (IMWA)", "waterschappen-waterbeheergebieden-imwa:peilgebied", "Gebieden met één afgesproken waterpeil.", "vlakken", "hwh_waterbeheergebieden_imwa", "37.418 gemeten. Grenzen vallen niet samen met waterschapsgrenzen."},
+		{"hwh-peilbesluitgebied", "Peilbesluitgebied (IMWA)", "waterschappen-waterbeheergebieden-imwa:peilbesluitgebied", "Het deel waarvoor formeel een peilbesluit geldt.", "vlakken", "hwh_waterbeheergebieden_imwa", "3.937 gemeten: het besluitdeel, geen groter peilgebied."},
+	} {
+		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welk water, welke kering en welk peilgebied liggen bij dit gebied?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Broncontrole in Go; geen automatische kaartlaag of analyse.", Terms: []string{"imwa", "kering", "peilgebied", "wfs"}})
+	}
+	// DAMO and RIONED each publish a family of object types. The types the
+	// register already described (put, rioleringsgebied, zuiveringseenheid) keep
+	// their source; these are the ones that were missing.
+	for _, extra := range []struct{ id, label, official, summary, geometry, source, limit string }{
+		{"damo-rwzi", "DAMO RWZI's", "waterschappen-waterketen-damo:rwzi", "Rioolwaterzuiveringsinstallaties als puntobject.", "punten", "damo_rwzi", "317 gemeten: één punt per installatie, zonder capaciteit of prestatie."},
+		{"damo-lozingspunt", "DAMO lozingspunten", "waterschappen-waterketen-damo:lozingspunt", "Lozingen op oppervlaktewater, inclusief overstorten.", "punten", "damo_lozingspunt", "3.236 gemeten. Een lozingspunt bewijst geen overstortwerking."},
+		{"damo-overnamepunt", "DAMO overnamepunten", "waterschappen-waterketen-damo:overnamepunt", "Overdracht van gemeentelijk riool naar het waterschapssysteem.", "punten", "damo_overnamepunt", "2.024 gemeten: het koppelpunt, niet de route daarna."},
+		{"damo-mantelbuis", "DAMO mantelbuizen", "waterschappen-waterketen-damo:mantelbuis", "Beschermbuis rond een leiding, bijvoorbeeld bij een kruising.", "lijnen", "damo_leiding", "3.603 gemeten. Een mantelbuis is geen transportleiding."},
+		{"damo-ontluchter", "DAMO ontluchters", "waterschappen-waterketen-damo:ontluchter", "Ontluchting op een transportleiding.", "punten", "damo_leiding", "4.257 gemeten. Onderdeel van het transportsysteem, geen rioolput."},
+		{"damo-leidingsegment", "DAMO leidingsegmenten", "waterschappen-waterketen-damo:leidingsegment", "Segmenten van waterketenleidingen, los van het leidingobject.", "lijnen", "damo_leiding", "28.221 gemeten. Segment en leiding beschrijven deels dezelfde buis; niet optellen."},
+		{"rioned-rioolgemaal", "RIONED rioolgemalen", "waterschap_rioolgemaal", "Rioolgemalen als eigen GWSW-collectie.", "punten", "rioned_rioolgemaal", "Alleen liveness: PDOK geeft geen totaaltelling."},
+		{"rioned-rwzi", "RIONED RWZI's", "waterschap_rwzi", "RWZI's als eigen GWSW-collectie.", "punten", "rioned_rwzi", "Alleen liveness; procesgegevens staan niet in deze collectie."},
+		{"rioned-iba", "RIONED IBA's", "waterschap_iba", "Kleinschalige afvalwaterbehandeling buiten het riool.", "punten", "rioned_iba", "Dekking hangt af van wat de bronhouder aanlevert."},
+		{"rioned-put", "RIONED putten", "waterschap_put", "Putten als eigen GWSW-collectie.", "punten", "rioned_gwsw", "Alleen liveness; nabijheid van een buis bewijst geen verbinding."},
+		{"rioned-lozingspunt", "RIONED lozingspunten", "waterschap_lozingspunt", "Lozingen als eigen GWSW-collectie.", "punten", "rioned_gwsw", "Losse objecten; geen bewijs van overstortgedrag."},
+		{"rioned-overnamepunt", "RIONED overnamepunten", "waterschap_overnamepunt", "Overnamepunten als eigen GWSW-collectie.", "punten", "rioned_gwsw", "Koppelpunt in de keten, geen volledige route."},
+	} {
+		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welke objectsoorten publiceren de waterschappen en RIONED?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Broncontrole in Go; niet automatisch op de kaart of in analyses.", Terms: []string{"damo", "rioned", "overstort", "iba"}})
 	}
 	c.Layers = append(c.Layers, CatalogLayer{
 		ID: "oppervlaktewatergemalen", Label: "Oppervlaktewatergemalen",
