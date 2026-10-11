@@ -64,23 +64,26 @@ func RenderScene(
 		}
 	}
 
-	// Per-layer draw — candidates sorted so selections/highlights draw LAST
-	// over their surroundings.
+	// Per-layer draw — ordinary features first, highlights last.
 	counts := map[string]int{}
 	labelFeatures := map[string][]Geometry{}
 	isSelected := func(f Feature) bool {
 		return selected != nil && f.Layer == selected.Layer && f.Position == selected.Position
 	}
+	isHighlighted := func(f Feature) bool {
+		return isSelected(f) || (street != "" && f.Street == street)
+	}
 	for _, layer := range scene.VisibleLayers(active, overlay, displayLayers) {
-		cands := scene.Candidates(layer, frame.Bounds)
-		counts[layer] = len(cands)
-		sort.SliceStable(cands, func(i, j int) bool {
-			hi := isSelected(cands[i]) || (street != "" && cands[i].Street == street)
-			hj := isSelected(cands[j]) || (street != "" && cands[j].Street == street)
-			return !hi && hj
-		})
-		for _, f := range cands {
-			highlight := isSelected(f) || (street != "" && f.Street == street)
+		idx, ok := scene.Index[layer]
+		if !ok {
+			continue
+		}
+		ids := idx.Query(frame.Bounds)
+		features := scene.Layers[layer]
+		counts[layer] = len(ids)
+
+		drawFeature := func(f Feature) {
+			highlight := isHighlighted(f)
 			if highlight {
 				grid.style = "#ffffff:#284a63" // "fg:bg" — resolved by the caller to CellStyle
 				grid.priority = 5
@@ -121,6 +124,21 @@ func RenderScene(
 			}
 			if f.Street != "" && (layer == "riool" || layer == "straten") {
 				labelFeatures[f.Street] = append(labelFeatures[f.Street], geom)
+			}
+		}
+
+		// Query returns ascending feature IDs. Two passes reproduce the stable
+		// normal-then-highlight ordering without copying and sorting []Feature.
+		for _, id := range ids {
+			f := features[id]
+			if !isHighlighted(f) {
+				drawFeature(f)
+			}
+		}
+		for _, id := range ids {
+			f := features[id]
+			if isHighlighted(f) {
+				drawFeature(f)
 			}
 		}
 	}
