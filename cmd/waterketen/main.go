@@ -10,7 +10,6 @@ import (
 	"math"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -96,7 +95,7 @@ func sourcesCmd() *cobra.Command {
 					}
 					line := s.Label
 					if live && s.Count >= 0 {
-						line += fmt.Sprintf("  ·  %s features  ·  %d ms", thousands(s.Count), s.LatencyMS)
+						line += fmt.Sprintf("  ·  %s features  ·  %d ms", screens.Thousands(s.Count), s.LatencyMS)
 					} else if live && s.Error != "" {
 						line += fmt.Sprintf("  ·  DOWN: %s", s.Error)
 					}
@@ -152,7 +151,7 @@ func statusCmd() *cobra.Command {
 						exists = "  (METADATA ZONDER BESTAND)"
 					}
 					fmt.Printf("  %s/%-22s  %6s features  %s%s\n",
-						a.Area, a.Layer, thousands(a.FeatureCount), a.FetchedAt[:10], exists)
+						a.Area, a.Layer, screens.Thousands(a.FeatureCount), a.FetchedAt[:10], exists)
 				}
 			}
 			fmt.Println()
@@ -160,7 +159,7 @@ func statusCmd() *cobra.Command {
 				fmt.Println(components.Muted("Geen kaartbibliotheek — bouw met Python: waterketen bibliotheek bouw …"))
 			} else {
 				fmt.Println(components.Strong(fmt.Sprintf("Bibliotheek-snapshot: %s", lib.Snapshot)))
-				fmt.Printf("  gebieden: %s  ·  CRS: %s\n", thousands(lib.Manifest.AreaCount), lib.Manifest.CRS)
+				fmt.Printf("  gebieden: %s  ·  CRS: %s\n", screens.Thousands(lib.Manifest.AreaCount), lib.Manifest.CRS)
 				names := make([]string, 0, len(lib.Manifest.Layers))
 				for n := range lib.Manifest.Layers {
 					names = append(names, n)
@@ -168,7 +167,7 @@ func statusCmd() *cobra.Command {
 				sort.Strings(names)
 				for _, n := range names {
 					rec := lib.Manifest.Layers[n]
-					fmt.Printf("  %-22s %8s features\n", n, thousands(rec.FeatureCount))
+					fmt.Printf("  %-22s %8s features\n", n, screens.Thousands(rec.FeatureCount))
 				}
 			}
 			return nil
@@ -250,7 +249,7 @@ func analyseCmd() *cobra.Command {
 			}
 			fmt.Println(components.Strong(fmt.Sprintf("%s/%s — %s", d.Area, d.Layer, label)))
 			fmt.Printf("  features: %s (lijnen %s · vlakken %s · punten %s)\n",
-				thousands(len(d.Features)), thousands(lines), thousands(polys), thousands(pts))
+				screens.Thousands(len(d.Features)), screens.Thousands(lines), screens.Thousands(polys), screens.Thousands(pts))
 			if spec != nil && !spec.Linear {
 				fmt.Printf("  omtrek totaal: %.2f km\n", totalLen/1000)
 			} else if lines > 0 {
@@ -268,14 +267,14 @@ func analyseCmd() *cobra.Command {
 						sum += v
 					}
 					fmt.Printf("  BOB: gemeten op %s van %s (%.1f%%)\n",
-						thousands(len(bobs)), thousands(len(d.Features)),
+						screens.Thousands(len(bobs)), screens.Thousands(len(d.Features)),
 						100*float64(len(bobs))/float64(len(d.Features)))
 					fmt.Printf("  BOB: min %.2f · mediaan %s · max %.2f\n",
 						lo, medianOf(bobs), hi)
 				}
 			}
 			if len(streets) > 0 {
-				fmt.Printf("  straten met buizen: %s\n", thousands(len(streets)))
+				fmt.Printf("  straten met buizen: %s\n", screens.Thousands(len(streets)))
 			}
 			return nil
 		},
@@ -337,18 +336,6 @@ func brailleCmd() *cobra.Command {
 }
 
 // --- helpers -----------------------------------------------------------------
-
-func thousands(n int) string {
-	s := strconv.Itoa(n)
-	var out []byte
-	for i, c := range s {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			out = append(out, '.')
-		}
-		out = append(out, byte(c))
-	}
-	return string(out)
-}
 
 func medianOf(v []float64) string {
 	if len(v) == 0 {

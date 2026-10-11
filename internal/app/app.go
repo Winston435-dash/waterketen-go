@@ -77,11 +77,11 @@ func (m Model) Init() tea.Cmd {
 	// program's screens through the shared slice, so they persist. The probe
 	// also returns its bar's first frame command, which must go to the runtime.
 	cmds := []tea.Cmd{screens.ProbeCmd(), loadAllDataCmd(m.root), m.spinner.Tick}
+	if b := m.bronnen(); b != nil {
+		cmds = append(cmds, b.BeginProbe())
+	}
 	for _, s := range m.screens {
-		switch p := s.(type) {
-		case *screens.Bronnen:
-			cmds = append(cmds, p.BeginProbe())
-		case *screens.AnalyseScreen:
+		if p, ok := s.(*screens.AnalyseScreen); ok {
 			p.SetBusy(true)
 		}
 	}
@@ -112,12 +112,8 @@ func (m Model) anyBusy() bool {
 // probeRunning reports whether the Bronnen panel already has a probe run in
 // flight, so 'v' cannot start a second run over the top of the first.
 func (m Model) probeRunning() bool {
-	for _, s := range m.screens {
-		if b, ok := s.(*screens.Bronnen); ok {
-			return b.Busy()
-		}
-	}
-	return false
+	b := m.bronnen()
+	return b != nil && b.Busy()
 }
 
 // beginProbe resets the source panel and dispatches the probe together; calling
@@ -127,10 +123,8 @@ func (m *Model) beginProbe() tea.Cmd {
 		return nil
 	}
 	cmds := []tea.Cmd{m.startSpinner(), screens.ProbeCmd()}
-	for _, s := range m.screens {
-		if b, ok := s.(*screens.Bronnen); ok {
-			cmds = append(cmds, b.BeginProbe())
-		}
+	if b := m.bronnen(); b != nil {
+		cmds = append(cmds, b.BeginProbe())
 	}
 	return tea.Batch(cmds...)
 }
@@ -141,9 +135,7 @@ func (m *Model) redrawMap() tea.Cmd {
 	if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
 		k.MarkDirty()
 		m.drawGen++
-		gen := m.drawGen
-		return tea.Batch(m.startSpinner(),
-			tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: gen} }))
+		return tea.Batch(m.startSpinner(), m.drawTick())
 	}
 	return nil
 }
@@ -182,18 +174,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Bubbles' progress-bar animation frame: hand it to the panel that owns
 		// the bar. It replies with the next frame while a run is in flight, so
 		// the chain dies on its own once the probe finishes.
-		for _, s := range m.screens {
-			if b, ok := s.(*screens.Bronnen); ok {
-				return m, b.Tick(msg)
-			}
+		if b := m.bronnen(); b != nil {
+			return m, b.Tick(msg)
 		}
 		return m, nil
 	case screens.HealthPartialMsg:
-		for _, s := range m.screens {
-			b, ok := s.(*screens.Bronnen)
-			if !ok {
-				continue
-			}
+		if b := m.bronnen(); b != nil {
 			done, cmd := b.AddProbe(core.SourceHealth(msg))
 			if done {
 				b.FinishProbe()
@@ -237,8 +223,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if k.NeedsDraw() {
 			m.drawGen++
 			m.drawing = true
-			return m, tea.Batch(cmd, m.startSpinner(),
-				tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} }))
+			return m, tea.Batch(cmd, m.startSpinner(), m.drawTick())
 		}
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	case screens.SceneMsg:
@@ -250,8 +235,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.drawGen++
 			m.drawing = true
-			return m, tea.Batch(m.startSpinner(),
-				tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} }))
+			return m, tea.Batch(m.startSpinner(), m.drawTick())
 		}
 		return m, nil
 	case drawFrameMsg:
@@ -268,8 +252,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			k.Commit(msg.Render)
 			if k.NeedsDraw() {
 				m.drawing = true
-				return m, tea.Batch(m.startSpinner(),
-					tea.Tick(0, func(time.Time) tea.Msg { return m.requestDraw() }))
+				return m, tea.Batch(m.startSpinner(), m.drawTick())
 			}
 		}
 		return m, nil
@@ -351,7 +334,12 @@ func (m *Model) afterScreenUpdate() tea.Cmd {
 
 type drawFrameMsg struct{ gen int }
 
-func (m Model) requestDraw() tea.Msg { return drawFrameMsg{gen: m.drawGen} }
+// drawTick returns the zero-delay command that asks the map to draw the
+// current generation. Every site that dispatches a draw uses it, so the
+// request message is built in one place.
+func (m Model) drawTick() tea.Cmd {
+	return tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: m.drawGen} })
+}
 
 func (m *Model) kaart() *screens.Kaart {
 	_, k := m.kaartEntry()
@@ -369,6 +357,17 @@ func (m *Model) kaartEntry() (int, *screens.Kaart) {
 	return -1, nil
 }
 
+// bronnen returns the Bronnen screen, like kaart() does for the map: the one
+// screen the probe messages always belong to, active or not.
+func (m *Model) bronnen() *screens.Bronnen {
+	for _, s := range m.screens {
+		if b, ok := s.(*screens.Bronnen); ok {
+			return b
+		}
+	}
+	return nil
+}
+
 func (m *Model) maybeTriggerDraw() tea.Cmd {
 	if m.screens[m.active].ID() != screens.ScreenKaart {
 		return nil
@@ -376,8 +375,7 @@ func (m *Model) maybeTriggerDraw() tea.Cmd {
 	if k := m.kaart(); k != nil && k.NeedsDraw() && !m.drawing {
 		m.drawing = true
 		m.drawGen++
-		gen := m.drawGen
-		return tea.Tick(0, func(time.Time) tea.Msg { return drawFrameMsg{gen: gen} })
+		return m.drawTick()
 	}
 	return nil
 }

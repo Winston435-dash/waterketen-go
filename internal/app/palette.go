@@ -64,25 +64,12 @@ func newCommandPalette(m Model, scope paletteScope) *commandPalette {
 			targeted: true,
 		})
 	}
-	for _, item := range []struct {
-		label    string
-		shortcut string
-		action   paletteAction
-		target   screens.ScreenID
-		targeted bool
-	}{
-		{label: "Ververs bronnen", shortcut: "v", action: paletteProbe},
-		{label: "Her-teken kaart", shortcut: "r", action: paletteRedraw, target: screens.ScreenKaart, targeted: true},
-		{label: "Afsluiten", shortcut: "q", action: paletteQuit},
+	for _, item := range []paletteCommand{
+		{group: "Algemeen", label: "Ververs bronnen", shortcut: "v", action: paletteProbe},
+		{group: "Algemeen", label: "Her-teken kaart", shortcut: "r", action: paletteRedraw, target: screens.ScreenKaart, targeted: true},
+		{group: "Algemeen", label: "Afsluiten", shortcut: "q", action: paletteQuit},
 	} {
-		p.commands = append(p.commands, paletteCommand{
-			group:    "Algemeen",
-			label:    item.label,
-			shortcut: item.shortcut,
-			action:   item.action,
-			target:   item.target,
-			targeted: item.targeted,
-		})
+		p.commands = append(p.commands, item)
 	}
 	for _, screen := range m.screens {
 		p.commands = append(p.commands, panelPaletteCommands(screen, true)...)
@@ -151,28 +138,31 @@ func isBinding(binding key.Binding, candidates ...key.Binding) bool {
 	return false
 }
 
+// keyNames maps the key names a binding's Keys() reports back to their key
+// types, so the palette can replay a command's shortcut as a real key message.
+var keyNames = map[string]tea.KeyType{
+	"up":        tea.KeyUp,
+	"down":      tea.KeyDown,
+	"left":      tea.KeyLeft,
+	"right":     tea.KeyRight,
+	"pgup":      tea.KeyPgUp,
+	"pgdown":    tea.KeyPgDown,
+	"home":      tea.KeyHome,
+	"end":       tea.KeyEnd,
+	"enter":     tea.KeyEnter,
+	"esc":       tea.KeyEsc,
+	"backspace": tea.KeyBackspace,
+	"space":     tea.KeySpace,
+	" ":         tea.KeySpace,
+	"shift+tab": tea.KeyShiftTab,
+	"ctrl+c":    tea.KeyCtrlC,
+	"ctrl+p":    tea.KeyCtrlP,
+	"ctrl+j":    tea.KeyCtrlJ,
+	"ctrl+k":    tea.KeyCtrlK,
+}
+
 func keyMessage(name string) (tea.KeyMsg, bool) {
-	keys := map[string]tea.KeyType{
-		"up":        tea.KeyUp,
-		"down":      tea.KeyDown,
-		"left":      tea.KeyLeft,
-		"right":     tea.KeyRight,
-		"pgup":      tea.KeyPgUp,
-		"pgdown":    tea.KeyPgDown,
-		"home":      tea.KeyHome,
-		"end":       tea.KeyEnd,
-		"enter":     tea.KeyEnter,
-		"esc":       tea.KeyEsc,
-		"backspace": tea.KeyBackspace,
-		"space":     tea.KeySpace,
-		" ":         tea.KeySpace,
-		"shift+tab": tea.KeyShiftTab,
-		"ctrl+c":    tea.KeyCtrlC,
-		"ctrl+p":    tea.KeyCtrlP,
-		"ctrl+j":    tea.KeyCtrlJ,
-		"ctrl+k":    tea.KeyCtrlK,
-	}
-	if keyType, ok := keys[name]; ok {
+	if keyType, ok := keyNames[name]; ok {
 		return tea.KeyMsg{Type: keyType}, true
 	}
 	if runes := []rune(name); len(runes) == 1 {
@@ -242,13 +232,9 @@ func (m Model) updatePalette(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			p.cursor = 0
 		}
 	default:
-		text := ""
-		if msg.Type == tea.KeySpace {
-			text = " "
-		} else if msg.Type == tea.KeyRunes {
-			text = string(msg.Runes)
-		}
-		if text != "" {
+		// screens.TypedText, not a KeyRunes test: a SPACE arrives as KeySpace
+		// and would otherwise be silently dropped while typing a command.
+		if text := screens.TypedText(msg); text != "" {
 			p.query += text
 			p.cursor = 0
 		}

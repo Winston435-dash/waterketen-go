@@ -68,10 +68,10 @@ func (s *StreetSearch) Update(msg tea.KeyMsg) (focus string, done, changed bool)
 		s.busy = true
 		return "", false, true
 	default:
-		// typedText, not `case tea.KeyRunes`: a SPACE arrives as KeySpace, so a
+		// TypedText, not `case tea.KeyRunes`: a SPACE arrives as KeySpace, so a
 		// KeyRunes-only handler silently dropped every space — you could not type
 		// "west zeedijk" in '/' at all.
-		if text := typedText(msg); text != "" {
+		if text := TypedText(msg); text != "" {
 			s.query += text
 			s.busy = true
 			return "", false, true
@@ -158,18 +158,6 @@ func (s *StreetSearch) windowRows() int {
 		rows = 1
 	}
 	return rows
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var digits []byte
-	for n > 0 {
-		digits = append([]byte{byte('0' + n%10)}, digits...)
-		n /= 10
-	}
-	return string(digits)
 }
 
 // OpenSearch opens the '/' overlay. It needs only a loaded scene: the library

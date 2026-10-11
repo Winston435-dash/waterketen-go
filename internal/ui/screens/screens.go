@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -315,7 +314,5 @@ func Thousands(n int) string {
 	}
 	return string(out)
 }
-
-var _ = help.New // silence unused-import during staged development
 
 // --- placeholder screens: implemented one file each -------------------------

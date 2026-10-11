@@ -310,6 +310,10 @@ func licenseExplanation(s string) string {
 	}
 }
 
+// probeParamMeanings explains the query parameters of a probe request in the
+// technical catalogue view. Built once, not per request line.
+var probeParamMeanings = map[string]string{"service": "standaard waarmee we de dienst aanspreken", "version": "versie van die standaard", "request": "soort vraag aan de dienst", "typeNames": "officiële laag-ID", "resultType": "hits telt alleen, zonder de objecten te downloaden", "where": "1=1 selecteert alle objecten", "returnCountOnly": "true vraagt alleen een telling", "f": "formaat van het antwoord", "limit": "maximum aantal objecten in dit antwoord, niet het totaalaantal"}
+
 // Show the actual probe request, not a bare service URL that may return HTTP 400.
 // This function only builds descriptions; it never sends these requests.
 func catalogRequestLines(s Source) []CatalogLine {
@@ -331,14 +335,13 @@ func catalogRequestLines(s Source) []CatalogLine {
 	out = append(out, CatalogLine{"Volledige aanvraag: " + request, "plain"}, CatalogLine{"Antwoord: " + response, "plain"}, CatalogLine{"Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.", "warning"})
 	u, err := url.Parse(request)
 	if err == nil {
-		meanings := map[string]string{"service": "standaard waarmee we de dienst aanspreken", "version": "versie van die standaard", "request": "soort vraag aan de dienst", "typeNames": "officiële laag-ID", "resultType": "hits telt alleen, zonder de objecten te downloaden", "where": "1=1 selecteert alle objecten", "returnCountOnly": "true vraagt alleen een telling", "f": "formaat van het antwoord", "limit": "maximum aantal objecten in dit antwoord, niet het totaalaantal"}
 		keys := make([]string, 0, len(u.Query()))
 		for k := range u.Query() {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			out = append(out, CatalogLine{k + "=" + u.Query().Get(k) + " — " + known(meanings[k]), "meta"})
+			out = append(out, CatalogLine{k + "=" + u.Query().Get(k) + " — " + known(probeParamMeanings[k]), "meta"})
 		}
 	}
 	if s.ProbeKind == "ogc" {

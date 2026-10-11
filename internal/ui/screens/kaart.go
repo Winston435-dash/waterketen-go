@@ -642,12 +642,3 @@ func thousandsShort(n int) string {
 	}
 	return fmt.Sprintf("%d", n)
 }
-
-func containsString(hay []string, needle string) bool {
-	for _, h := range hay {
-		if h == needle {
-			return true
-		}
-	}
-	return false
-}

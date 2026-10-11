@@ -226,7 +226,7 @@ func (s *AnalyseScreen) renderLines() []string {
 			}
 		}
 		out = append(out, fmt.Sprintf("  features: %s  ·  lijnen %s · vlakken %s · punten %s",
-			thousands(len(d.Features)), thousands(lines), thousands(polys), thousands(points)))
+			Thousands(len(d.Features)), Thousands(lines), Thousands(polys), Thousands(points)))
 		if spec != nil && !spec.Linear {
 			// polygon layer: perimeter, never "gemiddeld N m per buis"
 			out = append(out, fmt.Sprintf("  omtrek totaal: %.2f km", totalLen/1000))
@@ -249,12 +249,12 @@ func (s *AnalyseScreen) renderLines() []string {
 				coverage := float64(len(bobs)) / float64(len(d.Features)) * 100
 				out = append(out, fmt.Sprintf(
 					"  BOB: gemeten op %s van %s buizen (%.1f%%) · min %.2f · mediaan %s · max %.2f",
-					thousands(len(bobs)), thousands(len(d.Features)), coverage,
+					Thousands(len(bobs)), Thousands(len(d.Features)), coverage,
 					minB, median(bobs), maxB))
 			}
 		}
 		if len(streets) > 0 {
-			out = append(out, fmt.Sprintf("  straten met buizen: %s", thousands(len(streets))))
+			out = append(out, fmt.Sprintf("  straten met buizen: %s", Thousands(len(streets))))
 		}
 		out = append(out, "")
 	}
