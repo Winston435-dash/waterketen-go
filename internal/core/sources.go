@@ -20,8 +20,11 @@ type Source struct {
 	TypeName string `json:"type_name,omitempty"`
 }
 
-// WiredSources are the sources the CLI can actually fetch. Mirrors the Python
-// WIRED_SOURCES table (src/waterketen_cli/tui/app.py) one-to-one.
+// WiredSources are the sources this app probes live, in panel order. It is a
+// superset of the Python CLI's fetch registry (src/waterketen_cli/tui/app.py):
+// an entry here is registered and probeable, but ingest is still Python's —
+// the IMWA/DAMO/RIONED object types below have no Python fetch slug yet, so a
+// green row means "the source answers", never "this is on disk".
 //
 // Register entries that were checked live (8 okt '26) and are deliberately NOT
 // here, so they are not re-investigated: data.overheid.nl/dataset/79777 is the
@@ -29,6 +32,13 @@ type Source struct {
 // ("GWSW — Beheer stedelijk water systemen") is gone, its living equivalent is
 // the unwired bulk GPKG below. The community datarequest 7077 is not a dataset
 // at all — its "direct GeoJSON download" is exactly the wired Vewin endpoint.
+//
+// Dead-and-deliberately-not-registered (12 okt '26): the HWH service names in
+// PDOK's "vernieuwing" article of 22 dec 2023 — waterschapsgrenzenimso,
+// zoneringenimwa, kunstwerkenimwa, oppervlaktewaterenimwa,
+// waterbeheergebiedenimwa and keringenimwa — all answer HTTP 404 under
+// /hwh/<naam>/wms/v1_0. The living names are `waterschappen-<naam>` on v2_0
+// (keringen v3_0); sources_test.go fails if a dead name sneaks back in.
 var WiredSources = []Source{
 	{
 		ID:        "gws_netwerk",
