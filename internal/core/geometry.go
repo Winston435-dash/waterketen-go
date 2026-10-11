@@ -220,11 +220,13 @@ type GridIndex struct {
 	cell    float64
 	buckets map[[2]int][]int
 	bounds  []BBox
+	seen    []int32 // generation stamps for Query's dedupe (never reallocated)
+	gen     int32
 }
 
 // NewGridIndex builds a bucket index over the features' bounding boxes.
 func NewGridIndex(geoms []Geometry) GridIndex {
-	idx := GridIndex{cell: gridIndexCell, buckets: map[[2]int][]int{}, bounds: make([]BBox, len(geoms))}
+	idx := GridIndex{cell: gridIndexCell, buckets: map[[2]int][]int{}, bounds: make([]BBox, len(geoms)), seen: make([]int32, len(geoms))}
 	for i, g := range geoms {
 		b, ok := g.Bounds()
 		if !ok {
@@ -246,18 +248,29 @@ func NewGridIndex(geoms []Geometry) GridIndex {
 // Query returns the indices of features whose bbox intersects `b`, deduped
 // and ascending (the Python version returns sindex order; we guarantee a
 // stable order which the renderers already rely on).
-func (idx GridIndex) Query(b BBox) []int {
-	seen := map[int]struct{}{}
+//
+// Dedupe stamps a per-feature generation counter instead of allocating a map
+// per query: the render path calls this once per visible layer PER FRAME (and
+// once more for the minimap), and on a full-city viewport the map was 77% of
+// the render's CPU. NOT safe for concurrent use — indices are per-scene, and
+// every caller (render, nearest) is single-goroutine.
+func (idx *GridIndex) Query(b BBox) []int {
+	idx.gen++
+	if idx.gen < 0 { // wrapped after 2^31 queries: re-stamp everything
+		clear(idx.seen)
+		idx.gen = 1
+	}
+	seen, gen := idx.seen, idx.gen
 	var out []int
 	x0, y0 := int(math.Floor(b.MinX/idx.cell)), int(math.Floor(b.MinY/idx.cell))
 	x1, y1 := int(math.Floor(b.MaxX/idx.cell)), int(math.Floor(b.MaxY/idx.cell))
 	for x := x0; x <= x1; x++ {
 		for y := y0; y <= y1; y++ {
 			for _, i := range idx.buckets[[2]int{x, y}] {
-				if _, dup := seen[i]; dup {
+				if seen[i] == gen {
 					continue
 				}
-				seen[i] = struct{}{}
+				seen[i] = gen
 				if idx.bounds[i].intersects(b) {
 					out = append(out, i)
 				}

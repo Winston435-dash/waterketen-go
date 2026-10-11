@@ -44,9 +44,12 @@ type Table struct {
 	Lower string // lower-case name for idempotent lookups
 }
 
-// Open opens a .gpkg for reading.
+// Open opens a .gpkg for reading. journal_mode=OFF is legal on a read-only
+// connection and skips the per-transaction bookkeeping the snapshots never
+// need; mmap gives the R-tree and table reads page-cache speed without
+// copying through SQLite's page cache.
 func Open(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path+"?mode=ro")
+	db, err := sql.Open("sqlite", path+"?mode=ro&_pragma=journal_mode(off)&_pragma=mmap_size(268435456)")
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
 	}

@@ -22,6 +22,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // gwsAliases maps GWSW's native attribute names onto the city-schema names the
@@ -165,25 +166,51 @@ func (la *LibraryAtlas) Load(view View, width, height int, names []string, limit
 	window := frame.Bounds
 	names = la.visibleNames(names)
 
+	// Layers are independent GPKG files with their own connections, so the
+	// viewport reads run in parallel: a full-city load over four layers was
+	// ~1,3 s sequential — dominated by per-file SQLite work that shares
+	// nothing. Results are collected by INDEX so sources and warnings keep
+	// the caller's layer order regardless of completion order.
+	type result struct {
+		features []Feature
+		count    int
+		err      error
+		missing  bool
+	}
+	results := make([]result, len(names))
+	var wg sync.WaitGroup
+	for i, name := range names {
+		if _, ok := la.Library.Manifest.Layers[name]; !ok {
+			results[i].missing = true
+			continue
+		}
+		wg.Add(1)
+		go func(i int, name string) {
+			defer wg.Done()
+			f, c, err := la.layerFeatures(name, window, frame.MetresPerDot, limit)
+			results[i] = result{features: f, count: c, err: err}
+		}(i, name)
+	}
+	wg.Wait()
+
 	var sources []SceneSource
 	var warnings []string
-	for _, name := range names {
-		if _, ok := la.Library.Manifest.Layers[name]; !ok {
+	for i, name := range names {
+		r := results[i]
+		switch {
+		case r.missing:
 			warnings = append(warnings, name+": niet beschikbaar in snapshot")
-			continue
-		}
-		features, count, err := la.layerFeatures(name, window, frame.MetresPerDot, limit)
-		if err != nil {
-			warnings = append(warnings, fmt.Sprintf("%s: %v", name, err))
-			continue
-		}
-		if len(features) > 0 {
-			sources = append(sources, SceneSource{Name: name, Features: features})
-		}
-		if count > len(features) {
-			warnings = append(warnings, fmt.Sprintf(
-				"%s: overzicht %d/%d kandidaten; zoom in voor alle objecten",
-				name, len(features), count))
+		case r.err != nil:
+			warnings = append(warnings, fmt.Sprintf("%s: %v", name, r.err))
+		default:
+			if len(r.features) > 0 {
+				sources = append(sources, SceneSource{Name: name, Features: r.features})
+			}
+			if r.count > len(r.features) {
+				warnings = append(warnings, fmt.Sprintf(
+					"%s: overzicht %d/%d kandidaten; zoom in voor alle objecten",
+					name, len(r.features), r.count))
+			}
 		}
 	}
 	if len(sources) == 0 {
