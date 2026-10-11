@@ -1,7 +1,5 @@
 package core
 
-import "math"
-
 // Braille rendering primitives. One terminal cell holds 2x4 dots, so a
 // 110x38 pane shows 220x152 samples. Two non-negotiable rules carried over
 // from the Python atlas:
@@ -43,33 +41,33 @@ func (g *DotGrid) SetDot(x, y int) {
 	g.bits[cy][cx] |= dotBits[dy][dx]
 }
 
-// Line draws a Bresenham segment between two dot coordinates.
-func (g *DotGrid) Line(x0, y0, x1, y1 float64) {
-	ix0, iy0 := int(math.Round(x0)), int(math.Round(y0))
-	ix1, iy1 := int(math.Round(x1)), int(math.Round(y1))
-	dx := absi(ix1 - ix0)
-	dy := -absi(iy1 - iy0)
+// lineInt walks a Bresenham segment between integer dot coordinates and calls
+// plot for each dot. It is the single rasterising rule, shared by the colour
+// grid (which also records colour per dot), so segment drawing cannot drift.
+func lineInt(x0, y0, x1, y1 int, plot func(x, y int)) {
+	dx := absi(x1 - x0)
+	dy := -absi(y1 - y0)
 	sx, sy := 1, 1
-	if ix0 > ix1 {
+	if x0 > x1 {
 		sx = -1
 	}
-	if iy0 > iy1 {
+	if y0 > y1 {
 		sy = -1
 	}
 	err := dx + dy
 	for {
-		g.SetDot(ix0, iy0)
-		if ix0 == ix1 && iy0 == iy1 {
+		plot(x0, y0)
+		if x0 == x1 && y0 == y1 {
 			break
 		}
 		e2 := 2 * err
 		if e2 >= dy {
 			err += dy
-			ix0 += sx
+			x0 += sx
 		}
 		if e2 <= dx {
 			err += dx
-			iy0 += sy
+			y0 += sy
 		}
 	}
 }

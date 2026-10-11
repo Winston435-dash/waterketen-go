@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -83,22 +84,6 @@ type Feature struct {
 	Properties map[string]string
 	Street     string
 	BOB        float64 // NaN = unknown
-}
-
-func (f Feature) key() [2]int { return [2]int{f.Position, int(layerIndex(f.Layer))} }
-
-func layerIndex(name string) int {
-	for i, n := range allLayers {
-		if n == name {
-			return i
-		}
-	}
-	return len(allLayers)
-}
-
-var allLayers = []string{
-	"straten", "water", "groen", "gebouwen", "spoor",
-	"riool", "drinkwaterleidingen", "drinkwater", "putten", "gemalen",
 }
 
 // DrawOrder is the painting order for the library map, matching the Python
@@ -243,28 +228,6 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 	}
 	var fitBBox BBox
 	started := false
-	addExtent := func(b BBox, isNetwork bool) {
-		// Never let a country-wide service-area polygon determine network zoom.
-		if !isNetwork {
-			return
-		}
-		if !started {
-			fitBBox, started = b, true
-			return
-		}
-		fitBBox.MinX = math.Min(fitBBox.MinX, b.MinX)
-		fitBBox.MinY = math.Min(fitBBox.MinY, b.MinY)
-		fitBBox.MaxX = math.Max(fitBBox.MaxX, b.MaxX)
-		fitBBox.MaxY = math.Max(fitBBox.MaxY, b.MaxY)
-	}
-	isNetwork := func(name string) bool {
-		for _, n := range networks {
-			if n == name {
-				return true
-			}
-		}
-		return false
-	}
 
 	materialNames := map[string]struct{}{}
 	for _, layer := range layers {
@@ -283,10 +246,12 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 		}
 		scene.Layers[layer.Name] = layer.Features
 		scene.Index[layer.Name] = NewGridIndex(geoms)
-		if isNetwork(layer.Name) {
+		// Only networks set the fit bounds: a country-wide service-area polygon
+		// must never determine the network zoom.
+		if slices.Contains(networks, layer.Name) {
 			for _, g := range geoms {
 				if b, ok := g.Bounds(); ok {
-					addExtent(b, true)
+					fitBBox, started = mergeBBox(fitBBox, started, b)
 				}
 			}
 		}
@@ -296,14 +261,7 @@ func NewScene(area string, layers []SceneSource, warnings []string) (*Scene, err
 		for _, layer := range layers {
 			for _, f := range layer.Features {
 				if b, ok := f.Geometry.Bounds(); ok {
-					if !started {
-						fitBBox, started = b, true
-						continue
-					}
-					fitBBox.MinX = math.Min(fitBBox.MinX, b.MinX)
-					fitBBox.MinY = math.Min(fitBBox.MinY, b.MinY)
-					fitBBox.MaxX = math.Max(fitBBox.MaxX, b.MaxX)
-					fitBBox.MaxY = math.Max(fitBBox.MaxY, b.MaxY)
+					fitBBox, started = mergeBBox(fitBBox, started, b)
 				}
 			}
 		}
@@ -351,7 +309,7 @@ func (s *Scene) VisibleLayers(active string, overlay bool, display []string) []s
 			nets = append(nets, n)
 		}
 	}
-	if _, ok := s.Layers[active]; ok && !contains(nets, active) {
+	if _, ok := s.Layers[active]; ok && !slices.Contains(nets, active) {
 		return append([]string{active}, nets...)
 	}
 	if len(nets) > 0 {
@@ -497,19 +455,12 @@ func (s *Scene) StreetView(name string, width, height int) (View, bool) {
 		if !ok {
 			continue
 		}
-		if !started {
-			b, started = gb, true
-			continue
-		}
-		b.MinX = math.Min(b.MinX, gb.MinX)
-		b.MinY = math.Min(b.MinY, gb.MinY)
-		b.MaxX = math.Max(b.MaxX, gb.MaxX)
-		b.MaxY = math.Max(b.MaxY, gb.MaxY)
+		b, started = mergeBBox(b, started, gb)
 	}
 	if !started {
 		return View{}, false
 	}
-	target := BBox{b.MinX - 40, b.MinY - 40, b.MaxX + 40, b.MaxY + 40}
+	target := b.Grow(40)
 	base := FitView(s.Bounds).Frame(s.Bounds, width, height).MetresPerDot
 	needed := FitView(target).Frame(target, width, height).MetresPerDot
 	return View{
@@ -638,33 +589,7 @@ func (g *colourGrid) setDot(x, y int) {
 }
 
 func (g *colourGrid) line(ax, ay, bx, by float64) {
-	x0, y0 := int(math.Round(ax)), int(math.Round(ay))
-	x1, y1 := int(math.Round(bx)), int(math.Round(by))
-	dx := absi(x1 - x0)
-	dy := -absi(y1 - y0)
-	sx, sy := 1, 1
-	if x0 > x1 {
-		sx = -1
-	}
-	if y0 > y1 {
-		sy = -1
-	}
-	err := dx + dy
-	for {
-		g.setDot(x0, y0)
-		if x0 == x1 && y0 == y1 {
-			break
-		}
-		e2 := 2 * err
-		if e2 >= dy {
-			err += dy
-			x0 += sx
-		}
-		if e2 <= dx {
-			err += dx
-			y0 += sy
-		}
-	}
+	lineInt(int(math.Round(ax)), int(math.Round(ay)), int(math.Round(bx)), int(math.Round(by)), g.setDot)
 }
 
 // putText writes a string into a (rune, style) grid, clipped to the width.
@@ -698,13 +623,4 @@ func distanceLabel(m float64) string {
 		return fmt.Sprintf("%g km", m/1000)
 	}
 	return fmt.Sprintf("%g m", m)
-}
-
-func contains(s []string, v string) bool {
-	for _, x := range s {
-		if x == v {
-			return true
-		}
-	}
-	return false
 }

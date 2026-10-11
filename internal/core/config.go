@@ -107,13 +107,12 @@ func LoadAssets(root string) ([]AssetMeta, error) {
 		meta.path = path
 		out = append(out, meta)
 	}
+	prio := map[string]int{"riool": 0, "drinkwaterleidingen": 1, "drinkwater": 2}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Area != out[j].Area {
 			return out[i].Area < out[j].Area
 		}
-		prio := map[string]int{"riool": 0, "drinkwaterleidingen": 1, "drinkwater": 2}
-		pi, pj := prio[out[i].Layer], prio[out[j].Layer]
-		if pi != pj {
+		if pi, pj := prio[out[i].Layer], prio[out[j].Layer]; pi != pj {
 			return pi < pj
 		}
 		return out[i].Layer < out[j].Layer

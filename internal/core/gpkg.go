@@ -13,10 +13,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Bounds is (minx, miny, maxx, maxy), in the file's CRS — always RD New for
-// the waterketen snapshots (EPSG:28992).
-type Bounds struct{ MinX, MinY, MaxX, MaxY float64 }
-
 // Point / LineString carry XYZ; Z is NaN for 2D geometries.
 type Point struct{ X, Y, Z float64 }
 type LineString []Point

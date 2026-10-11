@@ -6,7 +6,10 @@ package core
 // atlas uses (sindex.query, boundary, representative_point, interpolate,
 // distance). It does NOT grow beyond what the atlas needs.
 
-import "math"
+import (
+	"math"
+	"sort"
+)
 
 // BBox is a (minx, miny, maxx, maxy) rectangle in EPSG:28992.
 type BBox struct{ MinX, MinY, MaxX, MaxY float64 }
@@ -18,6 +21,20 @@ func (b BBox) intersects(o BBox) bool {
 // Grow expands the box by r on all sides.
 func (b BBox) Grow(r float64) BBox {
 	return BBox{b.MinX - r, b.MinY - r, b.MaxX + r, b.MaxY + r}
+}
+
+// mergeBBox folds o into b; when ok is false b is treated as empty and seeded
+// with o. It is the one place a running bounding box is extended, so the fit
+// bounds, street views and geometry bounds all grow the same way.
+func mergeBBox(b BBox, ok bool, o BBox) (BBox, bool) {
+	if !ok {
+		return o, true
+	}
+	b.MinX = math.Min(b.MinX, o.MinX)
+	b.MinY = math.Min(b.MinY, o.MinY)
+	b.MaxX = math.Max(b.MaxX, o.MaxX)
+	b.MaxY = math.Max(b.MaxY, o.MaxY)
+	return b, true
 }
 
 // Lines normalises the geometry to its set of polylines: lines stay lines,
@@ -248,10 +265,6 @@ func (idx GridIndex) Query(b BBox) []int {
 		}
 	}
 	// insertion order is grid-scan order; sort for determinism
-	for i := 1; i < len(out); i++ {
-		for j := i; j > 0 && out[j-1] > out[j]; j-- {
-			out[j-1], out[j] = out[j], out[j-1]
-		}
-	}
+	sort.Ints(out)
 	return out
 }

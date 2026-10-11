@@ -3,6 +3,7 @@ package screens
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -148,17 +149,17 @@ func (s *AnalyseScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		total := len(s.renderLines())
 		switch {
 		case key.Matches(m, ui.Keys.Down):
-			s.scroll = min2(s.scroll+1, max2(0, total-contentH))
+			s.scroll = min(s.scroll+1, max(0, total-contentH))
 		case key.Matches(m, ui.Keys.Up):
-			s.scroll = max2(0, s.scroll-1)
+			s.scroll = max(0, s.scroll-1)
 		case key.Matches(m, ui.Keys.PageDown):
-			s.scroll = min2(s.scroll+contentH, max2(0, total-contentH))
+			s.scroll = min(s.scroll+contentH, max(0, total-contentH))
 		case key.Matches(m, ui.Keys.PageUp):
-			s.scroll = max2(0, s.scroll-contentH)
+			s.scroll = max(0, s.scroll-contentH)
 		case key.Matches(m, ui.Keys.Home):
 			s.scroll = 0
 		case key.Matches(m, ui.Keys.End):
-			s.scroll = max2(0, total-contentH)
+			s.scroll = max(0, total-contentH)
 		}
 	}
 	return s, nil
@@ -178,7 +179,7 @@ func (s *AnalyseScreen) View() string {
 	lines := s.renderLines()
 	contentH := s.h - 4
 	if s.scroll > len(lines)-contentH {
-		s.scroll = max2(0, len(lines)-contentH)
+		s.scroll = max(0, len(lines)-contentH)
 	}
 	window := lines[s.scroll:]
 	if len(window) > contentH {
@@ -268,20 +269,12 @@ func median(v []float64) string {
 		return "—"
 	}
 	sorted := append([]float64(nil), v...)
-	sort2(sorted)
+	sort.Float64s(sorted)
 	m := sorted[len(sorted)/2]
 	if len(v)%2 == 0 {
 		m = (sorted[len(v)/2-1] + sorted[len(v)/2]) / 2
 	}
 	return fmt.Sprintf("%.2f", m)
-}
-
-func sort2(v []float64) {
-	for i := 1; i < len(v); i++ {
-		for j := i; j > 0 && v[j-1] > v[j]; j-- {
-			v[j-1], v[j] = v[j], v[j-1]
-		}
-	}
 }
 
 // --- Profiel: panel 6 -------------------------------------------------------
@@ -386,7 +379,16 @@ func (s *ProfielScreen) View() string {
 	// downward: deeper pipes end up LOWER on screen.
 	// (Later refinement: real per-pipe x-extents, maaiveld band above.)
 	sorted := append([]core.Feature(nil), features...)
-	sortByBOB(sorted)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		a, b := sorted[i].BOB, sorted[j].BOB
+		if math.IsNaN(a) {
+			return false
+		}
+		if math.IsNaN(b) {
+			return true
+		}
+		return a < b
+	})
 	lo, hi := math.Inf(1), math.Inf(-1)
 	for _, f := range sorted {
 		lo = math.Min(lo, f.BOB)
@@ -411,29 +413,4 @@ func (s *ProfielScreen) View() string {
 		b.WriteString(fmt.Sprintf("%8.2f %s%s\n", f.BOB, bar, mark))
 	}
 	return strings.TrimRight(b.String(), "\n")
-}
-
-func sortByBOB(v []core.Feature) {
-	for i := 1; i < len(v); i++ {
-		for j := i; j > 0; j-- {
-			a, b := v[j-1].BOB, v[j].BOB
-			if math.IsNaN(a) || (!math.IsNaN(b) && b < a) {
-				v[j-1], v[j] = v[j], v[j-1]
-			}
-		}
-	}
-}
-
-func min2(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max2(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

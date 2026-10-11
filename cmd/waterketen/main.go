@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -164,7 +165,7 @@ func statusCmd() *cobra.Command {
 				for n := range lib.Manifest.Layers {
 					names = append(names, n)
 				}
-				sortStrings(names)
+				sort.Strings(names)
 				for _, n := range names {
 					rec := lib.Manifest.Layers[n]
 					fmt.Printf("  %-22s %8s features\n", n, thousands(rec.FeatureCount))
@@ -354,23 +355,10 @@ func medianOf(v []float64) string {
 		return "—"
 	}
 	s := append([]float64(nil), v...)
-	// insertion sort — plenty fast at our sizes
-	for i := 1; i < len(s); i++ {
-		for j := i; j > 0 && s[j-1] > s[j]; j-- {
-			s[j-1], s[j] = s[j], s[j-1]
-		}
-	}
+	sort.Float64s(s)
 	m := s[len(s)/2]
 	if len(s)%2 == 0 {
 		m = (s[len(s)/2-1] + s[len(s)/2]) / 2
 	}
 	return fmt.Sprintf("%.2f", m)
-}
-
-func sortStrings(v []string) {
-	for i := 1; i < len(v); i++ {
-		for j := i; j > 0 && v[j-1] > v[j]; j-- {
-			v[j-1], v[j] = v[j], v[j-1]
-		}
-	}
 }

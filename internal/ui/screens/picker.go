@@ -295,7 +295,7 @@ func (p *Picker) dialogWidth() int {
 }
 
 // innerWidth is the printable width inside the dialog.
-func (p *Picker) innerWidth() int { return maxPickerInt(8, p.dialogWidth()-4) }
+func (p *Picker) innerWidth() int { return max(8, p.dialogWidth()-4) }
 
 // windowRows is how many list rows fit in the host height, so the dialog's hint
 // and title are never pushed off the bottom of a phone screen.
@@ -308,11 +308,4 @@ func (p *Picker) windowRows() int {
 		rows = 1
 	}
 	return rows
-}
-
-func maxPickerInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

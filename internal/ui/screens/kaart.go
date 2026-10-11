@@ -389,7 +389,7 @@ func (s *Kaart) NeedsDraw() bool { return s.needsDraw }
 func (s *Kaart) MarkDirty() { s.needsDraw = true }
 
 func (s *Kaart) innerSize() (int, int) {
-	return max2(1, s.w-4), max2(1, s.h-8)
+	return max(1, s.w-4), max(1, s.h-8)
 }
 
 // ActiveLayerChoices returns the cycle order for [ and ]. The CHOSEN layer set

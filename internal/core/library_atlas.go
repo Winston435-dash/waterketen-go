@@ -379,12 +379,7 @@ func (la *LibraryAtlas) StreetView(name string, width, height int) (View, bool) 
 		if !has {
 			return
 		}
-		if !ok {
-			box, ok = b, true
-			return
-		}
-		box.MinX, box.MinY = math.Min(box.MinX, b.MinX), math.Min(box.MinY, b.MinY)
-		box.MaxX, box.MaxY = math.Max(box.MaxX, b.MaxX), math.Max(box.MaxY, b.MaxY)
+		box, ok = mergeBBox(box, ok, b)
 	})
 	if !ok {
 		return View{}, false
@@ -395,7 +390,7 @@ func (la *LibraryAtlas) StreetView(name string, width, height int) (View, bool) 
 // ViewToBox frames `target` (grown by `margin` metres) inside the area and
 // returns the matching zoom relative to the fit view.
 func ViewToBox(target, area BBox, width, height int, margin float64) View {
-	grown := BBox{target.MinX - margin, target.MinY - margin, target.MaxX + margin, target.MaxY + margin}
+	grown := target.Grow(margin)
 	base := FitView(area).Frame(area, width, height).MetresPerDot
 	needed := FitView(grown).Frame(grown, width, height).MetresPerDot
 	return View{
