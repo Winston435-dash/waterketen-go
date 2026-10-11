@@ -33,7 +33,7 @@ func (s *Lagen) View() string {
 	managed := map[string][]string{}
 	for _, a := range s.assets {
 		managed[a.Layer] = append(managed[a.Layer],
-			fmt.Sprintf("%s: %s", a.Area, thousands(a.FeatureCount)))
+			fmt.Sprintf("%s: %s", a.Area, Thousands(a.FeatureCount)))
 	}
 	var b strings.Builder
 	for _, spec := range core.LayerSpecs {
@@ -117,7 +117,7 @@ func (s *Gebieden) View() string {
 	}
 	for _, n := range names {
 		rec := s.lib.Manifest.Layers[n]
-		b.WriteString(components.Muted(fmt.Sprintf("  %-22s %s features", n, thousands(rec.FeatureCount))))
+		b.WriteString(components.Muted(fmt.Sprintf("  %-22s %s features", n, Thousands(rec.FeatureCount))))
 		b.WriteByte('\n')
 	}
 	return strings.TrimRight(b.String(), "\n")

@@ -194,7 +194,7 @@ func (p *Picker) Update(msg tea.KeyMsg) (PickerResult, bool) {
 		p.toggle()
 		return PickerResult{}, false
 	default:
-		if text := typedText(msg); text != "" && p.Searchable() {
+		if text := TypedText(msg); text != "" && p.Searchable() {
 			p.query += text
 			p.refilter()
 		}

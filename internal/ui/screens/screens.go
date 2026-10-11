@@ -260,7 +260,7 @@ func (s *Bronnen) View() string {
 		}
 		count := "—"
 		if h.Count >= 0 {
-			count = thousands(h.Count)
+			count = Thousands(h.Count)
 		}
 		line := fmt.Sprintf("%-22s %11s  %5d ms", h.Label, count, h.LatencyMS)
 		b.WriteString(components.Badge(status, line))
@@ -303,7 +303,8 @@ func licenseOrUnknown(license string) string {
 	return license
 }
 
-func thousands(n int) string {
+// Thousands renders an int with Dutch thousand separators: 87146 → "87.146".
+func Thousands(n int) string {
 	s := fmt.Sprintf("%d", n)
 	var out []byte
 	for i, c := range s {

@@ -1,6 +1,7 @@
 package screens
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -117,7 +118,7 @@ func (s *StreetSearch) View() string {
 		components.MutedText("typ om te zoeken · enter focust · esc sluit"), innerW))
 	title := "Straat zoeken"
 	if len(s.matches) > 0 {
-		title = "Straat zoeken · " + itoa(len(s.matches)) + " treffers"
+		title = "Straat zoeken · " + strconv.Itoa(len(s.matches)) + " treffers"
 	}
 	return components.Modal("", title, b.String(), s.w, s.h, s.dialogWidth())
 }

@@ -25,22 +25,22 @@ func pasted(s string) tea.KeyMsg {
 // every space, so "west zeedijk" was typed as "westzeedijk" and a leading space did
 // nothing. A space is a KeySpace event, not a KeyRunes event.
 func TestTypedTextAcceptsSpaceAndRunes(t *testing.T) {
-	if got := typedText(space()); got != " " {
-		t.Errorf("typedText(spatie) = %q, verwacht \" \"", got)
+	if got := TypedText(space()); got != " " {
+		t.Errorf("TypedText(spatie) = %q, verwacht \" \"", got)
 	}
-	if got := typedText(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}); got != "a" {
-		t.Errorf("typedText('a') = %q", got)
+	if got := TypedText(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}); got != "a" {
+		t.Errorf("TypedText('a') = %q", got)
 	}
-	if got := typedText(pasted("west zeedijk")); got != "west zeedijk" {
-		t.Errorf("typedText(plak) = %q", got)
+	if got := TypedText(pasted("west zeedijk")); got != "west zeedijk" {
+		t.Errorf("TypedText(plak) = %q", got)
 	}
 	// Non-text keys contribute nothing.
 	for _, m := range []tea.KeyMsg{
 		{Type: tea.KeyEnter}, {Type: tea.KeyEscape}, {Type: tea.KeyUp},
 		{Type: tea.KeyBackspace}, {Type: tea.KeyTab},
 	} {
-		if got := typedText(m); got != "" {
-			t.Errorf("typedText(%v) = %q, verwacht leeg", m.Type, got)
+		if got := TypedText(m); got != "" {
+			t.Errorf("TypedText(%v) = %q, verwacht leeg", m.Type, got)
 		}
 	}
 }

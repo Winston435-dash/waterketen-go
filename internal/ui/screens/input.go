@@ -2,8 +2,10 @@ package screens
 
 import tea "github.com/charmbracelet/bubbletea"
 
-// typedText returns the characters a key message contributes to a text field, or
-// "" when the key is not text.
+// TypedText returns the characters a key message contributes to a text field,
+// or "" when the key is not text. It is shared by every text field — the
+// street search, the picker and the app's command palette — so a space
+// (KeySpace, not KeyRunes) can never be dropped in one of them.
 //
 // This exists because a SPACE is not a KeyRunes event. Bubble Tea parses " " into
 // Key{Type: KeySpace, Runes: []rune{' '}} (bubbletea/key.go: len(runes)==1 &&
@@ -14,7 +16,7 @@ import tea "github.com/charmbracelet/bubbletea"
 //
 // Pasted text arrives as KeyRunes with Paste set and the whole run in Runes, so it
 // flows through here too — pasting a street name works for free.
-func typedText(msg tea.KeyMsg) string {
+func TypedText(msg tea.KeyMsg) string {
 	switch msg.Type {
 	case tea.KeySpace:
 		return " "

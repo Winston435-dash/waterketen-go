@@ -234,9 +234,6 @@ func (la *LibraryAtlas) layerFeatures(name string, window BBox, metresPerDot flo
 				props[alias] = v
 			}
 			if v, ok := numbers[source]; ok {
-				if numbers == nil {
-					numbers = map[string]float64{}
-				}
 				numbers[alias] = v
 			}
 		}
