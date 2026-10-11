@@ -86,3 +86,31 @@ func TestRenderSceneLineRasterMatchesIndependentProjection(t *testing.T) {
 		t.Fatal("reference line produced no visible dots")
 	}
 }
+
+func TestRenderSceneDrawsGemalenAsDots(t *testing.T) {
+	bounds := BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}
+	geom := Geometry{Kind: "polygon", Polygon: []LineString{{
+		{X: 2, Y: 2}, {X: 18, Y: 2}, {X: 18, Y: 18}, {X: 2, Y: 18}, {X: 2, Y: 2},
+	}}}
+	scene := &Scene{
+		Bounds: bounds,
+		Layers: map[string][]Feature{"gemalen": {{Layer: "gemalen", Geometry: geom}}},
+		Index:  map[string]GridIndex{"gemalen": NewGridIndex([]Geometry{geom})},
+	}
+
+	rendered := RenderScene(scene, FitView(bounds), 12, 6, "gemalen", false, "netwerk", false, false, nil, "", []string{"gemalen"}, false)
+	markers := 0
+	for _, row := range rendered.Cells {
+		for _, cell := range row {
+			if cell.Style == StyleForLayer("gemalen") {
+				markers++
+			}
+		}
+	}
+	if markers != 1 {
+		t.Fatalf("gemalen polygon painted %d cells; want one point marker", markers)
+	}
+	if len(rendered.Legend) != 1 || rendered.Legend[0].Symbol != "•" {
+		t.Fatalf("gemalen legend = %+v; want a dot marker", rendered.Legend)
+	}
+}

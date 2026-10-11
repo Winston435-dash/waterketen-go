@@ -57,6 +57,30 @@ func TestRenderAtlasPreservesGridAndRuns(t *testing.T) {
 	}
 }
 
+func TestRenderAtlasShowsColoredGemalenDotLegend(t *testing.T) {
+	old := lipgloss.ColorProfile()
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	defer lipgloss.SetColorProfile(old)
+
+	r := &core.Render{
+		Cells: [][]core.Cell{{{Rune: '⣿', Style: core.StyleBlank}}},
+		Legend: []core.LegendEntry{{
+			Label: "gemalen", Style: core.StyleForLayer("gemalen"), Symbol: "•",
+		}},
+	}
+	out := RenderAtlas(r)
+	plain := stripSGR(out)
+	if !strings.Contains(plain, "Legenda:") || !strings.Contains(plain, "• gemalen") {
+		t.Fatalf("gemalen dot legend missing from map output: %q", plain)
+	}
+	if !strings.Contains(out, "38;2;204;148;255") {
+		t.Fatalf("gemalen colour missing from legend output: %q", out)
+	}
+	if hasBackgroundSGR(out) {
+		t.Fatalf("legend paints a background: %q", out)
+	}
+}
+
 // hasBackgroundSGR reports whether a string sets a background, parsed properly:
 // a foreground triplet like 38;2;23;43;62 contains 43, so a naive per-parameter
 // scan reports a false background. This consumes 38/48 extended forms.

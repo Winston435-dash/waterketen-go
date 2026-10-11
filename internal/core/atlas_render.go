@@ -96,19 +96,21 @@ func RenderScene(
 				}
 			}
 			geom := f.Geometry
-			// Clip to the frame bounds: zoomed-outside segments must never
-			// generate Bresenham steps. We clip lazily — per-segment, not with a
-			// geometry intersection — because the grid's SetDot already drops
-			// out-of-range dots, and a full Cohen–Sutherland pass is only worth
-			// it on long segments. The Python version clips with a box
-			// intersection for correctness at extreme zoom; with our candidate
-			// bbox filter the per-dot drop is equivalent and cheaper.
-			if pts := geom.Dots(); len(pts) > 0 {
+			if f.Layer == "gemalen" {
+				// Pump constructions are map markers, not building footprints.
+				p := geom.RepresentativePoint()
+				if !math.IsNaN(p.X) && !math.IsNaN(p.Y) && !math.IsInf(p.X, 0) && !math.IsInf(p.Y, 0) {
+					px, py := frame.Project(p.X, p.Y)
+					grid.setDot(int(math.Round(px)), int(math.Round(py)))
+				}
+			} else if pts := geom.Dots(); len(pts) > 0 {
 				for _, p := range pts {
 					px, py := frame.Project(p.X, p.Y)
 					grid.setDot(int(math.Round(px)), int(math.Round(py)))
 				}
 			} else {
+				// Clip lazily per segment: the grid drops out-of-range dots, so
+				// a geometry intersection would only add work for ordinary lines.
 				for _, line := range geom.Outlines() {
 					if len(line) < 2 {
 						continue
@@ -282,15 +284,15 @@ func RenderScene(
 	var legend []LegendEntry
 	if mode == "bob" && counts["riool"] > 0 {
 		legend = []LegendEntry{
-			{"BOB < −4", "bob:very-deep"},
-			{"−4..−2", "bob:deep"},
-			{"−2..−1", "bob:mid"},
-			{"−1..0", "bob:shallow"},
-			{"≥ 0", "bob:above"},
-			{"onbekend", "bob:unknown"},
+			valueLegendEntry("BOB < −4", "bob:very-deep"),
+			valueLegendEntry("−4..−2", "bob:deep"),
+			valueLegendEntry("−2..−1", "bob:mid"),
+			valueLegendEntry("−1..0", "bob:shallow"),
+			valueLegendEntry("≥ 0", "bob:above"),
+			valueLegendEntry("onbekend", "bob:unknown"),
 		}
 		if counts["drinkwaterleidingen"] > 0 {
-			legend = append(legend, LegendEntry{"drinkwater", StyleForLayer("drinkwaterleidingen")})
+			legend = append(legend, LegendEntry{Label: "drinkwater", Style: StyleForLayer("drinkwaterleidingen"), Symbol: "━━"})
 		}
 	} else if mode == "materiaal" && counts["riool"] > 0 {
 		names := make([]string, 0, len(scene.Materials))
@@ -299,11 +301,11 @@ func RenderScene(
 		}
 		sort.Strings(names)
 		for _, m := range names {
-			legend = append(legend, LegendEntry{m, CellStyle("material:" + m)})
+			legend = append(legend, valueLegendEntry(m, CellStyle("material:"+m)))
 		}
-		legend = append(legend, LegendEntry{"onbekend", "material:unknown"})
+		legend = append(legend, valueLegendEntry("onbekend", "material:unknown"))
 		if counts["drinkwaterleidingen"] > 0 {
-			legend = append(legend, LegendEntry{"drinkwater", StyleForLayer("drinkwaterleidingen")})
+			legend = append(legend, LegendEntry{Label: "drinkwater", Style: StyleForLayer("drinkwaterleidingen"), Symbol: "━━"})
 		}
 	} else {
 		names := make([]string, 0, len(counts))
@@ -315,10 +317,12 @@ func RenderScene(
 			if n == "drinkwater" {
 				continue
 			}
-			legend = append(legend, LegendEntry{n, StyleForLayer(n)})
+			legend = append(legend, layerLegendEntry(n))
 		}
 		if counts["drinkwater"] > 0 {
-			legend = append(legend, LegendEntry{"verzorgingsgrens (geen buizen)", StyleForLayer("drinkwater")})
+			legend = append(legend, LegendEntry{
+				Label: "verzorgingsgrens (geen buizen)", Style: StyleForLayer("drinkwater"), Symbol: "■",
+			})
 		}
 	}
 

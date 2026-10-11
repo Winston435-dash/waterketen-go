@@ -546,10 +546,11 @@ func CellColour(s CellStyle) string {
 	return layerColours["riool"]
 }
 
-// LegendEntry is one legend item: label + which colour to draw it with.
+// LegendEntry is one legend item: label, data ink, and the map mark it explains.
 type LegendEntry struct {
-	Label string
-	Style CellStyle
+	Label  string
+	Style  CellStyle
+	Symbol string
 }
 
 // colourGrid keeps a colour per CELL (not per dot) — collisions resolve by
