@@ -68,14 +68,20 @@ func TestRenderAtlasShowsColoredGemalenDotLegend(t *testing.T) {
 	}
 	r := &core.Render{
 		Cells: [][]core.Cell{cells},
-		Legend: []core.LegendEntry{{
-			Label: "gemalen", Style: core.StyleForLayer("gemalen"), Symbol: "•",
-		}},
+		Legend: []core.LegendEntry{
+			{Label: "gemalen", Style: core.StyleForLayer("gemalen"), Symbol: "•"},
+			{Label: "drinkwaterleidingen", Style: core.StyleForLayer("drinkwaterleidingen"), Symbol: "━━"},
+		},
 	}
 	out := RenderAtlas(r)
 	plain := stripSGR(out)
-	if !strings.Contains(plain, "Legenda:") || !strings.Contains(plain, "• gemalen") {
-		t.Fatalf("gemalen dot legend missing from map output: %q", plain)
+	if !strings.Contains(plain, "Legenda:") || !strings.Contains(plain, "• gemalen") || !strings.Contains(plain, "━━ drinkwaterleidingen") {
+		t.Fatalf("colored map legend missing an item: %q", plain)
+	}
+	for _, line := range strings.Split(plain, "\n") {
+		if lipgloss.Width(line) > 40 {
+			t.Fatalf("legend line exceeds map width: %q", line)
+		}
 	}
 	if !strings.Contains(out, "38;2;204;147;255") {
 		t.Fatalf("gemalen colour missing from legend output: %q", out)
