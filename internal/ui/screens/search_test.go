@@ -1,6 +1,7 @@
 package screens
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -166,6 +167,23 @@ func TestToggleKeysMarkDirty(t *testing.T) {
 		if !k.needsDraw {
 			t.Errorf("%s (%s) zette needsDraw niet — de kaart hertekent niet", tc.key, tc.what)
 		}
+	}
+}
+
+// TestSurfaceWaterPumpsAreDefaultVisibleWhenAvailable keeps the newly sourced
+// surface-water layer visible on first open without requiring users to discover
+// and enable it manually. Older snapshots simply omit it from HasLayers.
+func TestSurfaceWaterPumpsAreDefaultVisibleWhenAvailable(t *testing.T) {
+	var manifest core.LibraryManifest
+	data := []byte(`{"layers":{"straten":{"file":"straten.gpkg"},"water":{"file":"water.gpkg"},"riool":{"file":"riool.gpkg"},"drinkwaterleidingen":{"file":"drinkwaterleidingen.gpkg"},"oppervlaktewatergemalen":{"file":"oppervlaktewatergemalen.gpkg"}}}`)
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	atlas := &core.LibraryAtlas{Library: &core.Library{Manifest: manifest}}
+	kaart := &Kaart{}
+	kaart.SetAtlas(atlas)
+	if got, want := strings.Join(kaart.layers, ","), "straten,water,riool,drinkwaterleidingen,oppervlaktewatergemalen"; got != want {
+		t.Fatalf("standaard zichtbare lagen = %q, verwacht %q", got, want)
 	}
 }
 

@@ -249,7 +249,7 @@ func (s *Kaart) SetAtlas(atlas *core.LibraryAtlas) tea.Cmd {
 	s.atlas = atlas
 	s.err = ""
 	if s.layers == nil {
-		s.layers = atlas.Library.HasLayers("straten", "water", "riool", "drinkwaterleidingen")
+		s.layers = atlas.Library.HasLayers("straten", "water", "riool", "drinkwaterleidingen", "oppervlaktewatergemalen")
 	}
 	s.view = core.FitView(atlas.Area.Bounds)
 	s.hasView = true
