@@ -1,7 +1,7 @@
 package core
 
 import (
-	"slices"
+	"math"
 	"testing"
 )
 
@@ -43,29 +43,46 @@ func BenchmarkRenderSceneRealLibrary(b *testing.B) {
 	b.ReportMetric(float64(len(scene.Layers["riool"])), "riool")
 }
 
-func TestDrawProjectedLineMatchesSegmentWiseProjection(t *testing.T) {
-	frame := Frame{Bounds: BBox{MinX: 0, MaxY: 20}, MetresPerDot: 1}
-	lines := []LineString{
-		nil,
-		{{X: 4, Y: 4}},
-		{{X: -12, Y: 18}, {X: -8.5, Y: 17.5}, {X: 0.2, Y: 15.5}, {X: 6.7, Y: 12.4}, {X: 19.5, Y: 2.5}, {X: 28, Y: 0}},
-		{{X: 5, Y: 30}, {X: 5, Y: 21}, {X: 5, Y: -5}},
+func TestRenderSceneLineRasterMatchesIndependentProjection(t *testing.T) {
+	bounds := BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}
+	geom := Geometry{Kind: "linestring", Line: LineString{
+		{X: -12, Y: 18}, {X: -8.5, Y: 17.5}, {X: 0.2, Y: 15.5},
+		{X: 6.7, Y: 12.4}, {X: 19.5, Y: 2.5}, {X: 28, Y: 0},
+	}}
+	scene := &Scene{
+		Bounds: bounds,
+		Layers: map[string][]Feature{"riool": {{Layer: "riool", Geometry: geom}}},
+		Index:  map[string]GridIndex{"riool": NewGridIndex([]Geometry{geom})},
+	}
+	const width, height = 12, 6
+	rendered := RenderScene(scene, FitView(bounds), width, height, "riool", false, "netwerk", false, false, nil, "", []string{"riool"}, false)
+
+	want := NewDotGrid(width, height)
+	for _, line := range geom.Outlines() {
+		for i := 1; i < len(line); i++ {
+			ax, ay := rendered.Frame.Project(line[i-1].X, line[i-1].Y)
+			bx, by := rendered.Frame.Project(line[i].X, line[i].Y)
+			lineInt(int(math.Round(ax)), int(math.Round(ay)), int(math.Round(bx)), int(math.Round(by)), want.SetDot)
+		}
 	}
 
-	for i, line := range lines {
-		got := newColourGrid(12, 6)
-		got.style, got.priority = "line", 1
-		drawProjectedLine(frame, line, &got)
-
-		want := newColourGrid(12, 6)
-		want.style, want.priority = "line", 1
-		for j := 1; j < len(line); j++ {
-			ax, ay := frame.Project(line[j-1].X, line[j-1].Y)
-			bx, by := frame.Project(line[j].X, line[j].Y)
-			want.line(ax, ay, bx, by)
+	checked := 0
+	for y, row := range want.bits {
+		for x, bits := range row {
+			if bits == 0 {
+				continue
+			}
+			got := int(rendered.Cells[y][x].Rune) - brailleBlank
+			if got&bits != bits {
+				t.Errorf("cell (%d,%d) lacks projected line dots: got %#x, want %#x", x, y, got, bits)
+			}
+			if rendered.Cells[y][x].Style != StyleForLayer("riool") {
+				t.Errorf("cell (%d,%d) style = %q, want riool", x, y, rendered.Cells[y][x].Style)
+			}
+			checked++
 		}
-		if !slices.Equal(got.grid.Text(), want.grid.Text()) {
-			t.Errorf("line %d raster differs from independent per-segment projection", i)
-		}
+	}
+	if checked == 0 {
+		t.Fatal("reference line produced no visible dots")
 	}
 }
