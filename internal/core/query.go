@@ -196,10 +196,14 @@ func queryCountLayer(ctx context.Context, lib *Library, layer QueryLayer, bounds
 	args := []any{bounds.MinX, bounds.MaxX, bounds.MinY, bounds.MaxY}
 	if layer.TypeURI != "" {
 		columns, err := table.columns()
-		if err != nil { return fail(err) }
+		if err != nil {
+			return fail(err)
+		}
 		// SQLite can treat a missing double-quoted column as a string literal.
 		// Without an explicit check, an unknown schema looks like zero pumps.
-		if !slices.Contains(columns.names, "type") { return fail(fmt.Errorf("objecttypekolom ontbreekt in %s", table.name)) }
+		if !slices.Contains(columns.names, "type") {
+			return fail(fmt.Errorf("objecttypekolom ontbreekt in %s", table.name))
+		}
 		where += ` AND "type"=?`
 		args = append(args, layer.TypeURI)
 	}
