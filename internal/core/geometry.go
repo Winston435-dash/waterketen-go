@@ -253,8 +253,8 @@ func NewGridIndex(geoms []Geometry) GridIndex {
 
 // Query returns the ascending indices of features whose bbox intersects `b`.
 // Search the monotonic prefix maximum for the first possible x-overlap, then
-// scan entries by minX until the query's right edge. NOT safe for concurrent
-// use — scenes own their index and render/nearest paths are single-goroutine.
+// scan entries by minX until the query's right edge. The immutable index is
+// safe to query concurrently.
 func (idx *GridIndex) Query(b BBox) []int {
 	es := idx.entries
 	lo := sort.Search(len(es), func(i int) bool { return idx.prefixMaxX[i] >= b.MinX })
