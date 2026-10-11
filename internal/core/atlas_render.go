@@ -74,13 +74,12 @@ func RenderScene(
 	for _, layer := range scene.VisibleLayers(active, overlay, displayLayers) {
 		cands := scene.Candidates(layer, frame.Bounds)
 		counts[layer] = len(cands)
-		features := append([]Feature(nil), cands...)
-		sort.SliceStable(features, func(i, j int) bool {
-			hi := isSelected(features[i]) || (street != "" && features[i].Street == street)
-			hj := isSelected(features[j]) || (street != "" && features[j].Street == street)
+		sort.SliceStable(cands, func(i, j int) bool {
+			hi := isSelected(cands[i]) || (street != "" && cands[i].Street == street)
+			hj := isSelected(cands[j]) || (street != "" && cands[j].Street == street)
 			return !hi && hj
 		})
-		for _, f := range features {
+		for _, f := range cands {
 			highlight := isSelected(f) || (street != "" && f.Street == street)
 			if highlight {
 				grid.style = "#ffffff:#284a63" // "fg:bg" — resolved by the caller to CellStyle
