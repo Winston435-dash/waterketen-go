@@ -74,6 +74,7 @@ func New(root string) []Screen {
 		NewKaart(root, lib, assets),
 		NewProfiel(root, assets),
 		NewOntdek(root),
+		NewQuery(root),
 	}
 }
 

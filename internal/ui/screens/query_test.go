@@ -48,6 +48,58 @@ func TestQueryPickersDisambiguateAreasAndApplyCheckboxes(t *testing.T) {
 	}
 }
 
+func TestQueryObjectPagingKeepsSelectionWhenReturningFromDetails(t *testing.T) {
+	s := readyQuery(t)
+	s.Update(keys("enter"))
+	ids := make([]int64, 54)
+	for i := range ids {
+		ids[i] = int64(i + 1)
+	}
+	s.Update(QueryDoneMsg{Generation: s.generation, Result: &core.QueryResult{Area: s.area, Layers: []core.QueryLayerResult{{Layer: core.QueryLayer{ID: "riool", Layer: "riool", Label: "Rioolbuizen"}, Status: core.QueryOK, Count: len(ids), IDs: ids}}}})
+	_, cmd := s.Update(keys("enter"))
+	if cmd == nil {
+		t.Fatal("object page was not dispatched")
+	}
+	rows := make([]core.Row, 50)
+	for i := range rows {
+		rows[i] = core.Row{ID: ids[i], Properties: map[string]string{"naam": "fixture-object"}}
+	}
+	s.Update(QueryObjectsMsg{Generation: s.generation, Offset: 0, Rows: rows})
+	for i := 0; i < 47; i++ {
+		s.Update(keys("down"))
+	}
+	s.Update(keys("enter"))
+	if !strings.Contains(s.View(), "Object 48") {
+		t.Fatal("selected object did not open")
+	}
+	s.Update(keys("esc"))
+	if !strings.Contains(s.View(), "› 48") {
+		t.Fatal("returning from details hid the selected object")
+	}
+	_, cmd = s.Update(keys("end"))
+	if cmd == nil || s.pageOffset != 50 {
+		t.Fatal("last page not dispatched beyond first 50 objects")
+	}
+	last := []core.Row{{ID: 51}, {ID: 52}, {ID: 53}, {ID: 54}}
+	s.Update(QueryObjectsMsg{Generation: s.generation, Offset: 50, Rows: last})
+	s.Update(keys("enter"))
+	if !strings.Contains(s.View(), "Object 54") {
+		t.Fatal("final object is unreachable")
+	}
+}
+
+func TestQueryIgnoresDuplicateCompletions(t *testing.T) {
+	s := readyQuery(t)
+	s.Update(keys("enter"))
+	msg := QueryDoneMsg{Generation: s.generation, Result: &core.QueryResult{Area: s.area, Layers: []core.QueryLayerResult{{Status: core.QueryOK, Count: 1}}}}
+	s.Update(msg)
+	s.Update(keys("esc"))
+	s.Update(msg)
+	if s.resultFocus {
+		t.Fatal("duplicate completion stole focus back from the form")
+	}
+}
+
 func TestQueryCancelDiscardsLateResults(t *testing.T) {
 	s := readyQuery(t)
 	_, cmd := s.Update(keys("enter"))

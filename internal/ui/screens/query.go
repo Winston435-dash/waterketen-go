@@ -209,7 +209,7 @@ func (s *Query) pageCmd() tea.Cmd {
 func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case QueryOpenMsg:
-		if msg.Generation != s.generation {
+		if msg.Generation != s.generation || !s.opening {
 			return s, nil
 		}
 		s.finishWork()
@@ -219,7 +219,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.refresh()
 		return s, nil
 	case QueryDoneMsg:
-		if msg.Generation != s.generation {
+		if msg.Generation != s.generation || !s.running {
 			return s, nil
 		}
 		s.finishWork()
@@ -227,7 +227,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.refresh()
 		return s, nil
 	case QueryObjectsMsg:
-		if msg.Generation != s.generation || s.mode != queryObjects {
+		if msg.Generation != s.generation || !s.pageLoading || s.mode != queryObjects {
 			return s, nil
 		}
 		s.finishWork()
@@ -290,6 +290,9 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			s.body.GotoTop()
 			s.refresh()
+			if s.mode == queryObjects {
+				s.reveal(2 + s.objectCursor - s.pageOffset)
+			}
 			return s, nil
 		case key.Matches(msg, ui.Keys.Enter):
 			if s.mode == queryDetails {

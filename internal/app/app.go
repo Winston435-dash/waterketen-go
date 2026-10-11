@@ -230,6 +230,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmd, m.startSpinner(), m.requestMapDraw())
 		}
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
+	case screens.QueryOpenMsg, screens.QueryDoneMsg, screens.QueryObjectsMsg:
+		// Query commands belong to their persistent owner, not the active tab.
+		for i, screen := range m.screens {
+			if query, ok := screen.(*screens.Query); ok {
+				next, cmd := query.Update(msg)
+				m.screens[i] = next
+				return m, tea.Batch(cmd, m.afterScreenUpdate())
+			}
+		}
+		return m, nil
 	case screens.SceneMsg:
 		if k := m.kaart(); k != nil {
 			if msg.Err != nil {
@@ -268,6 +278,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyMsg:
+		if query, ok := m.screens[m.active].(*screens.Query); ok && query.OverlayOpen() {
+			next, cmd := query.Update(msg)
+			m.screens[m.active] = next
+			return m, tea.Batch(cmd, m.afterScreenUpdate())
+		}
 		if m.palette != nil {
 			return m.updatePalette(msg)
 		}
@@ -294,6 +309,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Global keys first — they work regardless of active screen.
 		switch {
 		case key.Matches(msg, ui.Keys.Quit):
+			for _, screen := range m.screens {
+				if query, ok := screen.(*screens.Query); ok {
+					query.Cancel()
+				}
+			}
 			return m, tea.Quit
 		case key.Matches(msg, ui.Keys.Probe):
 			return m, m.beginProbe()
@@ -336,11 +356,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // and (re)starts the busy spinner when the active screen went busy.
 func (m *Model) afterScreenUpdate() tea.Cmd {
 	draw := m.maybeTriggerDraw()
-	var spin tea.Cmd
+	var load, spin tea.Cmd
+	if query, ok := m.screens[m.active].(*screens.Query); ok {
+		load = query.LoadCmd()
+	}
 	if b, ok := m.screens[m.active].(spinnerScreener); ok && b.Busy() {
 		spin = m.startSpinner()
 	}
-	return tea.Batch(draw, spin)
+	return tea.Batch(load, draw, spin)
 }
 
 type drawFrameMsg struct{ gen int }
