@@ -76,6 +76,7 @@ func NewCatalog() Catalog {
 		CatalogSource{Source: Source{ID: "osm", Label: "OpenStreetMap (lokale PBF)", License: "ODbL"}, Provider: "OpenStreetMap-bijdragers", Summary: "Bovengrondse context uit een lokaal geïmporteerd provinciaal bestand.", Limit: "Geen volledige officiële objectregistratie of ondergrondse leidingkaart.", Access: "Python importeert een lokale PBF; Go leest de bestaande snapshot. Geen API-aanvraag."},
 		CatalogSource{Source: Source{ID: "ahn", Label: "AHN DTM (WCS)", URL: "https://service.pdok.nl/rws/ahn/wcs/v1_0", License: "onbekend", ProbeKind: ""}, Provider: "AHN via PDOK", Summary: "Terreinhoogtes als raster, voor vergelijking met de buisbodem.", Limit: "Boven open water is een hoogtesample niet automatisch het straatmaaiveld. Geen licentie in dit register vastgesteld.", Access: "De Python-opdracht diepte downloadt AHN expliciet; geen Go-kaartlaag."},
 		CatalogSource{Source: Source{ID: "cbs", Label: "CBS wijk- en buurtgrenzen (2025)", URL: "https://service.pdok.nl/cbs/wijkenbuurten/2025/wfs/v1_0", License: "onbekend", ProbeKind: "wfs", TypeName: "wijkenbuurten:wijken"}, Provider: "CBS via PDOK", Summary: "Gemeente-, wijk- en buurtgrenzen met officiële gebiedscodes.", Limit: "2025 is het standaard bouwjaar in Python, niet een claim over het jaar van de lokale snapshot. Licentie hier niet vastgesteld.", Access: "Python haalt de grenzen op bij bibliotheekbouw; Go leest de snapshot."},
+		CatalogSource{Source: Source{ID: "rotterdam_oppervlaktewatergemalen", Label: "Gemeente Rotterdam — oppervlaktewatergemalen", URL: "https://services.arcgis.com/zP1tGdLpGvt2qNJ6/arcgis/rest/services/Gemalen_derde_ronde/FeatureServer/0", License: "onbekend — geen licentieveld in de dienst", ProbeKind: "arcgis"}, Provider: "Gemeente Rotterdam", Summary: "Punten van oppervlaktewatergemalen, apart van rioolgemalen.", Limit: "De dienst specificeert geen licentie of volledigheid; gebruik de bronmetadata en beschouw de telling niet als compleetheidsbewijs.", Access: "Wordt als aparte laag opgenomen bij Python bibliotheekbouw met --waterketen; Go leest daarna de nieuwe snapshot."},
 	)
 	c.Layers = []CatalogLayer{
 		{ID: "riool", Label: "Rioolbuizen", Official: "Rotterdam-beheer:beheer_leiding", Summary: "Lijnen met de geregistreerde ligging en eigenschappen van rioolbuizen.", Question: "Waar liggen de geregistreerde rioolbuizen?", Geometry: "lijnen", SourceID: "gws_netwerk", Limit: "Geen bewijs van een volledig fysiek netwerk; geen KLIC-vervanging.", Use: "Leesbaar in Go als managed data of kaartbibliotheek; ophalen via Python.", Terms: []string{"gwsw", "wfs", "bob", "nap"}},
@@ -112,6 +113,16 @@ func NewCatalog() Catalog {
 	} {
 		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welke aanvullende waterketengegevens zijn gepubliceerd?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Afzonderlijke downloadlaag in Python; niet automatisch geïntegreerd in de Go-kaart of analyses.", Terms: []string{"wfs", "damo", "bbox"}})
 	}
+	c.Layers = append(c.Layers, CatalogLayer{
+		ID: "oppervlaktewatergemalen", Label: "Oppervlaktewatergemalen",
+		Official: "Gemalen_derde_ronde / FeatureServer/0",
+		Summary:  "Geregistreerde pompinstallaties voor oppervlaktewater, niet rioolgemalen.",
+		Question: "Waar liggen oppervlaktewatergemalen?", Geometry: "punten",
+		SourceID: "rotterdam_oppervlaktewatergemalen",
+		Limit:    "De gemeentelijke dienst leverde bij controle 23 punten van dit type in Rotterdam, waarvan één in de wijk Delfshaven. De dienst vermeldt geen licentie of volledigheid.",
+		Use:      "Go-kaartlaag zodra opgenomen in een lokale bibliotheeksnapshot via Python bibliotheekbouw met --waterketen.",
+		Terms:    []string{"feature", "arcgis", "gemalen"},
+	})
 	for i := range c.Layers {
 		c.Layers[i].Local = []CatalogLocal{}
 	}

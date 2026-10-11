@@ -27,6 +27,9 @@ func TestCellColourMatchesCoreTables(t *testing.T) {
 	if got, want := CellColour(StyleForLayer("riool")), layerColours["riool"]; got != want {
 		t.Errorf("riool-ink=%q, wil %q", got, want)
 	}
+	if got, want := CellColour(StyleForLayer("oppervlaktewatergemalen")), layerColours["oppervlaktewatergemalen"]; got == "" || got != want {
+		t.Errorf("oppervlaktewatergemaal-ink=%q, wil %q", got, want)
+	}
 	if got, want := CellColour("bob:deep"), bobBands["deep"]; got != want {
 		t.Errorf("bob-deep-ink=%q, wil %q", got, want)
 	}

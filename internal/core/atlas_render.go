@@ -332,7 +332,7 @@ func RenderScene(
 func layerLegendEntry(name string) LegendEntry {
 	symbol := "━━"
 	switch name {
-	case "gemalen", "putten":
+	case "gemalen", "putten", "oppervlaktewatergemalen":
 		symbol = "•"
 	case "drinkwater", "water", "groen", "gebouwen":
 		symbol = "■"

@@ -15,16 +15,17 @@ import (
 // the Python atlas established and the TUI screenshots already taught.
 
 var layerColours = map[string]string{
-	"riool":               "#38d9ff",
-	"drinkwaterleidingen": "#ffa95c",
-	"drinkwater":          "#476c91",
-	"straten":             "#627d91",
-	"water":               "#416e91",
-	"spoor":               "#b19bbf",
-	"putten":              "#38d9ff",
-	"gemalen":             "#cc94ff",
-	"groen":               "#5a8f6f",
-	"gebouwen":            "#4a5a68",
+	"riool":                   "#38d9ff",
+	"drinkwaterleidingen":     "#ffa95c",
+	"drinkwater":              "#476c91",
+	"straten":                 "#627d91",
+	"water":                   "#416e91",
+	"spoor":                   "#b19bbf",
+	"putten":                  "#38d9ff",
+	"gemalen":                 "#cc94ff",
+	"oppervlaktewatergemalen": "#f2d35e",
+	"groen":                   "#5a8f6f",
+	"gebouwen":                "#4a5a68",
 }
 
 // Networks are drawn even in overlay mode regardless of the active layer.
@@ -92,7 +93,7 @@ type Feature struct {
 // agree about what is "under" what.
 var DrawOrder = []string{
 	"groen", "water", "gebouwen", "spoor", "straten", "drinkwater",
-	"riool", "drinkwaterleidingen", "putten", "gemalen",
+	"riool", "drinkwaterleidingen", "putten", "gemalen", "oppervlaktewatergemalen",
 }
 
 // OrderLayers filters `names` to the known layers and sorts them into

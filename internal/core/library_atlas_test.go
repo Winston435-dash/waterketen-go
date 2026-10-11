@@ -163,8 +163,8 @@ func TestLibraryAtlasZoomShrinksWindowAndCount(t *testing.T) {
 // in DrawOrder, so the map paints background under network — and an unknown
 // slug is dropped rather than drawn blind.
 func TestLibraryAtlasLayerSetIsOrdered(t *testing.T) {
-	got := OrderLayers([]string{"riool", "straten", "onbekend", "water"})
-	want := []string{"water", "straten", "riool"}
+	got := OrderLayers([]string{"riool", "oppervlaktewatergemalen", "straten", "onbekend", "water"})
+	want := []string{"water", "straten", "riool", "oppervlaktewatergemalen"}
 	if len(got) != len(want) {
 		t.Fatalf("OrderLayers = %v, verwacht %v", got, want)
 	}

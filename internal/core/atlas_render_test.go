@@ -87,6 +87,21 @@ func TestRenderSceneLineRasterMatchesIndependentProjection(t *testing.T) {
 	}
 }
 
+func TestRenderSceneShowsSurfaceWaterPumpInDotLegend(t *testing.T) {
+	bounds := BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}
+	geom := Geometry{Kind: "point", Point: Point{X: 10, Y: 10}}
+	scene := &Scene{
+		Bounds: bounds,
+		Layers: map[string][]Feature{"oppervlaktewatergemalen": {{Layer: "oppervlaktewatergemalen", Geometry: geom}}},
+		Index:  map[string]GridIndex{"oppervlaktewatergemalen": NewGridIndex([]Geometry{geom})},
+	}
+
+	rendered := RenderScene(scene, FitView(bounds), 12, 6, "oppervlaktewatergemalen", false, "netwerk", false, false, nil, "", []string{"oppervlaktewatergemalen"}, false)
+	if len(rendered.Legend) != 1 || rendered.Legend[0].Symbol != "•" || rendered.Legend[0].Style != StyleForLayer("oppervlaktewatergemalen") {
+		t.Fatalf("oppervlaktewatergemaal-legenda = %+v, verwacht gekleurde punt", rendered.Legend)
+	}
+}
+
 func TestRenderSceneDrawsGemalenAsDots(t *testing.T) {
 	bounds := BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}
 	geom := Geometry{Kind: "polygon", Polygon: []LineString{{
