@@ -8,6 +8,7 @@ func NewCatalog() Catalog {
 			{"riool", "Waar liggen rioolbuizen?", "Bekijk de geregistreerde ligging; een publicatie bewijst niet dat iedere buis is opgenomen.", []string{"riool"}, nil},
 			{"drinkwater", "Wie levert hier drinkwater?", "Een verzorgingsgebied vertelt wie er levert, niet waar de buizen liggen.", []string{"drinkwater"}, nil},
 			{"drinkwaterleidingen", "Waar liggen drinkwaterleidingen?", "De gemeentelijke Evides-publicatie toont een deel van de leidinggeometrie.", []string{"drinkwaterleidingen"}, nil},
+			{"oppervlaktewatergemalen", "Waar liggen gemalen voor oppervlaktewater?", "Deze gemeentelijke laag registreert oppervlaktewatergemalen; rioolgemalen staan apart.", []string{"oppervlaktewatergemalen"}, nil},
 			{"afvalwater", "Waar wordt afvalwater gepompt of gezuiverd?", "Putten, gemalen en afvoergebieden vertellen verschillende delen van het verhaal. Nabijheid is geen bewezen verbinding.", []string{"putten", "gemalen", "damo-rioolgemaal", "damo-zuiveringseenheid"}, []string{"rwzi"}},
 			{"diepte", "Hoe hoog of diep liggen de buizen?", "BOB is buisbodemhoogte ten opzichte van NAP. Voor diepte onder een straat is ook het maaiveld nodig.", []string{"riool", "hoogte"}, []string{"maaiveld"}},
 			{"omgeving", "Wat ligt er boven en rond het netwerk?", "Straten, water en wijkgrenzen geven context; ze zijn geen registratie van ondergrondse leidingen.", []string{"straten", "water", "gebieden"}, []string{"bbox"}},
@@ -32,6 +33,7 @@ func NewCatalog() Catalog {
 			{"bbox", "Bbox — bounding box", "Een rechthoekig zoekvak. Objecten in dat vak liggen niet noodzakelijk binnen de echte wijkgrens.", "De hoeken van een wijkvak kunnen stukken van buurgemeenten of buurwijken bevatten."},
 			{"gpkg", "GeoPackage (GPKG)", "Een databasebestand voor geografische objecten en eigenschappen, dat lokaal zonder netwerk kan worden gelezen.", "De CLI en TUI lezen dezelfde beheerde GeoPackages; het bestand is geen API."},
 			{"rwzi", "RWZI — rioolwaterzuiveringsinstallatie", "Een installatie die afvalwater zuivert. Een zuiveringseenheid als gebied is niet hetzelfde als een RWZI-punt.", "Een vlak dat het aangesloten gebied beschrijft, markeert niet de locatie van de zuiveringsinstallatie."},
+			{"oppervlaktewatergemaal", "Oppervlaktewatergemaal", "Een installatie die water in het oppervlaktewatersysteem verplaatst voor peil- of waterbeheer; geen afvalwaterpomp.", "De gemeentelijke kaartlaag typeert oppervlaktewatergemalen apart van rioolgemalen."},
 			{"klic", "KLIC — Kabels en Leidingen Informatie Centrum", "Informatie-uitwisseling via het Kadaster over kabels en leidingen, onder meer voor graafwerk.", "Deze openbare kaartcatalogus vervangt geen vereiste KLIC-melding."},
 			{"snapshot", "Snapshot — vastgelegde levering", "Een bewaarde versie van gegevens op een bepaald moment. De ophaaldatum hoeft niet de meet- of brondatum te zijn.", "Een recent opgehaald bestand kan oude metingen bevatten."},
 		},
@@ -121,7 +123,7 @@ func NewCatalog() Catalog {
 		SourceID: "rotterdam_oppervlaktewatergemalen",
 		Limit:    "De gemeentelijke dienst leverde bij controle 23 punten van dit type in Rotterdam, waarvan één in de wijk Delfshaven. De dienst vermeldt geen licentie of volledigheid.",
 		Use:      "Go-kaartlaag zodra opgenomen in een lokale bibliotheeksnapshot via Python bibliotheekbouw met --waterketen.",
-		Terms:    []string{"feature", "arcgis", "gemalen"},
+		Terms:    []string{"feature", "arcgis", "oppervlaktewatergemaal"},
 	})
 	for i := range c.Layers {
 		c.Layers[i].Local = []CatalogLocal{}
