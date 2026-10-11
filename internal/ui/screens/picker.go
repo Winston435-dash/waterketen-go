@@ -33,6 +33,7 @@ type Picker struct {
 	mode     pickMode
 	title    string
 	hint     string
+	intro    string // Optional context; the map picker keeps its existing caption.
 	all      []pickItem
 	filtered []pickItem
 	cursor   int
@@ -229,7 +230,11 @@ func (p *Picker) View() string {
 	if p.Searchable() {
 		b.WriteString(components.Strong("zoek: " + p.query))
 	} else {
-		b.WriteString(components.Muted("lagen die de kaart tekent"))
+		intro := p.intro
+		if intro == "" {
+			intro = "lagen die de kaart tekent"
+		}
+		b.WriteString(components.Muted(intro))
 	}
 	b.WriteByte('\n')
 	b.WriteByte('\n')

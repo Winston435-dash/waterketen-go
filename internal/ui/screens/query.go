@@ -85,7 +85,7 @@ func (s *Query) SetSize(w, h int) {
 	s.width = max(1, w-4)
 	s.body.Width, s.body.Height = s.width, max(1, h-2)
 	if s.picker != nil {
-		s.picker.SetSize(w, h)
+		s.picker.SetSize(s.width, s.body.Height)
 	}
 	s.refresh()
 }
@@ -192,7 +192,7 @@ func (s *Query) pageCmd() tea.Cmd {
 	offset := s.objectCursor / queryPageSize * queryPageSize
 	if offset == s.pageOffset && (s.pageLoading || len(s.objects) > 0) {
 		s.refresh()
-		s.reveal(2 + s.objectCursor - offset)
+		s.revealObject()
 		return nil
 	}
 	ctx, generation := s.beginWork()
@@ -233,7 +233,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.finishWork()
 		s.pageOffset, s.objects, s.err = msg.Offset, msg.Rows, msg.Err
 		s.refresh()
-		s.reveal(2 + s.objectCursor - s.pageOffset)
+		s.revealObject()
 		return s, nil
 	case tea.KeyMsg:
 		if s.picker != nil {
@@ -260,12 +260,12 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		case key.Matches(msg, ui.Keys.Area):
 			if len(s.areas) > 0 {
 				s.picker = NewAreaPicker(s.areas)
-				s.picker.SetSize(s.width+4, s.body.Height+2)
+				s.picker.SetSize(s.width, s.body.Height)
 			}
 			return s, nil
 		case key.Matches(msg, ui.Keys.QueryLayers):
 			if s.loaded && s.library != nil {
-				p := &Picker{mode: pickToggle, title: "Querylagen", hint: "spatie schakelt · enter past toe · esc terug"}
+				p := &Picker{mode: pickToggle, title: "Querylagen", intro: "lagen voor de gebiedstelling", hint: "spatie schakelt · enter past toe · esc terug"}
 				for _, l := range s.layers {
 					label := l.Label
 					if !l.Available {
@@ -273,7 +273,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 					}
 					p.all = append(p.all, pickItem{key: l.ID, label: label, mark: slices.Contains(s.selected, l.ID)})
 				}
-				p.SetSize(s.width+4, s.body.Height+2)
+				p.SetSize(s.width, s.body.Height)
 				s.picker = p
 			}
 			return s, nil
@@ -291,7 +291,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			s.body.GotoTop()
 			s.refresh()
 			if s.mode == queryObjects {
-				s.reveal(2 + s.objectCursor - s.pageOffset)
+				s.revealObject()
 			}
 			return s, nil
 		case key.Matches(msg, ui.Keys.Enter):
@@ -365,6 +365,17 @@ func queryMove(msg tea.KeyMsg, cursor, total, page int) int {
 	}
 	return min(max(0, cursor), max(0, total-1))
 }
+
+// Keep the page range reachable alongside the last object, even when the page
+// is taller than the viewport. Do not push the selection off a one-row viewport.
+func (s *Query) revealObject() {
+	line := 2 + s.objectCursor - s.pageOffset
+	if s.body.Height > 1 && len(s.objects) > 0 && s.objectCursor-s.pageOffset == len(s.objects)-1 {
+		line++
+	}
+	s.reveal(line)
+}
+
 func (s *Query) reveal(line int) {
 	if line < s.body.YOffset {
 		s.body.SetYOffset(line)

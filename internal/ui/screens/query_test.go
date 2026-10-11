@@ -23,6 +23,18 @@ func readyQuery(t *testing.T) *Query {
 	return s
 }
 
+func TestQueryPickersFitTheContentViewport(t *testing.T) {
+	for _, command := range []string{"g", "l"} {
+		t.Run(command, func(t *testing.T) {
+			s := readyQuery(t)
+			s.Update(keys(command))
+			fitsHost(t, "querypicker", s.View(), s.width, s.body.Height)
+			s.SetSize(48, 24)
+			fitsHost(t, "querypicker na resize", s.View(), s.width, s.body.Height)
+		})
+	}
+}
+
 func TestQueryPickersDisambiguateAreasAndApplyCheckboxes(t *testing.T) {
 	s := readyQuery(t)
 	s.Update(keys("g"))
@@ -35,6 +47,9 @@ func TestQueryPickersDisambiguateAreasAndApplyCheckboxes(t *testing.T) {
 		t.Fatalf("picked %+v instead of wijk", s.area)
 	}
 	s.Update(keys("l"))
+	if !strings.Contains(s.View(), "lagen voor de gebiedstelling") {
+		t.Fatal("query layer picker describes drawing instead of counting")
+	}
 	s.Update(keys(" ")) // first checkbox: Rioolgemalen
 	s.Update(keys("enter"))
 	if !reflect.DeepEqual(s.selected, []string{"putten", "riool"}) {
@@ -51,7 +66,7 @@ func TestQueryPickersDisambiguateAreasAndApplyCheckboxes(t *testing.T) {
 func TestQueryObjectPagingKeepsSelectionWhenReturningFromDetails(t *testing.T) {
 	s := readyQuery(t)
 	s.Update(keys("enter"))
-	ids := make([]int64, 54)
+	ids := make([]int64, 84)
 	for i := range ids {
 		ids[i] = int64(i + 1)
 	}
@@ -80,10 +95,16 @@ func TestQueryObjectPagingKeepsSelectionWhenReturningFromDetails(t *testing.T) {
 	if cmd == nil || s.pageOffset != 50 {
 		t.Fatal("last page not dispatched beyond first 50 objects")
 	}
-	last := []core.Row{{ID: 51}, {ID: 52}, {ID: 53}, {ID: 54}}
+	last := make([]core.Row, len(ids)-50)
+	for i := range last {
+		last[i] = core.Row{ID: ids[50+i]}
+	}
 	s.Update(QueryObjectsMsg{Generation: s.generation, Offset: 50, Rows: last})
+	if !strings.Contains(s.View(), "› 84") || !strings.Contains(s.View(), "Pagina 51–84 van 84") {
+		t.Fatal("final selection or page range is hidden")
+	}
 	s.Update(keys("enter"))
-	if !strings.Contains(s.View(), "Object 54") {
+	if !strings.Contains(s.View(), "Object 84") {
 		t.Fatal("final object is unreachable")
 	}
 }
