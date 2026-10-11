@@ -276,6 +276,7 @@ func (s *Kaart) SetArea(code string) tea.Cmd {
 // in would silently override what the user just chose.
 func (s *Kaart) SetLayers(names []string) tea.Cmd {
 	s.layers = core.OrderLayers(names)
+	s.solo = false
 	if len(s.layers) > 0 && !slices.Contains(s.layers, s.active) {
 		s.active = s.layers[0]
 	}

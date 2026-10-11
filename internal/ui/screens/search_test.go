@@ -169,8 +169,6 @@ func TestToggleKeysMarkDirty(t *testing.T) {
 	}
 }
 
-// TestSoloNarrowsToActiveLayer: 'o' switches samen/solo and '['/']' select a
-// layer, so the map must actually draw one layer in solo mode.
 // TestSetLayersShowsTheChosenSetAfterSolo verifies that applying the layer picker
 // restores the selected set instead of leaving the map narrowed to the old active
 // layer.
@@ -188,6 +186,8 @@ func TestSetLayersShowsTheChosenSetAfterSolo(t *testing.T) {
 	}
 }
 
+// TestSoloNarrowsToActiveLayer: 'o' switches samen/solo and '['/']' select a
+// layer, so the map must actually draw one layer in solo mode.
 func TestSoloNarrowsToActiveLayer(t *testing.T) {
 	k := &Kaart{scene: &core.Scene{}, layers: []string{"straten", "water", "riool"}, active: "riool"}
 	if got := k.visibleLayerNames(); len(got) != 3 {
