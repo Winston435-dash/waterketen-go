@@ -1,6 +1,7 @@
 // GeoPackage reading without cgo: SQLite via database/sql (pure-Go driver)
 // plus a small hand-rolled GeoPackageBinary/WKB parser. Only what waterketen
-// needs: points, (multi)linestrings and (multi)polygons, 2D or XYZ.
+// needs: (multi)points, (multi)linestrings, (multi)polygons and nested
+// GeometryCollections. Z is retained when present; M is not a height.
 package core
 
 import (

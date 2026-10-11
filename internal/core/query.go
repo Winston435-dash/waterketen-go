@@ -47,10 +47,10 @@ type QueryResult struct {
 // published vector layer. Alternatives stay separate; there is no grand total.
 func QueryLayers(lib *Library) []QueryLayer {
 	out := []QueryLayer{
-		{ID: "rioolgemalen", Label: "Rioolgemalen", Layer: "gemalen", TypeURI: "http://data.gwsw.nl/1.5/totaal/Rioolgemaal", SourceID: "gws_netwerk"},
-		{ID: "putten", Label: "Rioolputten", Layer: "putten", SourceID: "gws_netwerk"},
+		{ID: "rioolgemalen", Label: "Rioolgemalen", Layer: "gemalen", TypeURI: "http://data.gwsw.nl/1.5/totaal/Rioolgemaal", SourceID: "gws_aanvullend"},
+		{ID: "putten", Label: "Rioolputten", Layer: "putten", SourceID: "gws_aanvullend"},
 		{ID: "riool", Label: "Rioolbuizen", Layer: "riool", SourceID: "gws_netwerk"},
-		{ID: "oppervlaktewatergemalen", Label: "Oppervlaktewatergemalen", Layer: "oppervlaktewatergemalen"},
+		{ID: "oppervlaktewatergemalen", Label: "Oppervlaktewatergemalen", Layer: "oppervlaktewatergemalen", SourceID: "rotterdam_oppervlaktewatergemalen"},
 		{ID: "drinkwaterleidingen", Label: "Drinkwaterleidingen (Evides)", Layer: "drinkwaterleidingen", SourceID: "evides"},
 	}
 	if lib == nil {

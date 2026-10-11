@@ -4,7 +4,7 @@ package core
 // distance from a point to a geometry, polygon-outlining, linear
 // interpolation along a line. This replaces the shapely surface the Python
 // atlas uses (sindex.query, boundary, representative_point, interpolate,
-// distance). It does NOT grow beyond what the atlas needs.
+// distance). Exact area-query predicates live separately in query_geometry.go.
 
 import (
 	"math"

@@ -75,6 +75,16 @@ func queryTestLibrary(t *testing.T) *Library {
 	return lib
 }
 
+func TestQueryLayersKeepCatalogProvenance(t *testing.T) {
+	for _, choice := range QueryLayers(queryTestLibrary(t)) {
+		for _, layer := range NewCatalog().Layers {
+			if choice.Layer == layer.ID && choice.SourceID != layer.SourceID {
+				t.Fatalf("%s: query source %s differs from catalog source %s", choice.ID, choice.SourceID, layer.SourceID)
+			}
+		}
+	}
+}
+
 func TestAreaQueryRejectsMissingTypeColumn(t *testing.T) {
 	lib := queryTestLibrary(t)
 	db, err := sql.Open("sqlite", lib.LayerPath("gemalen"))

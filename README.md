@@ -22,8 +22,9 @@ nooit randen, kleuren of spacing definiëren**.
   - `keymap.go` — alle toetsen.
   - `components/` — `Panel`, `CommandBar`, `StatusBadge`, `EmptyState`,
     `DataTable`, `Modal`.
-  - `screens/` — zeven panelen: Ontdek, Bronnen, Lagen, Gebieden, Analyse,
-    Kaart en Profiel. Bestaande paneeltoetsen 1–6 blijven gelijk; Ontdek is 7.
+  - `screens/` — acht panelen: Ontdek, Bronnen, Lagen, Gebieden, Analyse,
+    Kaart, Profiel en Query. Bestaande paneeltoetsen 1–6 blijven gelijk;
+    Ontdek is 7 en Query is 8.
 
 ## Regels voor uitbreidingen (de contracten)
 
@@ -48,7 +49,10 @@ nooit randen, kleuren of spacing definiëren**.
 
 ## Status
 
-- ✅ Zeven panelen in de TUI, met Ontdek als vraaggestuurde startpagina.
+- ✅ Acht panelen in de TUI, met Ontdek als vraaggestuurde startpagina.
+- ✅ **Offline gebiedsquery.** Paneel 8 telt de gekozen snapshotlagen tegen de
+  volledige CBS-polygon, inclusief gaten en randintersecties. Gebiedskiezer,
+  laagvinkjes en objectdetails; paginering begrenst nooit de telling.
 - ✅ CLI: `ontdek`, `sources`, `status`, `analyse`, `braille`.
 - ✅ GeoPackage-lezing **zonder cgo** (pure-Go `modernc.org/sqlite` + eigen
   GeoPackageBinary/WKB-decoder).
@@ -135,6 +139,30 @@ empty=$(mktemp -d "${TMPDIR:-$HOME/.hermes/cache/scratch}/waterketen-docs.XXXXXX
 ./waterketen ontdek --markdown --technisch --data-root "$empty" > docs/catalogus.md
 rmdir "$empty"
 ```
+
+## Query: gebied kiezen, lagen tellen
+
+Open paneel **8 Query**. `g` kiest een gemeente, wijk of buurt: zoek op naam
+of CBS-code en bevestig met `Enter`. Wijk Delfshaven (`WK059903`) en buurt
+Delfshaven (`BU05990320`) zijn verschillende gebieden.
+
+Met `l` kies je lagen; `Spatie` schakelt een vinkje en `Enter` past de keuze
+toe. `Esc` annuleert de selectie. Druk daarna `Enter` om offline te tellen.
+Selecteer een resultaat met `↑`/`↓`; `Enter` opent de objecten en nogmaals
+`Enter` de bronattributen. `PgUp`/`PgDown`, `Home` en `End` navigeren over alle
+objecten, ook voorbij de eerste pagina van 50. `Esc` gaat terug of breekt
+lopend querywerk af.
+
+De query telt bronobjecten die de volledige gebiedsgrens raken, niet het
+rechthoekige kaartvak en niet een kaartsample. **Rioolgemalen** filtert de
+gemengde GWSW-pomplaag op het expliciete type `Rioolgemaal`; de ongefilterde
+laag en oppervlaktewatergemalen blijven aparte keuzes. Tel alternatieve
+leveringen niet bij elkaar op. Een nul is een succesvolle lege selectie;
+`—` met een melding betekent niet beschikbaar of een leesfout.
+
+Snapshotdatum, brondatum en licentie blijven afzonderlijk zichtbaar.
+**Registratie ≠ volledig fysiek netwerk.** De query zelf downloadt niets;
+de bestaande broncontroles bij het starten van de app blijven ongewijzigd.
 
 ## Mobiel (Termux / smalle terminals)
 
