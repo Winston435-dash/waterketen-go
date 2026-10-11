@@ -20,7 +20,8 @@ type Polygon []LineString // ring 0 = outer, rest = holes
 
 // Geometry is a tagged union of the supported WKB shapes.
 type Geometry struct {
-	Kind     string // "point" | "linestring" | "polygon" | "multilinestring" | "multipolygon"
+	Kind     string     // WKB shape; collections/multipoints retain their typed Parts
+	Parts    []Geometry // GeometryCollection / MultiPoint members, still one source row
 	Point    Point
 	Line     LineString
 	Lines    []LineString
@@ -351,16 +352,21 @@ func readWKB(b []byte) (Geometry, int, error) {
 			}
 		}
 		return Geometry{Kind: "polygon", Polygon: poly}, off, nil
-	case 5, 6: // MultiLineString / MultiPolygon
+	case 4, 5, 6, 7: // MultiPoint / MultiLineString / MultiPolygon / GeometryCollection
 		n, err := readCount()
 		if err != nil {
 			return Geometry{}, 0, err
 		}
 		out := Geometry{}
-		if base == 5 {
+		switch base {
+		case 4:
+			out.Kind = "multipoint"
+		case 5:
 			out.Kind = "multilinestring"
-		} else {
+		case 6:
 			out.Kind = "multipolygon"
+		case 7:
+			out.Kind = "collection"
 		}
 		for i := 0; i < n; i++ {
 			sub, used, err := readWKB(b[off:])
@@ -368,6 +374,9 @@ func readWKB(b []byte) (Geometry, int, error) {
 				return Geometry{}, 0, err
 			}
 			off += used
+			if base == 7 || base == 4 && sub.Kind == "point" {
+				out.Parts = append(out.Parts, sub)
+			}
 			if base == 5 && sub.Kind == "linestring" {
 				out.Lines = append(out.Lines, sub.Line)
 			}

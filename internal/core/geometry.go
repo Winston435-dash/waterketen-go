@@ -48,6 +48,12 @@ func (g Geometry) Outlines() []LineString {
 		return g.Lines
 	case "polygon":
 		return g.Polygon
+	case "collection":
+		var out []LineString
+		for _, part := range g.Parts {
+			out = append(out, part.Outlines()...)
+		}
+		return out
 	case "multipolygon":
 		var out []LineString
 		for _, p := range g.Polygons {
@@ -63,11 +69,25 @@ func (g Geometry) Dots() []Point {
 	if g.Kind == "point" {
 		return []Point{g.Point}
 	}
-	return nil
+	var out []Point
+	for _, part := range g.Parts {
+		out = append(out, part.Dots()...)
+	}
+	return out
 }
 
 // Bounds returns the geometry's bounding box.
 func (g Geometry) Bounds() (BBox, bool) {
+	if len(g.Parts) > 0 {
+		var bounds BBox
+		valid := false
+		for _, part := range g.Parts {
+			if b, ok := part.Bounds(); ok {
+				bounds, valid = mergeBBox(bounds, valid, b)
+			}
+		}
+		return bounds, valid
+	}
 	var b BBox
 	started := false
 	visit := func(p Point) {
@@ -112,6 +132,7 @@ func (g Geometry) Distance(p Point) float64 {
 		return math.Hypot(g.Point.X-p.X, g.Point.Y-p.Y)
 	}
 	best := math.Inf(1)
+	for _, dot := range g.Dots() { best = math.Min(best, math.Hypot(p.X-dot.X, p.Y-dot.Y)) }
 	for _, line := range g.Outlines() {
 		for i := 1; i < len(line); i++ {
 			d := segDistance(p, line[i-1], line[i])
@@ -145,9 +166,7 @@ func segDistance(p, a, b Point) float64 {
 func (g Geometry) Interpolate(t float64) Point {
 	lines := g.Outlines()
 	if len(lines) == 0 {
-		if g.Kind == "point" {
-			return g.Point
-		}
+		if points := g.Dots(); len(points) > 0 { return points[0] }
 		return Point{math.NaN(), math.NaN(), math.NaN()}
 	}
 	longest := lines[0]
@@ -191,6 +210,7 @@ func lineLength(l LineString) float64 {
 // RepresentativePoint is the centroid of the geometry's vertices — cheap and
 // good enough as a label fallback (shapely's representative_point()).
 func (g Geometry) RepresentativePoint() Point {
+	if g.Kind == "point" { return g.Point }
 	var sx, sy float64
 	var n int
 	for _, line := range g.Outlines() {
@@ -198,12 +218,8 @@ func (g Geometry) RepresentativePoint() Point {
 			sx, sy, n = sx+p.X, sy+p.Y, n+1
 		}
 	}
-	if n == 0 {
-		if g.Kind == "point" {
-			return g.Point
-		}
-		return Point{math.NaN(), math.NaN(), math.NaN()}
-	}
+	for _, p := range g.Dots() { sx, sy, n = sx+p.X, sy+p.Y, n+1 }
+	if n == 0 { return Point{math.NaN(), math.NaN(), math.NaN()} }
 	return Point{sx / float64(n), sy / float64(n), math.NaN()}
 }
 

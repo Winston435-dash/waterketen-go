@@ -138,6 +138,14 @@ func (f *areaFilter) covers(point Point) bool {
 }
 
 func (f *areaFilter) intersects(g Geometry) bool {
+	if len(g.Parts) > 0 {
+		for _, part := range g.Parts {
+			if f.intersects(part) {
+				return true
+			}
+		}
+		return false
+	}
 	if g.Kind == "point" {
 		return f.covers(g.Point)
 	}

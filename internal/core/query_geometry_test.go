@@ -1,6 +1,10 @@
 package core
 
-import "testing"
+import (
+	"encoding/binary"
+	"math"
+	"testing"
+)
 
 func queryRing(coords ...[2]float64) LineString {
 	out := make(LineString, len(coords))
@@ -8,6 +12,49 @@ func queryRing(coords ...[2]float64) LineString {
 		out[i] = Point{X: p[0], Y: p[1]}
 	}
 	return out
+}
+
+// Rotterdam's clipped groen contains real GeometryCollections. Their parts
+// remain one source object, including an enclosing polygon with no inside vertices.
+func TestQuerySupportsCollectedAndMultiPointGeometry(t *testing.T) {
+	collect := func(kind uint32, parts ...[]byte) []byte {
+		b := make([]byte, 9)
+		b[0] = 1
+		binary.LittleEndian.PutUint32(b[1:5], kind)
+		binary.LittleEndian.PutUint32(b[5:9], uint32(len(parts)))
+		for _, part := range parts {
+			b = append(b, part...)
+		}
+		return b
+	}
+	polygon := wkbLine(3, 1)
+	polygon = append(polygon, wkbLine(2, 5, -1, -1, 11, -1, 11, 11, -1, 11, -1, -1)[5:]...)
+	boundary := Geometry{Kind: "polygon", Polygon: Polygon{queryRing([2]float64{0, 0}, [2]float64{10, 0}, [2]float64{10, 10}, [2]float64{0, 10}, [2]float64{0, 0})}}
+	filter, err := newAreaFilter(boundary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, raw := range [][]byte{
+		collect(7, wkbPoint(1, 20, 20), collect(7, polygon)),
+		collect(4, wkbPoint(1, 20, 20), wkbPoint(1, 5, 5)),
+	} {
+		geometry, err := parseWKB(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !filter.intersects(geometry) {
+			t.Fatal("collected intersection lost")
+		}
+		if bounds, ok := geometry.Bounds(); !ok || bounds.MaxX != 20 || bounds.MaxY != 20 {
+			t.Fatalf("collected bounds: %+v / %v", bounds, ok)
+		}
+		if len(geometry.Dots()) == 0 {
+			t.Fatal("collected point lost")
+		}
+		if geometry.Distance(Point{X:20,Y:20}) != 0 { t.Fatal("collected point not inspectable by distance") }
+		if anchor := geometry.RepresentativePoint(); math.IsNaN(anchor.X) { t.Fatal("collection has no label anchor") }
+		if anchor := geometry.Interpolate(0.5); math.IsNaN(anchor.X) { t.Fatal("collection cannot be framed") }
+	}
 }
 
 func TestAreaFilterUsesPolygonHolesAndBoundary(t *testing.T) {
