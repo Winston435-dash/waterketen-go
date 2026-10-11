@@ -31,6 +31,11 @@ type KeyMap struct {
 	PrevTopic key.Binding
 	Technical key.Binding
 
+	// Data query only.
+	QueryLayers key.Binding
+	RunQuery    key.Binding
+	Inspect     key.Binding
+
 	// Atlas (kaart) only
 	PanLeft  key.Binding
 	PanRight key.Binding
@@ -72,6 +77,10 @@ var Keys = KeyMap{
 	NextTopic: key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "categorie →")),
 	PrevTopic: key.NewBinding(key.WithKeys("["), key.WithHelp("[", "← categorie")),
 	Technical: key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "techniek")),
+
+	QueryLayers: key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "lagen")),
+	RunQuery:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "uitvoeren")),
+	Inspect:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "objecten")),
 
 	PanLeft:  key.NewBinding(key.WithKeys("left"), key.WithHelp("←", "west")),
 	PanRight: key.NewBinding(key.WithKeys("right"), key.WithHelp("→", "oost")),

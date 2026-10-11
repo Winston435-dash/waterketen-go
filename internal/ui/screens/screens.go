@@ -29,6 +29,7 @@ const (
 	ScreenKaart
 	ScreenProfiel
 	ScreenOntdek
+	ScreenQuery
 )
 
 // ScreenInfo is the stable identity of one screen in the header navigation.
@@ -47,6 +48,7 @@ var Screens = []ScreenInfo{
 	{ScreenKaart, "5", "Kaart"},
 	{ScreenProfiel, "6", "Profiel"},
 	{ScreenOntdek, "7", "Ontdek"},
+	{ScreenQuery, "8", "Query"},
 }
 
 // Screen is the contract every panel satisfies. `Update` returns the new
