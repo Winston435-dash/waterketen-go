@@ -548,8 +548,9 @@ func CellColour(s CellStyle) string {
 
 // LegendEntry is one legend item: label, data ink, and the map mark it explains.
 type LegendEntry struct {
-	Label  string
-	Style  CellStyle
+	Label string
+	Style CellStyle
+	// Symbol is a short terminal sample, such as a line, area block, or point dot.
 	Symbol string
 }
 
