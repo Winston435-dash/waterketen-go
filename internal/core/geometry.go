@@ -209,75 +209,62 @@ func (g Geometry) RepresentativePoint() Point {
 
 // --- Spatial index ----------------------------------------------------------
 //
-// The Python atlas uses a STRtree via `gdf.sindex.query(box)`. Our feature
-// counts per load are 2-60k, which makes a grid-index over cell buckets the
-// right call: cheap to build, one-shot per scene, fast enough per query.
+// The Python atlas uses a STRtree via `gdf.sindex.query(box)`. We bucketed by
+// 64 m grid cells first, but the cell map dominated the render profile at 98%
+// of frames (hashing [2]int keys per candidate). A sorted entry array with a
+// binary search on minX plus a bbox filter answers the same query with no
+// hashing and no map at all — a linear scan over the candidate window on
+// cache-friendly float32 fields.
 
-const gridIndexCell = 64 // metres per bucket
-
-// GridIndex buckets features by the cells their bbox touches.
+// GridIndex is a spatial index over the features' bounding boxes.
 type GridIndex struct {
-	cell    float64
-	buckets map[[2]int][]int
-	bounds  []BBox
-	seen    []int32 // generation stamps for Query's dedupe (never reallocated)
-	gen     int32
+	entries []giEntry // sorted by minX
 }
 
-// NewGridIndex builds a bucket index over the features' bounding boxes.
+// giEntry is one feature's bbox. float32 keeps the whole index 24 bytes per
+// feature so the scan window fits a few cache lines; RD coordinates in
+// metres need ~1 mm precision, far inside float32's ~7 digits.
+type giEntry struct {
+	minX, minY, maxX, maxY float32
+	id                     int32
+}
+
+// NewGridIndex builds the index over the features' bounding boxes. The type
+// keeps its historical name; the structure is the sorted array above.
 func NewGridIndex(geoms []Geometry) GridIndex {
-	idx := GridIndex{cell: gridIndexCell, buckets: map[[2]int][]int{}, bounds: make([]BBox, len(geoms)), seen: make([]int32, len(geoms))}
+	entries := make([]giEntry, 0, len(geoms))
 	for i, g := range geoms {
 		b, ok := g.Bounds()
 		if !ok {
 			continue
 		}
-		idx.bounds[i] = b
-		x0, y0 := int(math.Floor(b.MinX/idx.cell)), int(math.Floor(b.MinY/idx.cell))
-		x1, y1 := int(math.Floor(b.MaxX/idx.cell)), int(math.Floor(b.MaxY/idx.cell))
-		for x := x0; x <= x1; x++ {
-			for y := y0; y <= y1; y++ {
-				key := [2]int{x, y}
-				idx.buckets[key] = append(idx.buckets[key], i)
-			}
-		}
+		entries = append(entries, giEntry{
+			float32(b.MinX), float32(b.MinY), float32(b.MaxX), float32(b.MaxY), int32(i),
+		})
 	}
-	return idx
+	sort.Slice(entries, func(i, j int) bool { return entries[i].minX < entries[j].minX })
+	return GridIndex{entries: entries}
 }
 
-// Query returns the indices of features whose bbox intersects `b`, deduped
-// and ascending (the Python version returns sindex order; we guarantee a
-// stable order which the renderers already rely on).
-//
-// Dedupe stamps a per-feature generation counter instead of allocating a map
-// per query: the render path calls this once per visible layer PER FRAME (and
-// once more for the minimap), and on a full-city viewport the map was 77% of
-// the render's CPU. NOT safe for concurrent use — indices are per-scene, and
-// every caller (render, nearest) is single-goroutine.
+// Query returns the ascending indices of features whose bbox intersects `b`.
+// Binary-search the first entry that can intersect on x, then scan until an
+// entry starts past the query. NOT safe for concurrent use — scenes own their
+// index and the render/nearest paths are single-goroutine.
 func (idx *GridIndex) Query(b BBox) []int {
-	idx.gen++
-	if idx.gen < 0 { // wrapped after 2^31 queries: re-stamp everything
-		clear(idx.seen)
-		idx.gen = 1
-	}
-	seen, gen := idx.seen, idx.gen
+	es := idx.entries
+	minX, maxX := float32(b.MinX), float32(b.MaxX)
+	lo := sort.Search(len(es), func(i int) bool { return es[i].maxX >= minX })
 	var out []int
-	x0, y0 := int(math.Floor(b.MinX/idx.cell)), int(math.Floor(b.MinY/idx.cell))
-	x1, y1 := int(math.Floor(b.MaxX/idx.cell)), int(math.Floor(b.MaxY/idx.cell))
-	for x := x0; x <= x1; x++ {
-		for y := y0; y <= y1; y++ {
-			for _, i := range idx.buckets[[2]int{x, y}] {
-				if seen[i] == gen {
-					continue
-				}
-				seen[i] = gen
-				if idx.bounds[i].intersects(b) {
-					out = append(out, i)
-				}
-			}
+	minY, maxY := float32(b.MinY), float32(b.MaxY)
+	for i := lo; i < len(es); i++ {
+		e := &es[i]
+		if e.minX > maxX {
+			break // sorted by minX: nothing further can match
+		}
+		if e.minY <= maxY && e.maxY >= minY {
+			out = append(out, int(e.id))
 		}
 	}
-	// insertion order is grid-scan order; sort for determinism
 	sort.Ints(out)
 	return out
 }

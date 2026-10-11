@@ -197,7 +197,12 @@ func (t *Table) checkIndexed(tree string) error {
 
 // Select streams ONLY the rows with the given rowids. This is the R-tree
 // viewport read: one query with an IN list, so a 87.146-row layer costs the
-// viewport and nothing more. Rows come back in rowid order.
+// viewport and nothing more.
+//
+// Rows come back in whatever plan order SQLite chooses; layerFeatures already
+// sorts its features by Position after the read, so no ORDER BY is needed
+// here (the sorter dominated the profile when the IN list reached 5.000 ids
+// per layer).
 func (t *Table) Select(ids []int64, fn func(Row)) error {
 	if len(ids) == 0 {
 		return nil
@@ -212,7 +217,7 @@ func (t *Table) Select(ids []int64, fn func(Row)) error {
 		args[i] = id
 	}
 	query := `SELECT "` + strings.Join(cols.names, `","`) + `" FROM "` + t.name +
-		`" WHERE rowid IN (` + placeholders + `) ORDER BY rowid`
+		`" WHERE rowid IN (` + placeholders + `)`
 	rows, err := t.db.Query(query, args...)
 	if err != nil {
 		return fmt.Errorf("lees %s viewport: %w", t.name, err)
