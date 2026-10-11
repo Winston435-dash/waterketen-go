@@ -75,6 +75,17 @@ func queryTestLibrary(t *testing.T) *Library {
 	return lib
 }
 
+func TestAreaQueryRejectsMissingTypeColumn(t *testing.T) {
+	lib := queryTestLibrary(t)
+	db, err := sql.Open("sqlite", lib.LayerPath("gemalen"))
+	if err != nil { t.Fatal(err) }
+	defer db.Close()
+	if _, err := db.Exec(`ALTER TABLE pumps RENAME COLUMN type TO unknown_type`); err != nil { t.Fatal(err) }
+	result, err := RunAreaQuery(context.Background(), lib, "WK000001", []string{"rioolgemalen"})
+	if err != nil { t.Fatal(err) }
+	if row := result.Layers[0]; row.Status != QueryFailed || row.Count != -1 || len(row.IDs) != 0 { t.Fatalf("missing object type reported as a complete count: %+v", row) }
+}
+
 func TestAreaQueryRejectsNonFiniteCoordinates(t *testing.T) {
 	lib := queryTestLibrary(t)
 	db, err := sql.Open("sqlite", lib.LayerPath("gemalen"))
