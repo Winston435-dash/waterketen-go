@@ -64,13 +64,11 @@ func newCommandPalette(m Model, scope paletteScope) *commandPalette {
 			targeted: true,
 		})
 	}
-	for _, item := range []paletteCommand{
-		{group: "Algemeen", label: "Ververs bronnen", shortcut: "v", action: paletteProbe},
-		{group: "Algemeen", label: "Her-teken kaart", shortcut: "r", action: paletteRedraw, target: screens.ScreenKaart, targeted: true},
-		{group: "Algemeen", label: "Afsluiten", shortcut: "q", action: paletteQuit},
-	} {
-		p.commands = append(p.commands, item)
-	}
+	p.commands = append(p.commands,
+		paletteCommand{group: "Algemeen", label: "Ververs bronnen", shortcut: "v", action: paletteProbe},
+		paletteCommand{group: "Algemeen", label: "Her-teken kaart", shortcut: "r", action: paletteRedraw, target: screens.ScreenKaart, targeted: true},
+		paletteCommand{group: "Algemeen", label: "Afsluiten", shortcut: "q", action: paletteQuit},
+	)
 	for _, screen := range m.screens {
 		p.commands = append(p.commands, panelPaletteCommands(screen, true)...)
 	}
