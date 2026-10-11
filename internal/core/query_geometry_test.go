@@ -19,7 +19,7 @@ func TestAreaFilterUsesPolygonHolesAndBoundary(t *testing.T) {
 	}
 	cases := []struct {
 		name string
-		g Geometry
+		g    Geometry
 		want bool
 	}{
 		{"inside", Geometry{Kind: "point", Point: Point{X: 1, Y: 1}}, true},
@@ -42,7 +42,13 @@ func TestAreaFilterUsesPolygonHolesAndBoundary(t *testing.T) {
 	}
 	// A concave boundary excludes objects that lie only in its bounding box.
 	concave, err := newAreaFilter(Geometry{Kind: "polygon", Polygon: Polygon{queryRing([2]float64{0, 0}, [2]float64{10, 0}, [2]float64{0, 10}, [2]float64{0, 0})}})
-	if err != nil { t.Fatal(err) }
-	if concave.intersects(Geometry{Kind: "point", Point: Point{X: 9, Y: 9}}) { t.Fatal("bbox-only match counted") }
-	if _, err := newAreaFilter(Geometry{Kind: "point"}); err == nil { t.Fatal("non-polygon area accepted") }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if concave.intersects(Geometry{Kind: "point", Point: Point{X: 9, Y: 9}}) {
+		t.Fatal("bbox-only match counted")
+	}
+	if _, err := newAreaFilter(Geometry{Kind: "point"}); err == nil {
+		t.Fatal("non-polygon area accepted")
+	}
 }
