@@ -42,7 +42,7 @@ func TestLateMapDrawCannotReplaceNewerRenderAfterPanelSwitch(t *testing.T) {
 	m.drawing = false // the newer draw has already completed
 
 	m = lifecycleKey(m, '7')
-	next, _ := m.Update(screens.DrawnMsg{Render: lifecycleRender('░')})
+	next, _ := m.Update(screens.DrawnMsg{Render: lifecycleRender('░'), Generation: 1})
 	m = next.(Model)
 	m = lifecycleKey(m, '5')
 

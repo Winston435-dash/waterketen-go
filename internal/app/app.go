@@ -223,10 +223,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		next, cmd := k.Update(msg)
 		m.screens[i] = next
-		// A committed viewport is a NEW scene, so the draw must be dispatched
-		// here. Relying on afterScreenUpdate alone only triggers a draw for the
-		// ACTIVE panel, and it may run before the scene is set — which stranded
-		// the map on its spinner with the data already in memory.
+		// Keep map completions moving even when the user has left this panel.
+		// A new scene schedules a draw now, or invalidates the in-flight frame
+		// so its replacement is queued when that frame completes or Kaart returns.
 		if k.NeedsDraw() {
 			return m, tea.Batch(cmd, m.startSpinner(), m.requestMapDraw())
 		}
