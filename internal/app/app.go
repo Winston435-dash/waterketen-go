@@ -134,8 +134,7 @@ func (m *Model) beginProbe() tea.Cmd {
 func (m *Model) redrawMap() tea.Cmd {
 	if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart {
 		k.MarkDirty()
-		m.drawGen++
-		return tea.Batch(m.startSpinner(), m.drawTick())
+		return tea.Batch(m.startSpinner(), m.requestMapDraw())
 	}
 	return nil
 }
@@ -153,7 +152,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		m.ready = true
 		m = m.applySize()
-		return m, nil
+		var resize tea.Cmd
+		if k := m.kaart(); k != nil {
+			resize = k.ResizeCmd()
+		}
+		cmds := []tea.Cmd{resize, m.afterScreenUpdate()}
+		if resize != nil {
+			cmds = append(cmds, m.startSpinner())
+		}
+		return m, tea.Batch(cmds...)
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -221,9 +228,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// ACTIVE panel, and it may run before the scene is set — which stranded
 		// the map on its spinner with the data already in memory.
 		if k.NeedsDraw() {
-			m.drawGen++
-			m.drawing = true
-			return m, tea.Batch(cmd, m.startSpinner(), m.drawTick())
+			return m, tea.Batch(cmd, m.startSpinner(), m.requestMapDraw())
 		}
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	case screens.SceneMsg:
@@ -233,26 +238,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				k.SetScene(msg.Scene)
 			}
-			m.drawGen++
-			m.drawing = true
-			return m, tea.Batch(m.startSpinner(), m.drawTick())
+			return m, tea.Batch(m.startSpinner(), m.requestMapDraw())
 		}
 		return m, nil
 	case drawFrameMsg:
 		if msg.gen != m.drawGen {
-			return m, nil // stale
+			m.drawing = false
+			return m, m.maybeTriggerDraw() // replace a superseded queued frame
 		}
 		if k := m.kaart(); k != nil && k.NeedsDraw() {
-			return m, k.DrawCmd()
+			cmd := k.DrawCmd(msg.gen)
+			if cmd == nil {
+				m.drawing = false
+			}
+			return m, cmd
 		}
+		m.drawing = false
 		return m, nil
 	case screens.DrawnMsg:
+		if msg.Generation != m.drawGen {
+			m.drawing = false
+			return m, m.maybeTriggerDraw() // replace a superseded render
+		}
 		m.drawing = false
 		if k := m.kaart(); k != nil {
 			k.Commit(msg.Render)
 			if k.NeedsDraw() {
-				m.drawing = true
-				return m, tea.Batch(m.startSpinner(), m.drawTick())
+				return m, tea.Batch(m.startSpinner(), m.requestMapDraw())
 			}
 		}
 		return m, nil
@@ -372,12 +384,23 @@ func (m *Model) maybeTriggerDraw() tea.Cmd {
 	if m.screens[m.active].ID() != screens.ScreenKaart {
 		return nil
 	}
-	if k := m.kaart(); k != nil && k.NeedsDraw() && !m.drawing {
-		m.drawing = true
-		m.drawGen++
-		return m.drawTick()
+	return m.requestMapDraw()
+}
+
+// requestMapDraw serializes expensive renders. If a render is already queued or
+// running, advance the generation so its result is discarded and draw the latest
+// view when it completes (or when Kaart becomes active again).
+func (m *Model) requestMapDraw() tea.Cmd {
+	k := m.kaart()
+	if k == nil || !k.NeedsDraw() {
+		return nil
 	}
-	return nil
+	m.drawGen++
+	if m.drawing {
+		return nil
+	}
+	m.drawing = true
+	return m.drawTick()
 }
 
 func (m Model) applySize() Model {

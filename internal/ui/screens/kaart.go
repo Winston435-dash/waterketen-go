@@ -33,11 +33,12 @@ type Kaart struct {
 	lib    *core.Library
 	assets []core.AssetMeta
 
-	atlas   *core.LibraryAtlas // nil until the library opens
-	layers  []string           // chosen layer set (library world)
-	opening bool               // the area registry is being read
-	loads   int                // viewport reads in flight (0 or 1)
-	stale   bool               // a read finished while another was in flight
+	atlas         *core.LibraryAtlas // nil until the library opens
+	layers        []string           // chosen layer set (library world)
+	opening       bool               // the area registry is being read
+	loads         int                // viewport reads in flight (0 or 1)
+	stale         bool               // a read finished while another was in flight
+	resizePending bool               // a library viewport read is needed after SetSize
 
 	data  []*LayerData
 	scene *core.Scene
@@ -112,10 +113,19 @@ func (s *Kaart) SetSize(w, h int) {
 	resized := (w != s.w || h != s.h) && s.hasView
 	s.w, s.h = w, h
 	if resized {
-		// A resize changes the visible world: reload, do not rescale a stale
-		// frame. This is the one place a pan-like event costs a disk read.
-		s.requestLoad()
+		s.needsDraw = true
+		s.resizePending = s.atlas != nil
 	}
+}
+
+// ResizeCmd returns the library reload deferred by SetSize. Managed scenes only
+// need a redraw at the new dimensions, so they do not start a phantom load.
+func (s *Kaart) ResizeCmd() tea.Cmd {
+	if !s.resizePending {
+		return nil
+	}
+	s.resizePending = false
+	return s.requestLoad()
 }
 
 func (s *Kaart) Info() string {
@@ -359,11 +369,14 @@ func (s *Kaart) SetScene(scene *core.Scene) {
 func (s *Kaart) SetError(err error) { s.err = err.Error(); s.scene = nil }
 
 // DrawnMsg carries a finished render back into the app loop.
-type DrawnMsg struct{ Render *core.Render }
+type DrawnMsg struct {
+	Render     *core.Render
+	Generation int
+}
 
 // DrawCmd renders off the event loop against the CURRENT view — a resize, pan
 // or zoom issued during the draw invalidates via NeedsDraw and the app requeues.
-func (s *Kaart) DrawCmd() tea.Cmd {
+func (s *Kaart) DrawCmd(generation int) tea.Cmd {
 	if s.scene == nil || !s.hasView {
 		return nil
 	}
@@ -374,7 +387,7 @@ func (s *Kaart) DrawCmd() tea.Cmd {
 	return func() tea.Msg {
 		r := core.RenderScene(scene, view, w, h,
 			active, overlay, mode, labels, true, selected, street, nil, true)
-		return DrawnMsg{Render: &r}
+		return DrawnMsg{Render: &r, Generation: generation}
 	}
 }
 

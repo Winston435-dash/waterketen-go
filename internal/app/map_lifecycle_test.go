@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/x/ansi"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui/screens"
@@ -64,5 +64,30 @@ func TestMapResizeDispatchesRedrawInsteadOfLeavingMapBusy(t *testing.T) {
 	}
 	if view := ansi.Strip(k.View()); strings.Contains(view, "Kaart wordt geladen") {
 		t.Fatalf("resize left the managed map waiting on a load that cannot complete: %q", view)
+	}
+}
+
+func TestPanelReturnQueuesFreshDrawAfterStaleDrawCompletes(t *testing.T) {
+	m := mapLifecycleModel(t)
+	k := m.kaart()
+	k.SetScene(&core.Scene{Bounds: core.BBox{MinX: 0, MinY: 0, MaxX: 10, MaxY: 10}})
+	k.Commit(lifecycleRender('⣿'))
+	k.MarkDirty()
+	m.drawGen = 1
+	m.drawing = true // an older render is still in flight
+
+	m = lifecycleKey(m, '7')
+	next, _ := m.Update(screens.SceneMsg{Scene: &core.Scene{Bounds: core.BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}}})
+	m = next.(Model)
+	next, _ = m.Update(screens.DrawnMsg{Render: lifecycleRender('░'), Generation: 1})
+	m = next.(Model)
+
+	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'5'}})
+	m = next.(Model)
+	if cmd == nil {
+		t.Fatal("returning to Kaart did not queue a draw for the latest scene")
+	}
+	if !k.NeedsDraw() {
+		t.Fatal("stale render completion incorrectly marked the latest scene clean")
 	}
 }
