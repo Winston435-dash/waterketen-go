@@ -110,16 +110,7 @@ func RenderScene(
 				}
 			} else {
 				for _, line := range geom.Outlines() {
-					for i := 1; i < len(line); i++ {
-						ax, ay := frame.Project(line[i-1].X, line[i-1].Y)
-						bx, by := frame.Project(line[i].X, line[i].Y)
-						// Fast-reject: fully outside on one axis.
-						if (ax < -8 && bx < -8) || (ax > float64(grid.grid.DotWidth+8) && bx > float64(grid.grid.DotWidth+8)) ||
-							(ay < -8 && by < -8) || (ay > float64(grid.grid.DotHeight+8) && by > float64(grid.grid.DotHeight+8)) {
-							continue
-						}
-						grid.line(ax, ay, bx, by)
-					}
+					drawProjectedLine(frame, line, &grid)
 				}
 			}
 			if f.Street != "" && (layer == "riool" || layer == "straten") {
@@ -317,6 +308,26 @@ func RenderScene(
 	}
 
 	return Render{Cells: rows, Frame: frame, Counts: counts, Legend: legend}
+}
+
+// drawProjectedLine projects each vertex once; adjacent segments reuse their
+// shared endpoint while retaining the per-segment offscreen fast-reject.
+func drawProjectedLine(frame Frame, line LineString, grid *colourGrid) {
+	if len(line) < 2 {
+		return
+	}
+	ax, ay := frame.Project(line[0].X, line[0].Y)
+	for _, point := range line[1:] {
+		bx, by := frame.Project(point.X, point.Y)
+		outside := (ax < -8 && bx < -8) ||
+			(ax > float64(grid.grid.DotWidth+8) && bx > float64(grid.grid.DotWidth+8)) ||
+			(ay < -8 && by < -8) ||
+			(ay > float64(grid.grid.DotHeight+8) && by > float64(grid.grid.DotHeight+8))
+		if !outside {
+			grid.line(ax, ay, bx, by)
+		}
+		ax, ay = bx, by
+	}
 }
 
 func gridStyleToCell(style string) CellStyle {
