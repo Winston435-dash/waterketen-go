@@ -103,12 +103,12 @@ func RenderScene(
 					px, py := frame.Project(p.X, p.Y)
 					grid.setDot(int(math.Round(px)), int(math.Round(py)))
 				}
-			} else if pts := geom.Dots(); len(pts) > 0 {
-				for _, p := range pts {
+			} else {
+				for _, p := range geom.Dots() {
 					px, py := frame.Project(p.X, p.Y)
 					grid.setDot(int(math.Round(px)), int(math.Round(py)))
 				}
-			} else {
+				// Collections may contain points AND outlines; draw both.
 				// Clip lazily per segment: the grid drops out-of-range dots, so
 				// a geometry intersection would only add work for ordinary lines.
 				for _, line := range geom.Outlines() {

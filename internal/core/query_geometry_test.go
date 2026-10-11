@@ -51,9 +51,15 @@ func TestQuerySupportsCollectedAndMultiPointGeometry(t *testing.T) {
 		if len(geometry.Dots()) == 0 {
 			t.Fatal("collected point lost")
 		}
-		if geometry.Distance(Point{X:20,Y:20}) != 0 { t.Fatal("collected point not inspectable by distance") }
-		if anchor := geometry.RepresentativePoint(); math.IsNaN(anchor.X) { t.Fatal("collection has no label anchor") }
-		if anchor := geometry.Interpolate(0.5); math.IsNaN(anchor.X) { t.Fatal("collection cannot be framed") }
+		if geometry.Distance(Point{X: 20, Y: 20}) != 0 {
+			t.Fatal("collected point not inspectable by distance")
+		}
+		if anchor := geometry.RepresentativePoint(); math.IsNaN(anchor.X) {
+			t.Fatal("collection has no label anchor")
+		}
+		if anchor := geometry.Interpolate(0.5); math.IsNaN(anchor.X) {
+			t.Fatal("collection cannot be framed")
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ package core
 
 import (
 	"math"
+	"reflect"
 	"testing"
 )
 
@@ -41,6 +42,22 @@ func BenchmarkRenderSceneRealLibrary(b *testing.B) {
 	}
 	b.ReportMetric(float64(featureCount), "features")
 	b.ReportMetric(float64(len(scene.Layers["riool"])), "riool")
+}
+
+func TestRenderSceneDrawsEveryCollectionPart(t *testing.T) {
+	bounds := BBox{MinX: 0, MinY: 0, MaxX: 20, MaxY: 20}
+	parts := []Geometry{{Kind: "point", Point: Point{X: 18, Y: 18}}, {Kind: "linestring", Line: LineString{{X: 2, Y: 2}, {X: 2, Y: 12}}}}
+	render := func(geometries []Geometry) Render {
+		features := make([]Feature, len(geometries))
+		for i, g := range geometries {
+			features[i] = Feature{Layer: "riool", Position: i, Geometry: g}
+		}
+		scene := &Scene{Bounds: bounds, Layers: map[string][]Feature{"riool": features}, Index: map[string]GridIndex{"riool": NewGridIndex(geometries)}}
+		return RenderScene(scene, FitView(bounds), 12, 6, "riool", false, "netwerk", false, false, nil, "", []string{"riool"}, false)
+	}
+	if got, want := render([]Geometry{{Kind: "collection", Parts: parts}}), render(parts); !reflect.DeepEqual(got.Cells, want.Cells) {
+		t.Fatal("collection omitted a line or point part")
+	}
 }
 
 func TestRenderSceneLineRasterMatchesIndependentProjection(t *testing.T) {
