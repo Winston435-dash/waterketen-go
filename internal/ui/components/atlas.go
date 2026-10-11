@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"waterketen/internal/core"
+	"waterketen/internal/ui"
 )
 
 // RenderAtlas turns the core renderer's semantic grid into styled terminal
@@ -37,7 +38,54 @@ func RenderAtlas(r *core.Render) string {
 			b.WriteByte('\n')
 		}
 	}
-	return b.String()
+	grid := b.String()
+	if len(r.Legend) == 0 || len(r.Cells) == 0 {
+		return grid
+	}
+	legend := renderAtlasLegend(r.Legend, len(r.Cells[0]))
+	if legend == "" {
+		return grid
+	}
+	return grid + "\n" + legend
+}
+
+func renderAtlasLegend(entries []core.LegendEntry, width int) string {
+	if width < 8 || len(entries) == 0 {
+		return ""
+	}
+
+	heading := lipgloss.NewStyle().Foreground(ui.ColorMuted).Render("Legenda:")
+	var lines []string
+	line := heading
+	lineWidth := lipgloss.Width(heading)
+	for _, entry := range entries {
+		symbol := entry.Symbol
+		if symbol == "" {
+			symbol = "•"
+		}
+		mark := atlasStyle(entry.Style).Render(symbol)
+		labelWidth := width - lipgloss.Width(mark) - 1
+		if labelWidth < 1 {
+			continue
+		}
+		label := entry.Label
+		if lipgloss.Width(label) > labelWidth {
+			label = strings.TrimRight(SingleLine(label, labelWidth), " ")
+		}
+		item := mark + " " + label
+		itemWidth := lipgloss.Width(item)
+		if lineWidth+2+itemWidth > width {
+			lines = append(lines, line)
+			line, lineWidth = item, itemWidth
+			continue
+		}
+		line += "  " + item
+		lineWidth += 2 + itemWidth
+	}
+	if line != "" {
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // atlasStyle maps a core CellStyle to lipgloss. There is deliberately no colour

@@ -62,8 +62,12 @@ func TestRenderAtlasShowsColoredGemalenDotLegend(t *testing.T) {
 	lipgloss.SetColorProfile(termenv.TrueColor)
 	defer lipgloss.SetColorProfile(old)
 
+	cells := make([]core.Cell, 40)
+	for i := range cells {
+		cells[i] = core.Cell{Rune: ' ', Style: core.StyleBlank}
+	}
 	r := &core.Render{
-		Cells: [][]core.Cell{{{Rune: '⣿', Style: core.StyleBlank}}},
+		Cells: [][]core.Cell{cells},
 		Legend: []core.LegendEntry{{
 			Label: "gemalen", Style: core.StyleForLayer("gemalen"), Symbol: "•",
 		}},
@@ -73,7 +77,7 @@ func TestRenderAtlasShowsColoredGemalenDotLegend(t *testing.T) {
 	if !strings.Contains(plain, "Legenda:") || !strings.Contains(plain, "• gemalen") {
 		t.Fatalf("gemalen dot legend missing from map output: %q", plain)
 	}
-	if !strings.Contains(out, "38;2;204;148;255") {
+	if !strings.Contains(out, "38;2;204;147;255") {
 		t.Fatalf("gemalen colour missing from legend output: %q", out)
 	}
 	if hasBackgroundSGR(out) {

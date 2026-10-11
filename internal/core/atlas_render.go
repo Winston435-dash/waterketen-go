@@ -329,6 +329,21 @@ func RenderScene(
 	return Render{Cells: rows, Frame: frame, Counts: counts, Legend: legend}
 }
 
+func layerLegendEntry(name string) LegendEntry {
+	symbol := "━━"
+	switch name {
+	case "gemalen", "putten":
+		symbol = "•"
+	case "drinkwater", "water", "groen", "gebouwen":
+		symbol = "■"
+	}
+	return LegendEntry{Label: name, Style: StyleForLayer(name), Symbol: symbol}
+}
+
+func valueLegendEntry(label string, style CellStyle) LegendEntry {
+	return LegendEntry{Label: label, Style: style, Symbol: "━━"}
+}
+
 func gridStyleToCell(style string) CellStyle {
 	if style == "" {
 		return StyleBlank
