@@ -90,4 +90,15 @@ func TestPanelReturnQueuesFreshDrawAfterStaleDrawCompletes(t *testing.T) {
 	if !k.NeedsDraw() {
 		t.Fatal("stale render completion incorrectly marked the latest scene clean")
 	}
+
+	next, drawCmd := m.Update(drawFrameMsg{gen: m.drawGen})
+	if drawCmd == nil {
+		t.Fatal("queued map frame did not start the render")
+	}
+	done := drawCmd()
+	next, _ = next.(Model).Update(done)
+	m = next.(Model)
+	if k.NeedsDraw() || strings.Contains(ansi.Strip(k.View()), "Kaart wordt getekend") {
+		t.Fatal("latest map render did not complete after returning to the panel")
+	}
 }
