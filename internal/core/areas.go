@@ -146,38 +146,3 @@ func DefaultArea(areas []Area) (Area, bool) {
 	}
 	return Area{}, false
 }
-
-// FilterAreas is the picker's search: case-insensitive substring on the name or
-// the code, prefix matches first, then alphabetical. An empty query returns
-// the whole registry in its sorted order.
-func FilterAreas(areas []Area, query string) []Area {
-	q := NormaliseName(query)
-	if q == "" {
-		return append([]Area(nil), areas...)
-	}
-	type hit struct {
-		area   Area
-		prefix bool
-	}
-	var hits []hit
-	for _, a := range areas {
-		name := NormaliseName(a.Name)
-		switch {
-		case strings.Contains(name, q):
-			hits = append(hits, hit{a, strings.HasPrefix(name, q)})
-		case strings.Contains(strings.ToLower(a.Code), q):
-			hits = append(hits, hit{a, false})
-		}
-	}
-	sort.SliceStable(hits, func(i, j int) bool {
-		if hits[i].prefix != hits[j].prefix {
-			return hits[i].prefix
-		}
-		return hits[i].area.Name < hits[j].area.Name
-	})
-	out := make([]Area, len(hits))
-	for i, h := range hits {
-		out[i] = h.area
-	}
-	return out
-}

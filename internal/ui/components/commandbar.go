@@ -33,6 +33,14 @@ func NewCommandBar() CommandBar {
 	return CommandBar{help: h}
 }
 
+// barInk/barSep are the footer's ink and separator, built once. The bar is
+// re-rendered on every frame, so per-render style construction would be the
+// hottest allocation in the app for no reason.
+var (
+	barInk = lipgloss.NewStyle().Foreground(ui.ColorPrimary)
+	barSep = lipgloss.NewStyle().Foreground(ui.ColorBorder).Render(" · ")
+)
+
 // View renders ONE row of the screen's active bindings, clipped to width.
 //
 // The one-row guarantee matters on a phone: lipgloss help wraps to as many rows
@@ -51,23 +59,20 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 		c.help.ShowAll = false
 		return SingleLine(c.help.ShortHelpView(bindings), width)
 	}
-	sep := lipgloss.NewStyle().Foreground(ui.ColorBorder).Render(" · ")
-	ink := lipgloss.NewStyle().Foreground(ui.ColorPrimary).Render
 	parts := make([]string, 0, len(bindings))
 	for _, b := range bindings {
 		if k := b.Help().Key; k != "" {
-			parts = append(parts, ink(k))
+			parts = append(parts, barInk.Render(k))
 		}
 	}
 	// Clip by WHOLE bindings, not mid-token: a footer ending in a dangling "·"
 	// reads as a rendering bug. SingleLine is the last-resort clip.
-	return SingleLine(clipParts(parts, lipgloss.Width(sep), width), width)
+	return SingleLine(clipParts(parts, lipgloss.Width(barSep), width), width)
 }
 
 // clipParts joins parts with a separator, dropping trailing parts that would not
 // fit so the row never ends in a separator.
 func clipParts(parts []string, sepWidth, width int) string {
-	sep := lipgloss.NewStyle().Foreground(ui.ColorBorder).Render(" · ")
 	total, end := 0, 0
 	for i, p := range parts {
 		add := lipgloss.Width(p)
@@ -82,5 +87,5 @@ func clipParts(parts []string, sepWidth, width int) string {
 	if end == 0 && len(parts) > 0 {
 		return parts[0]
 	}
-	return strings.Join(parts[:end], sep)
+	return strings.Join(parts[:end], barSep)
 }

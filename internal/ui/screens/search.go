@@ -91,14 +91,14 @@ func (s *StreetSearch) View() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	if s.busy {
-		b.WriteString(components.SingleLine(components.MutedText("  zoeken…"), innerW))
+		b.WriteString(components.SingleLine(components.Muted("  zoeken…"), innerW))
 		b.WriteByte('\n')
 	} else if len(s.matches) == 0 {
 		msg := "  typ een straatnaam"
 		if s.query != "" {
 			msg = "  geen straat gevonden"
 		}
-		b.WriteString(components.SingleLine(components.MutedText(msg), innerW))
+		b.WriteString(components.SingleLine(components.Muted(msg), innerW))
 		b.WriteByte('\n')
 	}
 	for i, name := range s.matches {
@@ -109,13 +109,13 @@ func (s *StreetSearch) View() string {
 		if i == 0 {
 			b.WriteString(components.Selected(components.SingleLine(line, innerW), innerW))
 		} else {
-			b.WriteString(components.SingleLine(components.MutedText(line), innerW))
+			b.WriteString(components.SingleLine(components.Muted(line), innerW))
 		}
 		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
 	b.WriteString(components.SingleLine(
-		components.MutedText("typ om te zoeken · enter focust · esc sluit"), innerW))
+		components.Muted("typ om te zoeken · enter focust · esc sluit"), innerW))
 	title := "Straat zoeken"
 	if len(s.matches) > 0 {
 		title = "Straat zoeken · " + strconv.Itoa(len(s.matches)) + " treffers"
@@ -231,6 +231,3 @@ func (s *Kaart) FocusStreetCmd(name string) tea.Cmd {
 	s.needsDraw = true
 	return nil
 }
-
-// focusStreet is the street the map highlights; the empty string means none.
-func (s *Kaart) focusStreet() string { return s.street }

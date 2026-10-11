@@ -125,11 +125,6 @@ func (s *AnalyseScreen) Info() string {
 // DataMsg carries loaded analysis data back to the app.
 type DataMsg []*LayerData
 
-// LoadDataCmd loads every managed asset off the event loop.
-func LoadDataCmd(assets []core.AssetMeta) tea.Cmd {
-	return func() tea.Msg { return DataMsg(LoadAssets(assets)) }
-}
-
 // SetData stores the loaded assets, clears the busy flag and resets the scroll.
 func (s *AnalyseScreen) SetData(d []*LayerData) { s.data, s.scroll, s.busy = d, 0, false }
 

@@ -290,7 +290,7 @@ func (p *commandPalette) View(width, height int) string {
 	}
 	if height == 2 {
 		return components.SingleLine(prompt, width) + "\n" + components.SingleLine(
-			components.MutedText("enter uitvoeren · esc terug"), width)
+			components.Muted("enter uitvoeren · esc terug"), width)
 	}
 
 	commands := p.filteredCommands()
@@ -306,7 +306,7 @@ func (p *commandPalette) View(width, height int) string {
 		if len(p.commands) == 0 && p.scope == palettePanel {
 			empty = "Geen paneelopdrachten"
 		}
-		lines = append(lines, components.SingleLine(components.MutedText(empty), width))
+		lines = append(lines, components.SingleLine(components.Muted(empty), width))
 	} else {
 		for i := start; i < len(commands) && len(lines) < height-1; i++ {
 			command := commands[i]
@@ -321,6 +321,6 @@ func (p *commandPalette) View(width, height int) string {
 			}
 		}
 	}
-	lines = append(lines, components.SingleLine(components.MutedText("↑↓ kiezen · enter uitvoeren · esc terug"), width))
+	lines = append(lines, components.SingleLine(components.Muted("↑↓ kiezen · enter uitvoeren · esc terug"), width))
 	return strings.Join(lines, "\n")
 }

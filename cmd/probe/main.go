@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"waterketen/internal/core"
 )
@@ -75,27 +78,13 @@ func bobOf(r core.Row) float64 {
 	case useB:
 		return b
 	}
-	return nan()
-}
-
-func nan() float64 {
-	f := float64(0)
-	return f / f
+	return math.NaN()
 }
 
 func base(p string) string {
-	name := p
-	for i := len(p) - 1; i >= 0; i-- {
-		if p[i] == '/' {
-			name = p[i+1:]
-			break
-		}
-	}
-	name = name[:len(name)-len(".gpkg")]
-	for i := 0; i < len(name); i++ {
-		if name[i] == '-' {
-			return name[i+1:]
-		}
+	name := strings.TrimSuffix(filepath.Base(p), ".gpkg")
+	if i := strings.IndexByte(name, '-'); i >= 0 {
+		return name[i+1:]
 	}
 	return name
 }

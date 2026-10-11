@@ -4,6 +4,8 @@
 package components
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/lipgloss"
 
 	"waterketen/internal/ui"
@@ -44,7 +46,7 @@ func withBorderTitle(rendered, title string, color lipgloss.TerminalColor) strin
 	// Cheap overlay: inject the title after the top-left corner of the first line.
 	// (Lip Gloss v1 lacks native border titles; this keeps it semantic: panels
 	// own their title, screens never draw one.)
-	first, rest, found := cut(rendered)
+	first, rest, found := strings.Cut(rendered, "\n")
 	if !found {
 		return rendered
 	}
@@ -69,14 +71,6 @@ func withBorderTitle(rendered, title string, color lipgloss.TerminalColor) strin
 	return head + label + tail + "\n" + rest
 }
 
-// cut splits s at the first newline.
-func cut(s string) (first, rest string, found bool) {
-	if i := indexByte(s, '\n'); i >= 0 {
-		return s[:i], s[i+1:], true
-	}
-	return s, "", false
-}
-
 // SingleLine guarantees a string occupies EXACTLY ONE row of `width` cells: it
 // takes the first line, truncates it ANSI-aware, and pads to the width. This is
 // the primitive for the header and the command bar, which are each one row of the
@@ -94,7 +88,7 @@ func SingleLine(s string, width int) string {
 	if width < 1 {
 		return ""
 	}
-	if i := indexByte(s, '\n'); i >= 0 {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
 		s = s[:i]
 	}
 	out := make([]rune, 0, width)
@@ -180,15 +174,6 @@ func runeWidth(r rune) int {
 	return 1
 }
 
-func indexByte(s string, b byte) int {
-	for i := 0; i < len(s); i++ {
-		if s[i] == b {
-			return i
-		}
-	}
-	return -1
-}
-
 // sliceRunes returns the printable cell range [from, to) of a single-line
 // rendered string. Lip Gloss widths are cell widths; we walk ANSI-aware.
 func sliceRunes(s string, from, to int) string {
@@ -217,4 +202,17 @@ func truncateLeft(s string, n int) string {
 		col++
 	}
 	return string(out)
+}
+
+// EmptyState is the single pattern for "there is nothing here": a muted glyph,
+// a bold one-line headline, then the action the user should take (the fetch
+// hint, typically). It exists so no screen invents its own sad-empty-box.
+func EmptyState(headline, hint string, width int) string {
+	body := lipgloss.JoinVertical(lipgloss.Left,
+		Muted("∅"),
+		Strong(headline),
+		"",
+		Muted(hint),
+	)
+	return lipgloss.Place(width, 5, lipgloss.Left, lipgloss.Top, body)
 }

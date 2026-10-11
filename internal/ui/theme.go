@@ -71,10 +71,3 @@ const (
 	// components.Busy so the alphabet stays pure.
 	SpinnerFrames = "⣾⣽⣻⢿⡿⣟⣯⣷"
 )
-
-// SpinnerFrame returns frame n of the app spinner (wrapping). Pure, so the
-// app's tick handler stays free of presentation details.
-func SpinnerFrame(n int) string {
-	frames := []rune(SpinnerFrames)
-	return string(frames[((n%len(frames))+len(frames))%len(frames)])
-}

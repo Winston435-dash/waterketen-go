@@ -11,6 +11,13 @@ import (
 	"strings"
 )
 
+// lowPriorityLayers draw first and dimmest: their ink should never outshine the
+// network above it. Built once, not per frame.
+var lowPriority = map[string]bool{
+	"drinkwater": true, "water": true, "straten": true,
+	"groen": true, "gebouwen": true, "spoor": true,
+}
+
 // RenderScene draws the scene into a width×height cell raster. This is the
 // full port of atlas.render_atlas: RD background grid, candidate selection,
 // per-layer colouring, highlight priority, the overview minimap with the
@@ -61,10 +68,6 @@ func RenderScene(
 	// over their surroundings.
 	counts := map[string]int{}
 	labelFeatures := map[string][]Geometry{}
-	lowPriority := map[string]bool{
-		"drinkwater": true, "water": true, "straten": true,
-		"groen": true, "gebouwen": true, "spoor": true,
-	}
 	isSelected := func(f Feature) bool {
 		return selected != nil && f.Layer == selected.Layer && f.Position == selected.Position
 	}

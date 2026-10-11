@@ -109,25 +109,6 @@ func TestAreaLabelLeadsWithCode(t *testing.T) {
 		t.Errorf("label %q mist de naam", got)
 	}
 }
-func TestFilterAreas(t *testing.T) {
-	areas, err := LoadAreas(testLibrary(t))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := len(FilterAreas(areas, "")); got != len(areas) {
-		t.Errorf("lege query gaf %d, verwacht %d", got, len(areas))
-	}
-	hits := FilterAreas(areas, "delf")
-	if len(hits) == 0 || hits[0].Name != "Delfshaven" {
-		t.Errorf("zoeken op 'delf' gaf %+v", hits)
-	}
-	if byCode := FilterAreas(areas, "GM0599"); len(byCode) != 1 || byCode[0].Code != DefaultAreaCode {
-		t.Errorf("zoeken op GM0599 = %+v", byCode)
-	}
-	if got := FilterAreas(areas, "zzz-niets"); len(got) != 0 {
-		t.Errorf("onzin-query gaf %d treffers", len(got))
-	}
-}
 
 // TestMatchStreetQueryAcceptsSpaces is the guard for the reported bug's second half.
 // Fixing the space KEY alone is not enough: "west zeedijk" must actually FIND

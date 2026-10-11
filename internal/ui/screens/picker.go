@@ -229,12 +229,12 @@ func (p *Picker) View() string {
 	if p.Searchable() {
 		b.WriteString(components.Strong("zoek: " + p.query))
 	} else {
-		b.WriteString(components.MutedText("lagen die de kaart tekent"))
+		b.WriteString(components.Muted("lagen die de kaart tekent"))
 	}
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	if len(p.filtered) == 0 {
-		b.WriteString(components.SingleLine(components.MutedText("  geen treffers"), innerW))
+		b.WriteString(components.SingleLine(components.Muted("  geen treffers"), innerW))
 		b.WriteByte('\n')
 	}
 	start := 0
@@ -254,12 +254,12 @@ func (p *Picker) View() string {
 		if i == p.cursor {
 			b.WriteString(components.Selected(components.SingleLine(line, innerW), innerW))
 		} else {
-			b.WriteString(components.SingleLine(components.MutedText(line), innerW))
+			b.WriteString(components.SingleLine(components.Muted(line), innerW))
 		}
 		b.WriteByte('\n')
 	}
 	b.WriteByte('\n')
-	b.WriteString(components.SingleLine(components.MutedText(p.hint), innerW))
+	b.WriteString(components.SingleLine(components.Muted(p.hint), innerW))
 	title := p.title
 	if p.Searchable() && p.query != "" {
 		title = fmt.Sprintf("%s · %d van %d", p.title, len(p.filtered), len(p.all))

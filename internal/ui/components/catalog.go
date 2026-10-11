@@ -71,30 +71,27 @@ func escapeMarkdownText(text string) string {
 }
 
 func catalogMarkdownStyles() glamouransi.StyleConfig {
-	bold, italic := true, true
-	zero, one := uint(0), uint(1)
 	primary := adaptiveMarkdownColor(ui.ColorPrimary)
 	text := adaptiveMarkdownColor(ui.ColorText)
 	muted := adaptiveMarkdownColor(ui.ColorMuted)
 	warning := adaptiveMarkdownColor(ui.ColorWarning)
 	ok := adaptiveMarkdownColor(ui.ColorOK)
-	underline := true
 	return glamouransi.StyleConfig{
 		Document: glamouransi.StyleBlock{
 			StylePrimitive: glamouransi.StylePrimitive{Color: &text},
-			Margin:         &zero,
+			Margin:         ptr(uint(0)),
 		},
 		Heading: glamouransi.StyleBlock{
-			StylePrimitive: glamouransi.StylePrimitive{Color: &primary, Bold: &bold},
+			StylePrimitive: glamouransi.StylePrimitive{Color: &primary, Bold: ptr(true)},
 		},
 		BlockQuote: glamouransi.StyleBlock{
 			StylePrimitive: glamouransi.StylePrimitive{Color: &warning},
-			Indent:         &one,
-			IndentToken:    stringValue("│ "),
+			Indent:         ptr(uint(1)),
+			IndentToken:    ptr("│ "),
 		},
-		Emph:   glamouransi.StylePrimitive{Color: &muted, Italic: &italic},
-		Strong: glamouransi.StylePrimitive{Bold: &bold},
-		Link:   glamouransi.StylePrimitive{Color: &primary, Underline: &underline},
+		Emph:   glamouransi.StylePrimitive{Color: &muted, Italic: ptr(true)},
+		Strong: glamouransi.StylePrimitive{Bold: ptr(true)},
+		Link:   glamouransi.StylePrimitive{Color: &primary, Underline: ptr(true)},
 		Code: glamouransi.StyleBlock{
 			StylePrimitive: glamouransi.StylePrimitive{Color: &ok},
 		},
@@ -108,7 +105,9 @@ func adaptiveMarkdownColor(color lipgloss.AdaptiveColor) string {
 	return color.Light
 }
 
-func stringValue(value string) *string { return &value }
+// ptr returns a pointer to v — for glamour's pointer-taking style config, so a
+// bool or uint doesn't need a named local just to take its address.
+func ptr[T any](v T) *T { return &v }
 
 func catalogPlainDocument(lines []core.CatalogLine, width int) string {
 	rows := make([]string, 0, len(lines))
