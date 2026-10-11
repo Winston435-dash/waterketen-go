@@ -1,3 +1,8 @@
 /waterketen
 /waterketen-tui
 *.test
+
+# Generated demo renders (reproducible via demo/render.sh)
+/demo/*.mp4
+/demo/*.gif
+/demo/*.png
