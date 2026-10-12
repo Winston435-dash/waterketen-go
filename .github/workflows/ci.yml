@@ -25,3 +25,5 @@ jobs:
       - run: go test -race -count=1 ./...
       - name: WKB fuzz smoke test
         run: go test ./internal/core -run '^$' -fuzz '^FuzzWKB$' -fuzztime=10s -parallel=2
+      - name: GeoPackage header fuzz smoke test
+        run: go test ./internal/core -run '^$' -fuzz '^FuzzGeoPackageBinary$' -fuzztime=10s -parallel=2

@@ -31,6 +31,7 @@ type AnalyseScreen struct {
 	w, h     int
 	scroll   int
 	lines    []string // cached when data changes, never recomputed by scrolling
+	report   []string // data-only report, unchanged when diagnostics arrive
 	failures []error
 }
 
@@ -56,12 +57,20 @@ type DataMsg struct {
 // SetData stores the loaded assets, clears the busy flag and resets the scroll.
 func (s *AnalyseScreen) SetData(d []*LayerData) {
 	s.data, s.scroll, s.busy = d, 0, false
-	s.lines = s.renderLines()
+	s.report = s.renderLines()
+	s.refreshLines()
 }
 
 func (s *AnalyseScreen) SetErrors(errors []error) {
 	s.failures = errors
-	s.lines = s.renderLines()
+	s.refreshLines()
+}
+
+func (s *AnalyseScreen) refreshLines() {
+	s.lines = append([]string(nil), s.report...)
+	for _, err := range s.failures {
+		s.lines = append(s.lines, components.Error("Leesfout: "+err.Error()))
+	}
 }
 
 // Busy reports bounded work in flight: the managed assets are being read.
@@ -165,9 +174,6 @@ func (s *AnalyseScreen) renderLines() []string {
 	}
 	if len(out) > 0 {
 		out = out[:len(out)-1] // trailing blank line
-	}
-	for _, err := range s.failures {
-		out = append(out, components.Error("Leesfout: "+err.Error()))
 	}
 	return out
 }

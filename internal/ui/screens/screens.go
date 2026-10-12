@@ -280,11 +280,7 @@ func (s *Bronnen) View() string {
 }
 
 func (s *Bronnen) refreshHealth() {
-	lines := strings.Split(s.renderHealth(), "\n")
-	for i, line := range lines {
-		lines[i] = components.SingleLine(line, s.body.Width)
-	}
-	s.body.SetContent(strings.Join(lines, "\n"))
+	s.body.SetContent(components.WrappedText(s.renderHealth(), s.body.Width))
 }
 
 func (s *Bronnen) renderHealth() string {
@@ -325,8 +321,11 @@ func (s *Bronnen) renderHealth() string {
 		b.WriteString(components.Strong("Gedetecteerd, niet bedraad:"))
 		b.WriteByte('\n')
 		for _, h := range unwired {
-			b.WriteString(components.Muted("  " + h.Label + " — " + h.Note +
-				"  ·  " + licenseOrUnknown(h.License)))
+			b.WriteString(components.Muted("  " + h.Label))
+			b.WriteByte('\n')
+			b.WriteString(components.Muted("   licentie: " + licenseOrUnknown(h.License)))
+			b.WriteByte('\n')
+			b.WriteString(components.Muted("   " + h.Note))
 			b.WriteByte('\n')
 		}
 	}

@@ -151,6 +151,9 @@ func TestAnalysisCachesReportsAndShowsReadFailures(t *testing.T) {
 		t.Fatal("report recomputed during View")
 	}
 	s.SetErrors([]error{errors.New("test failure")})
+	if !strings.HasPrefix(s.View(), before) {
+		t.Fatal("diagnostics recomputed the cached report")
+	}
 	if !strings.Contains(s.View(), "test failure") {
 		t.Fatal("load error hidden")
 	}
@@ -172,15 +175,17 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 		t.Fatal("page down did not scroll")
 	}
 	s.Update(tea.KeyMsg{Type: tea.KeyEnd})
-	if !strings.Contains(s.View(), "Gedetecteerd") {
+	if !s.body.AtBottom() {
 		t.Fatal("end did not reach unwired sources")
 	}
 	// Walk every row, verifying bounded rendering and reachability.
 	s.Update(tea.KeyMsg{Type: tea.KeyHome})
 	seenLast := false
+	seenRestrictedLicence := false
 	for i := 0; i < s.body.TotalLineCount(); i++ {
 		view := s.View()
 		seenLast = seenLast || strings.Contains(view, "Source 24")
+		seenRestrictedLicence = seenRestrictedLicence || strings.Contains(view, "CC BY-NC-ND")
 		for _, line := range strings.Split(view, "\n") {
 			if lipgloss.Width(line) > 44 {
 				t.Fatal("source row exceeds viewport width")
@@ -190,6 +195,9 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 	}
 	if !seenLast {
 		t.Fatal("last wired source cannot be reached")
+	}
+	if !seenRestrictedLicence {
+		t.Fatal("unwired licence is truncated rather than reachable")
 	}
 	s.Update(tea.KeyMsg{Type: tea.KeyHome})
 	if s.body.YOffset != 0 {
