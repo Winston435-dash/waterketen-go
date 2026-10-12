@@ -57,7 +57,7 @@ func QueryLayers(lib *Library) []QueryLayer {
 	}
 	seen := map[string]bool{}
 	for i := range out {
-		_, out[i].Available = lib.Manifest.Layers[out[i].Layer]
+		out[i].Available = localFileExists(lib.LayerPath(out[i].Layer))
 		seen[out[i].ID] = true
 	}
 	catalog := NewCatalog()
@@ -66,7 +66,7 @@ func QueryLayers(lib *Library) []QueryLayer {
 		if seen[id] {
 			continue
 		}
-		l := QueryLayer{ID: id, Label: id, Layer: id, Available: true}
+		l := QueryLayer{ID: id, Label: id, Layer: id, Available: localFileExists(lib.LayerPath(id))}
 		for _, c := range catalog.Layers {
 			if c.ID == id {
 				l.Label, l.SourceID = c.Label, c.SourceID

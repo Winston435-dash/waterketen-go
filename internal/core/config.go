@@ -125,8 +125,12 @@ func (a AssetMeta) ProcessedExists() bool {
 	if a.ProcessedPath == "" {
 		return false
 	}
-	_, err := os.Stat(a.ProcessedPath)
-	return err == nil
+	return localFileExists(a.ProcessedPath)
+}
+
+func localFileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsRegular()
 }
 
 // --- Library (the snapshot store under $DATA_ROOT/library) ------------------
@@ -206,4 +210,13 @@ func (l *Library) HasLayers(names ...string) []string {
 		}
 	}
 	return out
+}
+
+// LayerNames is the complete published vector inventory, including new layer
+// names that do not yet have a dedicated colour or a catalog explanation.
+func (l *Library) LayerNames() []string {
+	if l == nil { return nil }
+	names := make([]string, 0, len(l.Manifest.Layers))
+	for name := range l.Manifest.Layers { names = append(names, name) }
+	return OrderLayers(names)
 }

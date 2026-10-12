@@ -49,6 +49,7 @@ const (
 	// materialInk is the fallback ink for a material legend swatch whose colour
 	// core cannot resolve without the scene's material map.
 	materialInk = "#9ddeda"
+	genericLayerInk = "#9aa8b8" // new snapshot layers without a dedicated data colour
 )
 
 // bobBands are the sewer-invert depth bands the "bob" colour mode draws, in
@@ -96,8 +97,8 @@ var DrawOrder = []string{
 	"riool", "drinkwaterleidingen", "putten", "gemalen", "oppervlaktewatergemalen",
 }
 
-// OrderLayers filters `names` to the known layers and sorts them into
-// DrawOrder. Unknown names are dropped rather than drawn blind.
+// OrderLayers preserves the established paint order and appends new layer names
+// alphabetically. A published vector layer must not vanish behind an allowlist.
 func OrderLayers(names []string) []string {
 	in := map[string]bool{}
 	for _, n := range names {
@@ -110,8 +111,13 @@ func OrderLayers(names []string) []string {
 	for _, n := range DrawOrder {
 		if in[n] {
 			out = append(out, n)
+			delete(in, n)
 		}
 	}
+	var extra []string
+	for name := range in { if name != "" { extra = append(extra, name) } }
+	sort.Strings(extra)
+	out = append(out, extra...)
 	return out
 }
 
@@ -533,6 +539,7 @@ func CellColour(s CellStyle) string {
 		if c, ok := layerColours[name]; ok {
 			return c
 		}
+		return genericLayerInk
 	}
 	if band, ok := strings.CutPrefix(str, "bob:"); ok {
 		if c, ok := bobBands[band]; ok {

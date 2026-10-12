@@ -317,7 +317,7 @@ func RenderScene(
 			if n == "drinkwater" {
 				continue
 			}
-			legend = append(legend, layerLegendEntry(n))
+			legend = append(legend, layerLegendEntry(n, scene.Layers[n]))
 		}
 		if counts["drinkwater"] > 0 {
 			legend = append(legend, LegendEntry{
@@ -329,13 +329,21 @@ func RenderScene(
 	return Render{Cells: rows, Frame: frame, Counts: counts, Legend: legend}
 }
 
-func layerLegendEntry(name string) LegendEntry {
+func layerLegendEntry(name string, features []Feature) LegendEntry {
 	symbol := "━━"
 	switch name {
 	case "gemalen", "putten", "oppervlaktewatergemalen":
 		symbol = "•"
 	case "drinkwater", "water", "groen", "gebouwen":
 		symbol = "■"
+	default:
+		if _, known := layerColours[name]; !known && len(features) > 0 {
+			switch features[0].Geometry.Kind {
+			case "point", "multipoint": symbol = "•"
+			case "polygon", "multipolygon": symbol = "■"
+			case "collection": symbol = "◇"
+			}
+		}
 	}
 	return LegendEntry{Label: name, Style: StyleForLayer(name), Symbol: symbol}
 }
@@ -411,7 +419,7 @@ func featureColour(f Feature, mode string, scene *Scene) string {
 	if c, ok := layerColours[f.Layer]; ok {
 		return c
 	}
-	return "#8ee6a8"
+	return genericLayerInk
 }
 
 func intersectsAny(rect [4]int, rects [][4]int) bool {

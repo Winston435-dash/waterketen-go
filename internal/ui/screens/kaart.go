@@ -355,8 +355,8 @@ func (s *Kaart) OpenLayerPicker() {
 	if s.atlas == nil {
 		return
 	}
-	available := s.atlas.Library.HasLayers(core.DrawOrder...)
-	p := NewLayerPicker(available, s.layers, core.DrawOrder)
+	available := s.atlas.Library.LayerNames()
+	p := NewLayerPicker(available, s.layers, available)
 	p.SetSize(s.w, s.h)
 	s.picker = p
 }
