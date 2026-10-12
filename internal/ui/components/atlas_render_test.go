@@ -13,7 +13,7 @@ import (
 
 // TestRenderAtlasEmitsNoBackground is the transparency guard for the map: the
 // atlas must set ink, bold and underline only, never a background, so the
-// terminal's own background shows through. It forces a truecolor profile (tests
+// app shell's shared black surface shows through. It forces a truecolor profile (tests
 // run without a TTY, where lipgloss would otherwise strip all colour) so the
 // assertion is made against the SGR the app really emits.
 func TestRenderAtlasEmitsNoBackground(t *testing.T) {

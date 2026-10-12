@@ -458,7 +458,7 @@ func (m Model) panelBox() (int, int) {
 
 func (m Model) View() string {
 	if !m.ready {
-		return "initialiseren…"
+		return components.AppSurface("initialiseren…")
 	}
 	header := m.renderHeader()
 	body := m.renderBody()
@@ -472,7 +472,7 @@ func (m Model) View() string {
 		bindings = append([]key.Binding{ui.Keys.Palette, ui.Keys.PanelPalette}, bindings...)
 	}
 	bar := m.cmdBar.View(m.width, bindings)
-	return lipgloss.JoinVertical(lipgloss.Left, header, body, bar)
+	return components.AppSurface(lipgloss.JoinVertical(lipgloss.Left, header, body, bar))
 }
 
 func (m Model) renderBody() string {
@@ -553,6 +553,9 @@ func screenTitle(s screens.Screen) string {
 
 // Run starts the TUI. Called from cmd/waterketen-tui/main.go.
 func Run(root string) error {
+	// The app owns a black surface even when the terminal's default is light.
+	// Keep adaptive foreground tokens on their legible dark-background variant.
+	lipgloss.SetHasDarkBackground(true)
 	p := tea.NewProgram(New(root), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	_, err := p.Run()
 	return err
