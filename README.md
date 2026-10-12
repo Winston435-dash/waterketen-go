@@ -57,12 +57,14 @@ nooit randen, kleuren of spacing definiëren**.
 - ✅ GeoPackage-lezing **zonder cgo** (pure-Go `modernc.org/sqlite` + eigen
   GeoPackageBinary/WKB-decoder).
 - ✅ Live WFS/ArcGIS-probes (hits-only) via `net/http`.
-- ✅ **Bronnenregister met licentie per bron.** Zes bedrade bronnen (GWSW, DAMO,
-  Vewin, RIONED-OGC, Zuid-Holland drinkwater, RWS regiogebieden) met hun eigen
-  `TypeName` en `License`, plus vijf gedetecteerde-niet-bedrade bronnen met
+- ✅ **Bronnenregister met licentie per bron.** Zeventien bedrade bronlagen (GWSW,
+  DAMO, Vewin, RIONED-OGC, Zuid-Holland, IMWA en RWS) met hun eigen
+  `TypeName` en `License`, plus zes gedetecteerde-niet-bedrade bronnen met
   reden. Licentie is een beslissing, geen detail: CC0, CC BY-SA 4.0 en publiek
   domein zijn verschillende rechten, en een dienst zonder licentieveld zegt
   "onbekend". `go test` faalt als een bron die velden mist.
+  Paneel 1 scrollt met `↑`/`↓`, `PgUp`/`PgDown`, `Home` en `End`, zodat alle
+  bronnen en licenties ook op een kleine terminal bereikbaar blijven.
 - ✅ Renderer gebruikt dezelfde managed data als de Python-CLI
   (`~/.local/share/waterketen`).
 - ✅ **Kaartbibliotheek in de TUI.** Paneel 5 leest de gepubliceerde snapshot
@@ -211,11 +213,30 @@ De binaire namen bewust **anders** dan de Python-CLI (`waterketen` /
 ## Tests
 
 ```bash
-go test ./...
+gofmt -l . && go build ./... && go vet ./... && go test -count=1 ./...
+go test -race -count=1 ./...
 ```
 
-De kern-tests lezen de echte managed data op
-`~/.local/share/waterketen/processed/` en pinnen metingen (4.610 buizen,
-4461 gemeten BOB's (beide uiteinden), 342 straten, 12 materialen, grenzen).
-Dat maakt ze tot een echte regressievangnet: elke afwijking in WKB,
-BOB-filtering of de render faalt direct.
+De standaardtests gebruiken kleine, deterministische SQLite-/R-tree-fixtures en
+lokale HTTP-testservers. Ze vereisen geen managed datastore en benaderen geen
+externe diensten. CI controleert formatting, build, vet, tests, races en WKB-fuzzing.
+
+De echte managed-data-regressies zijn expliciet opt-in. Ze lezen `core.DataRoot()`
+(`$WATERKETEN_DATA_DIR`, anders `~/.local/share/waterketen`) en pinnen metingen:
+4.610 buizen, 4.461 gemeten BOB's (minstens één uiteinde), 342 straten,
+12 materialen en de 115 CBS-gebieden. Een ontbrekende datastore is dan een fout,
+niet een stil overgeslagen controle.
+
+```bash
+WATERKETEN_INTEGRATION=1 go test -count=1 ./internal/core
+# Apart: echte externe diensten controleren (kan falen door storing/netwerk).
+WATERKETEN_LIVE_TESTS=1 go test -run '^TestLiveSources$' -count=1 ./internal/core
+# Parser-fuzzing: tellingen worden vóór allocatie gevalideerd; nesting is begrensd.
+go test ./internal/core -run '^$' -fuzz '^FuzzWKB$' -fuzztime=30s -parallel=2
+go test ./internal/core -run '^$' -fuzz '^FuzzGeoPackageBinary$' -fuzztime=30s -parallel=2
+```
+
+CLI en TUI gebruiken dezelfde laagloader en samenvatting in
+`internal/core/analysis.go`. Analyse cachet zijn rapport totdat de data verandert;
+leesfouten blijven naast de leesbare lagen zichtbaar. Een lege kaartselectie of
+uitsnede blijft een geldige kaart, zonder impliciet opnieuw netwerken aan te zetten.

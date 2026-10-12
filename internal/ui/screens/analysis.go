@@ -40,7 +40,7 @@ func NewAnalyse(root string, assets []core.AssetMeta) *AnalyseScreen {
 
 func (s *AnalyseScreen) ID() ScreenID { return ScreenAnalyse }
 func (s *AnalyseScreen) KeyMap() []key.Binding {
-	return []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Quit}
+	return []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Quit}
 }
 func (s *AnalyseScreen) SetSize(w, h int) { s.w, s.h = w, h }
 func (s *AnalyseScreen) Info() string {

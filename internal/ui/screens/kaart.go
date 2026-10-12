@@ -396,7 +396,7 @@ func (s *Kaart) DrawCmd(generation int) tea.Cmd {
 	selected, street := s.selected, s.street
 	var display []string
 	if s.atlas != nil {
-		display = append([]string{}, s.visibleLayerNames()...)
+		display = core.OrderLayers(append([]string{}, s.visibleLayerNames()...))
 	}
 	return func() tea.Msg {
 		r := core.RenderScene(scene, view, w, h,

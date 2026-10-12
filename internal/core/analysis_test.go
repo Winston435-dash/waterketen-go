@@ -22,6 +22,17 @@ func TestLoadLayerReturnsReadErrors(t *testing.T) {
 	}
 }
 
+func TestLoadLayerRejectsCorruptGeometryInsteadOfPartialCounts(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "corrupt.gpkg")
+	db := testutil.GeoPackage(t, path, `INSERT INTO gpkg_geometry_columns VALUES('features','geom',28992); CREATE TABLE features(fid INTEGER PRIMARY KEY, geom BLOB);`)
+	if _, err := db.Exec(`INSERT INTO features VALUES(1,?),(2,?)`, testutil.Point(1, 2), []byte("corrupt")); err != nil {
+		t.Fatal(err)
+	}
+	if data, err := LoadLayer(AssetMeta{Area: "test", Layer: "riool", ProcessedPath: path}); err == nil || data != nil {
+		t.Fatalf("corrupt geometry reported a partial count: %+v / %v", data, err)
+	}
+}
+
 func TestLoadLayerAndSummaryUseBothBOBEnds(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "layer.gpkg")
 	db := testutil.GeoPackage(t, path, `INSERT INTO gpkg_geometry_columns VALUES('features','geom',28992);

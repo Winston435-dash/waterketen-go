@@ -84,8 +84,8 @@ data tot de Go-fetch er is — beide tools praten hetzelfde opslagformaat.
 ## Bronnenregister: twee tools, één waarheid per bron
 
 De bronlijsten lopen bewust **niet** meer één-op-één: de Python-CLI heeft 3
-bedrade bronnen (`gws_netwerk`, `damo_leiding`, `vewin`), de Go-CLI heeft er 6
-(inclusief `rioned_gwsw`, `zh_drinkwater`, `rws_regiogebieden`). De
+bedrade bronnen (`gws_netwerk`, `damo_leiding`, `vewin`), de Go-CLI heeft er 17
+(inclusief afzonderlijke DAMO-/RIONED-objecttypen en vier IMWA-bronlagen). De
 licentie-notie is in **beide** tools dezelfde eis, met een test:
 `internal/core/sources_test.go` en `tests/test_health.py`. Trek een nieuwe bron
 in Python bij in `tui/app.py` (`WIRED_SOURCES`) en in Go in

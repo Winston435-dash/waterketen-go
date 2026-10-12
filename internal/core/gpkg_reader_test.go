@@ -36,3 +36,14 @@ func TestGeoPackageReadsPreserveIDsAndQuotedNames(t *testing.T) {
 		t.Fatalf("bad viewport read: %+v", rows)
 	}
 }
+
+func TestGeoPackageRejectsMissingGeometryColumn(t *testing.T) {
+	db := testutil.GeoPackage(t, filepath.Join(t.TempDir(), "missing.gpkg"), `INSERT INTO gpkg_geometry_columns VALUES('features','geom',28992); CREATE TABLE features(fid INTEGER PRIMARY KEY);`)
+	table, err := FeatureTable(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := table.Each(func(Row) {}); err == nil {
+		t.Fatal("missing geometry column reported an empty layer")
+	}
+}

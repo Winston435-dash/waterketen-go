@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -134,12 +135,15 @@ func (t *Table) scanRow(cols columnInfo, rows *sql.Rows) (Row, bool, error) {
 	for i, name := range cols.names {
 		if name == t.geom {
 			blob, ok := vals[i].([]byte)
-			if !ok || len(blob) == 0 {
+			if vals[i] == nil {
 				continue
+			}
+			if !ok || len(blob) == 0 {
+				return Row{}, false, fmt.Errorf("onleesbare geometrie in %s, object %d", t.name, f.ID)
 			}
 			geom, err := parseGeoPackageBinary(blob)
 			if err != nil {
-				continue // corrupt cell: skip the feature, never the table
+				return Row{}, false, fmt.Errorf("geometrie in %s, object %d: %w", t.name, f.ID, err)
 			}
 			f.Geometry = geom
 			continue
@@ -190,7 +194,13 @@ func (t *Table) columns() (columnInfo, error) {
 		}
 		info.names = append(info.names, name)
 	}
-	return info, rows.Err()
+	if err := rows.Err(); err != nil {
+		return columnInfo{}, err
+	}
+	if !slices.Contains(info.names, t.geom) {
+		return columnInfo{}, fmt.Errorf("geometriekolom %s ontbreekt in %s", t.geom, t.name)
+	}
+	return info, nil
 }
 
 // --- GeoPackageBinaryHeader + WKB ------------------------------------------
