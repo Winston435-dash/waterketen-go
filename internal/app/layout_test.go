@@ -29,7 +29,7 @@ var mobile = []struct {
 // renderSize draws the whole app at one terminal size and returns its lines.
 func renderSize(t *testing.T, w, h int) []string {
 	t.Helper()
-	m := New("")
+	m := New(t.TempDir())
 	m.width, m.height, m.ready = w, h, true
 	m = m.applySize()
 	return strings.Split(m.View(), "\n")
@@ -60,7 +60,7 @@ func TestViewNeverExceedsTerminal(t *testing.T) {
 // full-width box at every supported terminal geometry.
 func TestPanelBoxMatchesRenderedPanel(t *testing.T) {
 	for _, s := range mobile {
-		m := New("")
+		m := New(t.TempDir())
 		m.width, m.height, m.ready = s.w, s.h, true
 		l := m.layout()
 		wantW, wantH := l.panelW, l.panelH

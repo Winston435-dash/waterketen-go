@@ -236,6 +236,9 @@ func (s *Kaart) LibraryLayerCmd() tea.Cmd {
 // visibleLayerNames resolves what the map should draw: the chosen set, or just
 // the active layer when the map is in solo mode.
 func (s *Kaart) visibleLayerNames() []string {
+	if s.atlas != nil && s.layers != nil && len(s.layers) == 0 {
+		return []string{}
+	}
 	if s.solo && s.active != "" {
 		return []string{s.active}
 	}
@@ -319,8 +322,10 @@ func (s *Kaart) CommitLoad(scene *core.Scene) tea.Cmd {
 func (s *Kaart) FailLoad(err error) tea.Cmd {
 	s.loads = max(0, s.loads-1)
 	s.err = err.Error()
+	s.needsDraw = false
 	if s.stale {
 		s.stale = false
+		return s.requestLoad()
 	}
 	return nil
 }
@@ -371,7 +376,7 @@ func (s *Kaart) SetScene(scene *core.Scene) {
 }
 
 // SetError shows a load failure inside the panel.
-func (s *Kaart) SetError(err error) { s.err = err.Error(); s.scene = nil }
+func (s *Kaart) SetError(err error) { s.err = err.Error(); s.scene = nil; s.needsDraw = false }
 
 // DrawnMsg carries a finished render back into the app loop.
 type DrawnMsg struct {

@@ -92,7 +92,7 @@ func checkOGC(text string) (int, error) {
 func countFromText(text string, kind string) (int, error) {
 	if kind == "arcgis" {
 		var payload struct {
-			Count *int `json:"count"`
+			Count *int            `json:"count"`
 			Error json.RawMessage `json:"error"`
 		}
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {

@@ -8,15 +8,22 @@ import (
 	"testing"
 )
 
-const dataRoot = "/home/hermes/.local/share/waterketen"
+func integrationDataRoot(t *testing.T) string {
+	t.Helper()
+	if testing.Short() || os.Getenv("WATERKETEN_INTEGRATION") != "1" {
+		t.Skip("managed-data integration test; set WATERKETEN_INTEGRATION=1")
+	}
+	return DataRoot()
+}
 
 // TestGpkgRealData reads the real managed Delfshaven files and pins the
 // numbers the Python pipeline established. This is the regression net for the
 // whole rewrite: if the reader, the WKB decoder, or BOB handling drift, this
 // test fails — matching the same file the Python pipeline wrote.
 func TestGpkgRealData(t *testing.T) {
+	dataRoot := integrationDataRoot(t)
 	if !fileExists(filepath.Join(dataRoot, "processed", "delfshaven-riool.gpkg")) {
-		t.Skip("geen managed data — sla live-verificatie over")
+		t.Fatal("geen managed data voor integratieverificatie")
 	}
 
 	db, err := Open(filepath.Join(dataRoot, "processed", "delfshaven-riool.gpkg"))
@@ -105,8 +112,9 @@ func TestGpkgRealData(t *testing.T) {
 // non-empty legend. This is the pin that catches regressions in Bresenham,
 // clipping, cell mapping, and the overlay policy.
 func TestAtlasRendersRealScene(t *testing.T) {
+	dataRoot := integrationDataRoot(t)
 	if !fileExists(filepath.Join(dataRoot, "processed", "delfshaven-riool.gpkg")) {
-		t.Skip("geen managed data")
+		t.Fatal("geen managed data voor integratieverificatie")
 	}
 	scene := mustScene(t, "delfshaven", []string{"riool", "drinkwaterleidingen"})
 	view := FitView(scene.Bounds)
@@ -142,6 +150,7 @@ func diff(a, b float64) float64 { return math.Abs(a - b) }
 
 func mustScene(t *testing.T, area string, layers []string) *Scene {
 	t.Helper()
+	dataRoot := integrationDataRoot(t)
 	var sources []SceneSource
 	for _, name := range layers {
 		path := filepath.Join(dataRoot, "processed", fmt.Sprintf("%s-%s.gpkg", area, name))

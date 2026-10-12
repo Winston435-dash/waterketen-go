@@ -141,8 +141,12 @@ func (m *Model) redrawMap() tea.Cmd {
 
 func loadAllDataCmd(root string) tea.Cmd {
 	return func() tea.Msg {
-		assets, _ := core.LoadAssets(root)
-		return screens.DataMsg(screens.LoadAssets(assets))
+		assets, err := core.LoadAssets(root)
+		if err != nil {
+			return screens.DataMsg{Errors: []error{err}}
+		}
+		layers, failures := core.LoadManagedLayers(assets)
+		return screens.DataMsg{Layers: layers, Errors: failures}
 	}
 }
 
@@ -196,15 +200,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case screens.DataMsg:
-		m.data = msg
+		m.data = msg.Layers
 		for _, s := range m.screens {
 			switch p := s.(type) {
 			case *screens.AnalyseScreen:
-				p.SetData(msg)
+				p.SetData(msg.Layers)
+				p.SetErrors(msg.Errors)
 			case *screens.ProfielScreen:
-				p.SetData(msg)
+				p.SetData(msg.Layers)
 			case *screens.Kaart:
-				p.SetData(msg)
+				p.SetData(msg.Layers)
 			}
 		}
 		// The Kaart always has a world to build: the library snapshot when one

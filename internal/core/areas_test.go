@@ -7,12 +7,12 @@ import (
 
 func testLibrary(t *testing.T) *Library {
 	t.Helper()
-	lib, err := OpenLibrary(dataRoot)
+	lib, err := OpenLibrary(integrationDataRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if lib == nil {
-		t.Skip("geen kaartbibliotheek — sla bibliotheek-tests over")
+		t.Fatal("geen kaartbibliotheek voor integratieverificatie")
 	}
 	return lib
 }

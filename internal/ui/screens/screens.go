@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"waterketen/internal/core"
@@ -91,18 +92,21 @@ type Bronnen struct {
 	spinner string
 	prog    progress.Model // Bubbles' spring-animated bar for the probe run
 	w, h    int
+	body    viewport.Model
 }
 
 func NewBronnen() *Bronnen {
-	return &Bronnen{prog: components.NewProgress(40)}
+	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(1, 1)}
 }
 
 func (s *Bronnen) ID() ScreenID { return ScreenBronnen }
 func (s *Bronnen) KeyMap() []key.Binding {
-	return []key.Binding{ui.Keys.Probe, ui.Keys.NextPanel, ui.Keys.Quit}
+	return []key.Binding{ui.Keys.Probe, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
 }
 func (s *Bronnen) SetSize(w, h int) {
 	s.w, s.h = w, h
+	s.body.Width, s.body.Height = max(1, w-4), max(1, h-2)
+	s.refreshHealth()
 	if s.probing {
 		s.prog.Width = s.barWidth()
 	}
@@ -209,6 +213,8 @@ func (s *Bronnen) Tick(msg tea.Msg) tea.Cmd {
 func (s *Bronnen) FinishProbe() {
 	s.health = core.AssembleHealth(s.health)
 	s.probing = false
+	s.refreshHealth()
+	s.body.GotoTop()
 }
 
 // SetHealth stores a full probe result (used for a pre-baked list). The wired
@@ -225,6 +231,8 @@ func (s *Bronnen) SetHealth(h []core.SourceHealth) {
 	})
 	s.health = core.AssembleHealth(wired)
 	s.probing = false
+	s.refreshHealth()
+	s.body.GotoTop()
 }
 
 // Busy reports bounded work in flight: a probe run is counting up.
@@ -234,7 +242,24 @@ func (s *Bronnen) Busy() bool { return s.probing }
 // themselves; the app broadcasts one frame to every screen that shows it.
 func (s *Bronnen) SetSpinner(frame string) { s.spinner = frame }
 
-func (s *Bronnen) Update(msg tea.Msg) (Screen, tea.Cmd) { return s, nil }
+func (s *Bronnen) Update(msg tea.Msg) (Screen, tea.Cmd) {
+	if s.probing {
+		return s, nil
+	}
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		if key.Matches(msg, ui.Keys.Home) {
+			s.body.GotoTop()
+			return s, nil
+		}
+		if key.Matches(msg, ui.Keys.End) {
+			s.body.GotoBottom()
+			return s, nil
+		}
+	}
+	var cmd tea.Cmd
+	s.body, cmd = s.body.Update(msg)
+	return s, cmd
+}
 
 func (s *Bronnen) View() string {
 	if s.probing {
@@ -251,6 +276,18 @@ func (s *Bronnen) View() string {
 			s.w,
 		)
 	}
+	return s.body.View()
+}
+
+func (s *Bronnen) refreshHealth() {
+	lines := strings.Split(s.renderHealth(), "\n")
+	for i, line := range lines {
+		lines[i] = components.SingleLine(line, s.body.Width)
+	}
+	s.body.SetContent(strings.Join(lines, "\n"))
+}
+
+func (s *Bronnen) renderHealth() string {
 	var b strings.Builder
 	for _, h := range s.health {
 		if h.Status == core.HealthNotWired {
@@ -307,15 +344,7 @@ func licenseOrUnknown(license string) string {
 
 // Thousands renders an int with Dutch thousand separators: 87146 → "87.146".
 func Thousands(n int) string {
-	s := fmt.Sprintf("%d", n)
-	var out []byte
-	for i, c := range s {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			out = append(out, '.')
-		}
-		out = append(out, byte(c))
-	}
-	return string(out)
+	return ui.Thousands(n)
 }
 
 // --- placeholder screens: implemented one file each -------------------------

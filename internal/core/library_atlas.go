@@ -301,7 +301,8 @@ func (la *LibraryAtlas) layerFeatures(name string, window BBox, metresPerDot flo
 func bobOf(numbers map[string]float64) float64 {
 	beg, okBeg := numbers["BOB_ACTUEE"]
 	end, okEnd := numbers["BOB_ACTU_1"]
-	useBeg, useEnd := okBeg && beg != 0, okEnd && end != 0
+	useBeg := okBeg && beg != 0 && !math.IsNaN(beg) && !math.IsInf(beg, 0)
+	useEnd := okEnd && end != 0 && !math.IsNaN(end) && !math.IsInf(end, 0)
 	switch {
 	case useBeg && useEnd:
 		return (beg + end) / 2

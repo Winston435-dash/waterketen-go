@@ -14,79 +14,7 @@ import (
 	"waterketen/internal/ui/components"
 )
 
-// LayerData is one loaded (area, layer) pair ready for analysis.
-type LayerData struct {
-	Area     string
-	Layer    string
-	Spec     *core.LayerSpec
-	Features []core.Feature
-}
-
-// LoadLayer reads one managed asset's processed GPKG into a Feature slice.
-// Returns an error when the asset has no on-disk file or the table cannot
-// be read — the analysis screen shows it, never crashes.
-func LoadLayer(a core.AssetMeta) (*LayerData, error) {
-	if !a.ProcessedExists() {
-		return nil, fmt.Errorf("geen processed data voor %s/%s", a.Area, a.Layer)
-	}
-	db, err := core.Open(a.ProcessedPath)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-	tbl, err := core.FeatureTable(db)
-	if err != nil {
-		return nil, err
-	}
-	data := &LayerData{
-		Area:  a.Area,
-		Layer: a.Layer,
-		Spec:  core.LayerSpecFor(a.Layer),
-	}
-	tbl.Each(func(r core.Row) {
-		f := core.Feature{
-			Layer:      a.Layer,
-			Position:   len(data.Features),
-			Geometry:   r.Geometry,
-			Properties: r.Properties,
-			Street:     r.Properties["STRAATNAAM"],
-		}
-		// BOB: 0,00 betekent "nooit gemeten"; gebruik beide uiteinden apart.
-		// One put gets two values when begin + end share a manhole; the mean
-		// of the two columns per pipe is the established simplification.
-		beg, okBeg := r.Numbers["BOB_ACTUEE"]
-		end, okEnd := r.Numbers["BOB_ACTU_1"]
-		useBeg := okBeg && beg != 0
-		useEnd := okEnd && end != 0
-		switch {
-		case useBeg && useEnd:
-			f.BOB = (beg + end) / 2
-		case useBeg:
-			f.BOB = beg
-		case useEnd:
-			f.BOB = end
-		default:
-			f.BOB = math.NaN()
-		}
-		data.Features = append(data.Features, f)
-	})
-	return data, nil
-}
-
-// LoadAssets reads every on-disk managed asset.
-func LoadAssets(assets []core.AssetMeta) []*LayerData {
-	var out []*LayerData
-	for _, a := range assets {
-		if !a.ProcessedExists() {
-			continue
-		}
-		d, err := LoadLayer(a)
-		if err == nil {
-			out = append(out, d)
-		}
-	}
-	return out
-}
+type LayerData = core.LayerData
 
 // --- Analyse: panel 4 --------------------------------------------------------
 //
@@ -94,19 +22,16 @@ func LoadAssets(assets []core.AssetMeta) []*LayerData {
 // layer. The Python rule that caught real bugs: a polygon layer has no pipes,
 // so a per-pipe length is nonsense — the report says "omtrek" for those.
 
-type AnalysisLine struct {
-	Text  string
-	Muted bool
-}
-
 // AnalyseScreen renders the analysis of all loaded layers as a scrollable list.
 type AnalyseScreen struct {
-	assets  []core.AssetMeta
-	data    []*LayerData
-	busy    bool   // the initial managed-data load is in flight
-	spinner string // current app busy-spinner frame
-	w, h    int
-	scroll  int
+	assets   []core.AssetMeta
+	data     []*LayerData
+	busy     bool   // the initial managed-data load is in flight
+	spinner  string // current app busy-spinner frame
+	w, h     int
+	scroll   int
+	lines    []string // cached when data changes, never recomputed by scrolling
+	failures []error
 }
 
 func NewAnalyse(root string, assets []core.AssetMeta) *AnalyseScreen {
@@ -123,10 +48,21 @@ func (s *AnalyseScreen) Info() string {
 }
 
 // DataMsg carries loaded analysis data back to the app.
-type DataMsg []*LayerData
+type DataMsg struct {
+	Layers []*LayerData
+	Errors []error
+}
 
 // SetData stores the loaded assets, clears the busy flag and resets the scroll.
-func (s *AnalyseScreen) SetData(d []*LayerData) { s.data, s.scroll, s.busy = d, 0, false }
+func (s *AnalyseScreen) SetData(d []*LayerData) {
+	s.data, s.scroll, s.busy = d, 0, false
+	s.lines = s.renderLines()
+}
+
+func (s *AnalyseScreen) SetErrors(errors []error) {
+	s.failures = errors
+	s.lines = s.renderLines()
+}
 
 // Busy reports bounded work in flight: the managed assets are being read.
 func (s *AnalyseScreen) Busy() bool { return s.busy }
@@ -140,8 +76,8 @@ func (s *AnalyseScreen) SetSpinner(frame string) { s.spinner = frame }
 func (s *AnalyseScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.KeyMsg:
-		contentH := s.h - 4 // Panel border + padding
-		total := len(s.renderLines())
+		contentH := max(1, s.h-4)
+		total := len(s.lines)
 		switch {
 		case key.Matches(m, ui.Keys.Down):
 			s.scroll = min(s.scroll+1, max(0, total-contentH))
@@ -164,15 +100,15 @@ func (s *AnalyseScreen) View() string {
 	if s.busy {
 		return components.Busy(s.spinner, "Lagen worden gelezen…")
 	}
-	if len(s.data) == 0 {
+	if len(s.data) == 0 && len(s.failures) == 0 {
 		return components.EmptyState(
 			"Geen managed data",
 			"Haal data op: waterketen fetch --gebied delfshaven --laag riool",
 			s.w,
 		)
 	}
-	lines := s.renderLines()
-	contentH := s.h - 4
+	lines := s.lines
+	contentH := max(1, s.h-4)
 	if s.scroll > len(lines)-contentH {
 		s.scroll = max(0, len(lines)-contentH)
 	}
@@ -199,77 +135,41 @@ func (s *AnalyseScreen) renderLines() []string {
 		}
 		out = append(out, components.Strong(header))
 
-		var totalLen float64
-		var lines, polys, points int
-		var bobs []float64
-		streets := map[string]int{}
-		for _, f := range d.Features {
-			switch f.Geometry.Kind {
-			case "linestring", "multilinestring":
-				lines++
-			case "polygon", "multipolygon":
-				polys++
-			case "point":
-				points++
-			}
-			totalLen += f.Geometry.Length()
-			if !math.IsNaN(f.BOB) {
-				bobs = append(bobs, f.BOB)
-			}
-			if f.Street != "" {
-				streets[f.Street]++
-			}
-		}
+		summary := core.Summarize(d.Features)
 		out = append(out, fmt.Sprintf("  features: %s  ·  lijnen %s · vlakken %s · punten %s",
-			Thousands(len(d.Features)), Thousands(lines), Thousands(polys), Thousands(points)))
+			Thousands(summary.Features), Thousands(summary.Lines), Thousands(summary.Polygons), Thousands(summary.Points)))
 		if spec != nil && !spec.Linear {
 			// polygon layer: perimeter, never "gemiddeld N m per buis"
-			out = append(out, fmt.Sprintf("  omtrek totaal: %.2f km", totalLen/1000))
+			out = append(out, fmt.Sprintf("  omtrek totaal: %.2f km", summary.TotalM/1000))
 		} else {
-			out = append(out, fmt.Sprintf("  lengte totaal: %.2f km", totalLen/1000))
-			if lines > 0 {
-				out = append(out, fmt.Sprintf("  gemiddelde leiding: %.1f m", totalLen/float64(lines)))
+			out = append(out, fmt.Sprintf("  lengte totaal: %.2f km", summary.TotalM/1000))
+			if summary.Lines > 0 {
+				out = append(out, fmt.Sprintf("  gemiddelde leiding: %.1f m", summary.TotalM/float64(summary.Lines)))
 			}
 		}
 		if spec != nil && spec.HasBOB {
-			if len(bobs) == 0 {
+			if summary.BOBMeasured == 0 {
 				out = append(out, components.Error("  geen BOB gemeten (0,00 = geen meting)"))
 			} else {
-				minB, maxB, sum := bobs[0], bobs[0], 0.0
-				for _, v := range bobs {
-					minB = math.Min(minB, v)
-					maxB = math.Max(maxB, v)
-					sum += v
-				}
-				coverage := float64(len(bobs)) / float64(len(d.Features)) * 100
+				coverage := float64(summary.BOBMeasured) / float64(summary.Features) * 100
 				out = append(out, fmt.Sprintf(
 					"  BOB: gemeten op %s van %s buizen (%.1f%%) · min %.2f · mediaan %s · max %.2f",
-					Thousands(len(bobs)), Thousands(len(d.Features)), coverage,
-					minB, median(bobs), maxB))
+					Thousands(summary.BOBMeasured), Thousands(summary.Features), coverage,
+					summary.BOBMin, fmt.Sprintf("%.2f", summary.BOBMedian), summary.BOBMax))
 			}
 		}
-		if len(streets) > 0 {
-			out = append(out, fmt.Sprintf("  straten met buizen: %s", Thousands(len(streets))))
+		if summary.Streets > 0 {
+			out = append(out, fmt.Sprintf("  straten met buizen: %s", Thousands(summary.Streets)))
 		}
 		out = append(out, "")
 	}
 	if len(out) > 0 {
 		out = out[:len(out)-1] // trailing blank line
 	}
+	for _, err := range s.failures {
+		out = append(out, components.Error("Leesfout: "+err.Error()))
+	}
 	return out
-}
-
-func median(v []float64) string {
-	if len(v) == 0 {
-		return "—"
-	}
-	sorted := append([]float64(nil), v...)
-	sort.Float64s(sorted)
-	m := sorted[len(sorted)/2]
-	if len(v)%2 == 0 {
-		m = (sorted[len(v)/2-1] + sorted[len(v)/2]) / 2
-	}
-	return fmt.Sprintf("%.2f", m)
 }
 
 // --- Profiel: panel 6 -------------------------------------------------------
@@ -404,7 +304,7 @@ func (s *ProfielScreen) View() string {
 		}
 		depth := (f.BOB - lo) / (hi - lo) // 0 = shallowest, 1 = deepest
 		mark := components.Badge(components.StatusOK, "")
-		bar := strings.Repeat(" ", int(depth*float64(s.w-20)))
+		bar := strings.Repeat(" ", int(depth*float64(max(0, s.w-20))))
 		b.WriteString(fmt.Sprintf("%8.2f %s%s\n", f.BOB, bar, mark))
 	}
 	return strings.TrimRight(b.String(), "\n")
