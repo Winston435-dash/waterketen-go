@@ -75,6 +75,9 @@ func FeatureTable(db *sql.DB) (*Table, error) {
 		}
 		found = append(found, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	if len(found) != 1 {
 		return nil, fmt.Errorf("verwachtte 1 feature-tabel, vond %d", len(found))
 	}
@@ -84,7 +87,7 @@ func FeatureTable(db *sql.DB) (*Table, error) {
 // Count returns the row count of the table.
 func (t *Table) Count() (int, error) {
 	var n int
-	err := t.db.QueryRow(`SELECT COUNT(*) FROM "` + t.name + `"`).Scan(&n)
+	err := t.db.QueryRow(`SELECT COUNT(*) FROM ` + quoteQueryIdentifier(t.name)).Scan(&n)
 	return n, err
 }
 
@@ -96,7 +99,7 @@ func (t *Table) Each(fn func(Row)) error {
 	if err != nil {
 		return err
 	}
-	query := `SELECT "` + strings.Join(cols.names, `","`) + `" FROM "` + t.name + `"`
+	query := `SELECT ` + cols.projection() + ` FROM ` + quoteQueryIdentifier(t.name)
 	rows, err := t.db.Query(query)
 	if err != nil {
 		return fmt.Errorf("lees %s: %w", t.name, err)
@@ -119,14 +122,15 @@ func (t *Table) Each(fn func(Row)) error {
 // float for analysis. ok=false means the row carries no usable geometry.
 func (t *Table) scanRow(cols columnInfo, rows *sql.Rows) (Row, bool, error) {
 	vals := make([]any, len(cols.names))
-	scan := make([]any, len(cols.names))
+	f := Row{Properties: map[string]string{}, Numbers: map[string]float64{}}
+	scan := make([]any, len(cols.names)+1)
+	scan[0] = &f.ID
 	for i := range vals {
-		scan[i] = &vals[i]
+		scan[i+1] = &vals[i]
 	}
 	if err := rows.Scan(scan...); err != nil {
 		return Row{}, false, fmt.Errorf("scan %s: %w", t.name, err)
 	}
-	f := Row{Properties: map[string]string{}, Numbers: map[string]float64{}}
 	for i, name := range cols.names {
 		if name == t.geom {
 			blob, ok := vals[i].([]byte)
@@ -161,8 +165,16 @@ func (t *Table) scanRow(cols columnInfo, rows *sql.Rows) (Row, bool, error) {
 
 type columnInfo struct{ names []string }
 
+func (c columnInfo) projection() string {
+	names := []string{"rowid"}
+	for _, name := range c.names {
+		names = append(names, quoteQueryIdentifier(name))
+	}
+	return strings.Join(names, ",")
+}
+
 func (t *Table) columns() (columnInfo, error) {
-	rows, err := t.db.Query(`PRAGMA table_info("` + t.name + `")`)
+	rows, err := t.db.Query(`PRAGMA table_info(` + quoteQueryIdentifier(t.name) + `)`)
 	if err != nil {
 		return columnInfo{}, err
 	}
@@ -218,8 +230,8 @@ func (t *Table) Select(ids []int64, fn func(Row)) error {
 	for i, id := range ids {
 		args[i] = id
 	}
-	query := `SELECT "` + strings.Join(cols.names, `","`) + `" FROM "` + t.name +
-		`" WHERE rowid IN (` + placeholders + `)`
+	query := `SELECT ` + cols.projection() + ` FROM ` + quoteQueryIdentifier(t.name) +
+		` WHERE rowid IN (` + placeholders + `)`
 	rows, err := t.db.Query(query, args...)
 	if err != nil {
 		return fmt.Errorf("lees %s viewport: %w", t.name, err)
@@ -237,7 +249,7 @@ func (t *Table) Select(ids []int64, fn func(Row)) error {
 	return rows.Err()
 }
 
-var envelopeSize = [8]int{0, 32, 48, 48, 64, 64, 0, 0}
+var envelopeSize = [5]int{0, 32, 48, 48, 64}
 
 // parseGeoPackageBinary parses the 'GP' header, skips the envelope, then WKB.
 func parseGeoPackageBinary(b []byte) (Geometry, error) {
@@ -245,12 +257,13 @@ func parseGeoPackageBinary(b []byte) (Geometry, error) {
 		return Geometry{}, fmt.Errorf("geen GeoPackageBinaryHeader")
 	}
 	flags := b[3]
-	var order binary.ByteOrder = binary.LittleEndian
-	if flags&1 == 0 {
-		order = binary.BigEndian
+	if b[2] != 0 || flags&0xe0 != 0 {
+		return Geometry{}, fmt.Errorf("niet-ondersteunde GeoPackage-header")
 	}
-	_ = order // srs_id word (bytes 4..8); not needed for geometry parsing
 	envKind := (flags >> 1) & 0x7
+	if int(envKind) >= len(envelopeSize) {
+		return Geometry{}, fmt.Errorf("ongeldig GeoPackage-envelope %d", envKind)
+	}
 	off := 8 + envelopeSize[envKind]
 	if off >= len(b) {
 		return Geometry{}, fmt.Errorf("envelope loopt buiten blob")
@@ -265,6 +278,15 @@ func parseWKB(b []byte) (Geometry, error) {
 }
 
 func readWKB(b []byte) (Geometry, int, error) {
+	return readWKBDepth(b, 0)
+}
+
+const maxWKBDepth = 64
+
+func readWKBDepth(b []byte, depth int) (Geometry, int, error) {
+	if depth >= maxWKBDepth {
+		return Geometry{}, 0, fmt.Errorf("WKB-collectie te diep genest")
+	}
 	if len(b) < 5 {
 		return Geometry{}, 0, fmt.Errorf("WKB te kort")
 	}
@@ -306,12 +328,17 @@ func readWKB(b []byte) (Geometry, int, error) {
 		off += need
 		return nil
 	}
-	readCount := func() (int, error) {
+	readCount := func(minBytes int) (int, error) {
 		if off+4 > len(b) {
 			return 0, fmt.Errorf("WKB buffer te kort voor telling")
 		}
 		n := int(order.Uint32(b[off:]))
 		off += 4
+		// Validate before allocating: a nine-byte truncated line must not be
+		// able to request billions of points. Division avoids overflow.
+		if n < 0 || n > (len(b)-off)/minBytes {
+			return 0, fmt.Errorf("WKB-telling past niet in buffer")
+		}
 		return n, nil
 	}
 
@@ -323,7 +350,7 @@ func readWKB(b []byte) (Geometry, int, error) {
 		}
 		return Geometry{Kind: "point", Point: p}, off, nil
 	case 2: // LineString
-		n, err := readCount()
+		n, err := readCount(8 * dims)
 		if err != nil {
 			return Geometry{}, 0, err
 		}
@@ -335,13 +362,13 @@ func readWKB(b []byte) (Geometry, int, error) {
 		}
 		return Geometry{Kind: "linestring", Line: line}, off, nil
 	case 3: // Polygon
-		n, err := readCount()
+		n, err := readCount(4)
 		if err != nil {
 			return Geometry{}, 0, err
 		}
 		poly := make(Polygon, n)
 		for ring := range poly {
-			m, err := readCount()
+			m, err := readCount(8 * dims)
 			if err != nil {
 				return Geometry{}, 0, err
 			}
@@ -354,7 +381,7 @@ func readWKB(b []byte) (Geometry, int, error) {
 		}
 		return Geometry{Kind: "polygon", Polygon: poly}, off, nil
 	case 4, 5, 6, 7: // MultiPoint / MultiLineString / MultiPolygon / GeometryCollection
-		n, err := readCount()
+		n, err := readCount(5)
 		if err != nil {
 			return Geometry{}, 0, err
 		}
@@ -370,11 +397,14 @@ func readWKB(b []byte) (Geometry, int, error) {
 			out.Kind = "collection"
 		}
 		for i := 0; i < n; i++ {
-			sub, used, err := readWKB(b[off:])
+			sub, used, err := readWKBDepth(b[off:], depth+1)
 			if err != nil {
 				return Geometry{}, 0, err
 			}
 			off += used
+			if base == 4 && sub.Kind != "point" || base == 5 && sub.Kind != "linestring" || base == 6 && sub.Kind != "polygon" {
+				return Geometry{}, 0, fmt.Errorf("ongeldig WKB-multigeometrie-lid %s", sub.Kind)
+			}
 			if base == 7 || base == 4 && sub.Kind == "point" {
 				out.Parts = append(out.Parts, sub)
 			}

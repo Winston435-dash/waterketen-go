@@ -92,12 +92,16 @@ func checkOGC(text string) (int, error) {
 func countFromText(text string, kind string) (int, error) {
 	if kind == "arcgis" {
 		var payload struct {
-			Count int `json:"count"`
+			Count *int `json:"count"`
+			Error json.RawMessage `json:"error"`
 		}
 		if err := json.Unmarshal([]byte(text), &payload); err != nil {
 			return -1, fmt.Errorf("geen geldige JSON in probe-antwoord: %.80s", text)
 		}
-		return payload.Count, nil
+		if payload.Count == nil || *payload.Count < 0 || len(payload.Error) > 0 && string(payload.Error) != "null" {
+			return -1, fmt.Errorf("geen geldige telling in ArcGIS-antwoord: %.80s", text)
+		}
+		return *payload.Count, nil
 	}
 	if kind == "ogc" {
 		return checkOGC(text)
@@ -129,6 +133,9 @@ func ProbeSource(src Source) SourceHealth {
 		return down(src, started, err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return down(src, started, fmt.Errorf("HTTP %d", resp.StatusCode))
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return down(src, started, err)

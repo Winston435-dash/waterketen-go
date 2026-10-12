@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -284,16 +283,7 @@ func (t *Table) eachQueryRow(ctx context.Context, where string, args []any, fn f
 	if err != nil {
 		return err
 	}
-	const idColumn = "_waterketen_query_rowid"
-	columns := []string{`rowid AS ` + quoteQueryIdentifier(idColumn)}
-	for _, name := range cols.names {
-		if name == idColumn {
-			return fmt.Errorf("gereserveerde querykolom: %s", name)
-		}
-		columns = append(columns, quoteQueryIdentifier(name))
-	}
-	cols.names = append([]string{idColumn}, cols.names...)
-	rows, err := t.db.QueryContext(ctx, `SELECT `+strings.Join(columns, ",")+` FROM `+quoteQueryIdentifier(t.name)+` `+where+` ORDER BY rowid`, args...)
+	rows, err := t.db.QueryContext(ctx, `SELECT `+cols.projection()+` FROM `+quoteQueryIdentifier(t.name)+` `+where+` ORDER BY rowid`, args...)
 	if err != nil {
 		return err
 	}
@@ -310,12 +300,6 @@ func (t *Table) eachQueryRow(ctx context.Context, where string, args []any, fn f
 		if !ok || !valid || math.IsNaN(bounds.MinX) || math.IsNaN(bounds.MinY) || math.IsNaN(bounds.MaxX) || math.IsNaN(bounds.MaxY) || math.IsInf(bounds.MinX, 0) || math.IsInf(bounds.MinY, 0) || math.IsInf(bounds.MaxX, 0) || math.IsInf(bounds.MaxY, 0) {
 			return fmt.Errorf("onleesbare geometrie in %s; telling afgebroken", t.name)
 		}
-		row.ID, err = strconv.ParseInt(row.Properties[idColumn], 10, 64)
-		if err != nil {
-			return err
-		}
-		delete(row.Properties, idColumn)
-		delete(row.Numbers, idColumn)
 		fn(row)
 	}
 	return rows.Err()

@@ -213,13 +213,24 @@ func (la *LibraryAtlas) Load(view View, width, height int, names []string, limit
 			}
 		}
 	}
+	var scene *Scene
 	if len(sources) == 0 {
-		warnings = append(warnings, "Geen objecten in deze uitsnede")
-		return nil, fmt.Errorf("%s", strings.Join(warnings, "; "))
-	}
-	scene, err := NewScene(la.Area.Label(), sources, warnings)
-	if err != nil {
-		return nil, err
+		if len(warnings) > 0 {
+			return nil, fmt.Errorf("%s", strings.Join(warnings, "; "))
+		}
+		// Empty selections and empty windows are valid views, not read errors.
+		scene = &Scene{Area: la.Area.Label(), Layers: map[string][]Feature{}, Index: map[string]GridIndex{}, Streets: map[string][]StreetRef{}}
+		if len(names) == 0 {
+			scene.Warnings = []string{"Geen lagen geselecteerd"}
+		} else {
+			scene.Warnings = []string{"Geen objecten in deze uitsnede"}
+		}
+	} else {
+		var err error
+		scene, err = NewScene(la.Area.Label(), sources, warnings)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// The AREA owns the frame, not whatever happened to load. Python does the
 	// same (AtlasData.build(..., bounds=self.bounds)): without it the map would
@@ -305,11 +316,10 @@ func bobOf(numbers map[string]float64) float64 {
 // --- street search (no geometry loaded) -------------------------------------
 
 // visibleNames answers what `waterketen kaart`/`bibliotheek` already answer: a
-// NIL or EMPTY layer set means "the networks on top of nothing", NOT "every layer
-// in the snapshot". Loading all ten (gebouwen is 226.272 objects) for an empty
-// picker result would be both slow and a lie about what the user asked for.
+// A nil layer set means the default networks; an explicit empty set means no
+// data layers. Never silently undo the user's layer-picker selection.
 func (la *LibraryAtlas) visibleNames(names []string) []string {
-	if len(names) > 0 {
+	if names != nil {
 		return OrderLayers(names)
 	}
 	return la.Library.HasLayers("riool", "drinkwaterleidingen")

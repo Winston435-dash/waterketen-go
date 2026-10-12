@@ -275,8 +275,9 @@ func (s *Kaart) SetArea(code string) tea.Cmd {
 // "draw no data layers" is a real answer from the picker, and forcing riool back
 // in would silently override what the user just chose.
 func (s *Kaart) SetLayers(names []string) tea.Cmd {
-	s.layers = core.OrderLayers(names)
+	s.layers = core.OrderLayers(append([]string{}, names...))
 	s.solo = false
+	s.overlay = true
 	if len(s.layers) > 0 && !slices.Contains(s.layers, s.active) {
 		s.active = s.layers[0]
 	}
@@ -289,6 +290,9 @@ func (s *Kaart) SetLayers(names []string) tea.Cmd {
 // multi-second disk read per repeat.
 func (s *Kaart) requestLoad() tea.Cmd {
 	s.needsDraw = true
+	if s.atlas == nil {
+		return nil
+	}
 	if s.loads > 0 {
 		s.stale = true
 		return nil
@@ -385,9 +389,13 @@ func (s *Kaart) DrawCmd(generation int) tea.Cmd {
 	w, h := s.innerSize()
 	active, overlay, mode, labels := s.active, s.overlay, s.mode, s.labels
 	selected, street := s.selected, s.street
+	var display []string
+	if s.atlas != nil {
+		display = append([]string{}, s.visibleLayerNames()...)
+	}
 	return func() tea.Msg {
 		r := core.RenderScene(scene, view, w, h,
-			active, overlay, mode, labels, true, selected, street, nil, true)
+			active, overlay, mode, labels, true, selected, street, display, true)
 		return DrawnMsg{Render: &r, Generation: generation}
 	}
 }
@@ -510,8 +518,6 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 	}
 	w, h := s.innerSize()
 	pan := func(dx, dy float64) tea.Cmd {
-		dx = dx * (s.scene.Bounds.MaxX - s.scene.Bounds.MinX) * .18
-		dy = dy * (s.scene.Bounds.MaxY - s.scene.Bounds.MinY) * .18
 		return s.moveView(dx, dy)
 	}
 	switch {
@@ -540,6 +546,9 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 		s.overlay = !s.overlay
 		s.solo = !s.solo
 		s.selected = nil
+		if s.atlas != nil {
+			return s.requestLoad()
+		}
 	case key.Matches(m, ui.Keys.Labels):
 		s.labels = !s.labels
 	case key.Matches(m, ui.Keys.Area):
@@ -553,10 +562,10 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 		return nil
 	case key.Matches(m, ui.Keys.NextLayer):
 		s.cycleLayer(1)
-		return nil
+		return s.requestLoad()
 	case key.Matches(m, ui.Keys.PrevLayer):
 		s.cycleLayer(-1)
-		return nil
+		return s.requestLoad()
 	default:
 		return nil
 	}
@@ -571,9 +580,8 @@ func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
 // against the AREA bounds, the managed world uses core.View.Pan.
 func (s *Kaart) moveView(east, north float64) tea.Cmd {
 	if s.atlas != nil {
-		b := s.atlas.Area.Bounds
-		s.view.CX += east * (b.MaxX - b.MinX) * .18
-		s.view.CY += north * (b.MaxY - b.MinY) * .18
+		w, h := s.innerSize()
+		s.view.Pan(east, north, s.atlas.Area.Bounds, w, h)
 		return s.requestLoad()
 	}
 	s.view.Pan(east, north, s.scene.Bounds, s.w, s.h)

@@ -104,6 +104,9 @@ func OrderLayers(names []string) []string {
 		in[n] = true
 	}
 	var out []string
+	if names != nil {
+		out = make([]string, 0)
+	}
 	for _, n := range DrawOrder {
 		if in[n] {
 			out = append(out, n)
