@@ -5,6 +5,7 @@
 package screens
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -65,16 +66,20 @@ type Screen interface {
 
 // New builds the initial screen set, given the loaded domain state.
 func New(root string) []Screen {
-	assets, _ := core.LoadAssets(root)
-	lib, _ := core.OpenLibrary(root)
+	assets, assetErr := core.LoadAssets(root)
+	lib, libErr := core.OpenLibrary(root)
+	catalog := core.CatalogWithLocal(assets, lib)
+	metadataErr := errors.Join(assetErr, libErr)
+	analysis := NewAnalyse(root, assets)
+	analysis.SetLibrary(lib, catalog)
 	return []Screen{
 		NewBronnen(),
-		NewLagen(assets),
+		NewLagen(catalog, metadataErr),
 		NewGebieden(lib, assets),
-		NewAnalyse(root, assets),
+		analysis,
 		NewKaart(root, lib, assets),
 		NewProfiel(root, assets),
-		NewOntdek(root),
+		NewOntdekCatalog(catalog, metadataErr),
 		NewQuery(root),
 	}
 }
@@ -285,6 +290,11 @@ func (s *Bronnen) refreshHealth() {
 
 func (s *Bronnen) renderHealth() string {
 	var b strings.Builder
+	b.WriteString(components.Muted("Groen = dienst bereikbaar, niet gedownload of lokaal beschikbaar."))
+	b.WriteByte('\n')
+	b.WriteString(components.Muted("Probe-aantallen kunnen landelijk zijn; dit zijn geen gebiedstellingen."))
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	for _, h := range s.health {
 		if h.Status == core.HealthNotWired {
 			continue // unwired section below

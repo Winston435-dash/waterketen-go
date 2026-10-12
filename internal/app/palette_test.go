@@ -141,12 +141,12 @@ func TestPaletteEscapeClosesWithoutDispatchingToPanel(t *testing.T) {
 	}
 }
 
-func TestEmptyPanelPaletteCanSwitchToGlobal(t *testing.T) {
+func TestInventoryPanelPaletteCanSwitchToGlobal(t *testing.T) {
 	m := paletteModel(t, screens.ScreenLagen)
 	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 	view := ansi.Strip(m.View())
-	if !strings.Contains(view, "Geen paneelopdrachten") {
-		t.Fatalf("empty panel palette lacks an explanation:\n%s", view)
+	if !strings.Contains(view, "Lagen · lokaal/alle") || !strings.Contains(view, "Lagen · filter") {
+		t.Fatalf("inventory panel palette omits its new actions:\n%s", view)
 	}
 	if strings.Contains(view, "Ververs bronnen") || !strings.Contains(view, "ctrl+p") {
 		t.Fatalf("panel palette has the wrong scope or no global hint:\n%s", view)

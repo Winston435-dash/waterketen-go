@@ -26,6 +26,10 @@ type Ontdek struct {
 
 func NewOntdek(root string) *Ontdek {
 	catalog, err := core.LoadCatalog(root)
+	return NewOntdekCatalog(catalog, err)
+}
+
+func NewOntdekCatalog(catalog core.Catalog, err error) *Ontdek {
 	return &Ontdek{catalog: catalog, loadErr: err, menu: viewport.New(1, 1), document: viewport.New(1, 1)}
 }
 func (s *Ontdek) ID() ScreenID { return ScreenOntdek }

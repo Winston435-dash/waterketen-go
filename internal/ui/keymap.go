@@ -6,12 +6,14 @@ import "github.com/charmbracelet/bubbles/key"
 // declare which of these they use; the CommandBar renders them. A key that is
 // not in this table does not exist.
 type KeyMap struct {
-	Up       key.Binding
-	Down     key.Binding
-	PageUp   key.Binding
-	PageDown key.Binding
-	Home     key.Binding
-	End      key.Binding
+	Up        key.Binding
+	Down      key.Binding
+	PageUp    key.Binding
+	PageDown  key.Binding
+	Home      key.Binding
+	End       key.Binding
+	Filter    key.Binding
+	LocalOnly key.Binding
 
 	NextPanel key.Binding
 	PrevPanel key.Binding
@@ -51,12 +53,14 @@ type KeyMap struct {
 
 // Keys is the app-wide binding table. Descriptions are Dutch, matching the UI.
 var Keys = KeyMap{
-	Up:       key.NewBinding(key.WithKeys("up"), key.WithHelp("↑", "omhoog")),
-	Down:     key.NewBinding(key.WithKeys("down"), key.WithHelp("↓", "omlaag")),
-	PageUp:   key.NewBinding(key.WithKeys("pgup"), key.WithHelp("pgup", "pagina ↑")),
-	PageDown: key.NewBinding(key.WithKeys("pgdown"), key.WithHelp("pgdn", "pagina ↓")),
-	Home:     key.NewBinding(key.WithKeys("home"), key.WithHelp("home", "begin")),
-	End:      key.NewBinding(key.WithKeys("end"), key.WithHelp("end", "eind")),
+	Up:        key.NewBinding(key.WithKeys("up"), key.WithHelp("↑", "omhoog")),
+	Down:      key.NewBinding(key.WithKeys("down"), key.WithHelp("↓", "omlaag")),
+	PageUp:    key.NewBinding(key.WithKeys("pgup"), key.WithHelp("pgup", "pagina ↑")),
+	PageDown:  key.NewBinding(key.WithKeys("pgdown"), key.WithHelp("pgdn", "pagina ↓")),
+	Home:      key.NewBinding(key.WithKeys("home"), key.WithHelp("home", "begin")),
+	End:       key.NewBinding(key.WithKeys("end"), key.WithHelp("end", "eind")),
+	Filter:    key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "filter")),
+	LocalOnly: key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "lokaal/alle")),
 
 	NextPanel: key.NewBinding(key.WithKeys("tab", "j"), key.WithHelp("j", "volgend paneel")),
 	PrevPanel: key.NewBinding(key.WithKeys("shift+tab", "k"), key.WithHelp("k", "vorig paneel")),

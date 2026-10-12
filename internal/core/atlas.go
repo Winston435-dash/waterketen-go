@@ -48,7 +48,7 @@ const (
 	scaleInk     = "#b3d3e9"
 	// materialInk is the fallback ink for a material legend swatch whose colour
 	// core cannot resolve without the scene's material map.
-	materialInk = "#9ddeda"
+	materialInk     = "#9ddeda"
 	genericLayerInk = "#9aa8b8" // new snapshot layers without a dedicated data colour
 )
 
@@ -115,7 +115,11 @@ func OrderLayers(names []string) []string {
 		}
 	}
 	var extra []string
-	for name := range in { if name != "" { extra = append(extra, name) } }
+	for name := range in {
+		if name != "" {
+			extra = append(extra, name)
+		}
+	}
 	sort.Strings(extra)
 	out = append(out, extra...)
 	return out

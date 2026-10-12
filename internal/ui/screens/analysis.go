@@ -33,6 +33,8 @@ type AnalyseScreen struct {
 	lines    []string // cached when data changes, never recomputed by scrolling
 	report   []string // data-only report, unchanged when diagnostics arrive
 	failures []error
+	library  *core.Library
+	catalog  core.Catalog
 }
 
 func NewAnalyse(root string, assets []core.AssetMeta) *AnalyseScreen {
@@ -45,7 +47,16 @@ func (s *AnalyseScreen) KeyMap() []key.Binding {
 }
 func (s *AnalyseScreen) SetSize(w, h int) { s.w, s.h = w, h }
 func (s *AnalyseScreen) Info() string {
-	return fmt.Sprintf("%d lagen geladen", len(s.data))
+	if s.library != nil {
+		return fmt.Sprintf("%d managed berekend · %d snapshot (metadata)", len(s.data), len(s.library.Manifest.Layers))
+	}
+	return fmt.Sprintf("%d managed lagen berekend", len(s.data))
+}
+
+func (s *AnalyseScreen) SetLibrary(lib *core.Library, catalog core.Catalog) {
+	s.library, s.catalog = lib, catalog
+	s.report = s.renderLines()
+	s.refreshLines()
 }
 
 // DataMsg carries loaded analysis data back to the app.
@@ -109,7 +120,7 @@ func (s *AnalyseScreen) View() string {
 	if s.busy {
 		return components.Busy(s.spinner, "Lagen worden gelezen…")
 	}
-	if len(s.data) == 0 && len(s.failures) == 0 {
+	if len(s.data) == 0 && len(s.failures) == 0 && s.library == nil {
 		return components.EmptyState(
 			"Geen managed data",
 			"Haal data op: waterketen fetch --gebied delfshaven --laag riool",
@@ -136,6 +147,10 @@ func (s *AnalyseScreen) View() string {
 // beyond Muted via components — colour decisions stay in the components.
 func (s *AnalyseScreen) renderLines() []string {
 	var out []string
+	if len(s.data) > 0 {
+		out = append(out, components.Strong("Managed — berekend over de gebiedsbestanden"),
+			components.Muted("Dit is niet de gemeentebrede snapshot; kies paneel 8 voor een gebiedstelling."), "")
+	}
 	for _, d := range s.data {
 		spec := d.Spec
 		header := fmt.Sprintf("%s/%s", d.Area, d.Layer)
@@ -175,6 +190,28 @@ func (s *AnalyseScreen) renderLines() []string {
 	if len(out) > 0 {
 		out = out[:len(out)-1] // trailing blank line
 	}
+	if s.library != nil {
+		out = append(out, "", components.Strong("Snapshot — metadata, geen geometrieanalyse"),
+			components.Muted("Snapshot "+s.library.Snapshot),
+			components.Muted("Registratie ≠ volledig netwerk. Voor exacte gebiedsaantallen: paneel 8 Query."))
+		for _, name := range s.library.LayerNames() {
+			label, state := name, "bestand ontbreekt"
+			for _, layer := range s.catalog.Layers {
+				if layer.ID != name {
+					continue
+				}
+				label = layer.Label
+				for _, local := range layer.Local {
+					if local.Storage == "snapshot" && local.OnDisk {
+						state = "bestand aanwezig"
+					}
+				}
+				break
+			}
+			rec := s.library.Manifest.Layers[name]
+			out = append(out, components.Muted(queryClean(fmt.Sprintf("  %s: %s objecten volgens metadata · %s", label, Thousands(rec.FeatureCount), state))))
+		}
+	}
 	return out
 }
 
@@ -205,11 +242,19 @@ func (s *ProfielScreen) Info() string {
 	if len(s.data) == 0 {
 		return "geen managed data"
 	}
-	return fmt.Sprintf("laag %d/%d", s.index+1, len(s.data))
+	return fmt.Sprintf("managed BOB-laag %d/%d", s.index+1, len(s.data))
 }
 
 // SetData shares the same loaded data as Analyse — one load, two panels.
-func (s *ProfielScreen) SetData(d []*LayerData) { s.data = d }
+func (s *ProfielScreen) SetData(data []*LayerData) {
+	s.data = nil
+	for _, layer := range data {
+		if layer.Spec != nil && layer.Spec.HasBOB {
+			s.data = append(s.data, layer)
+		}
+	}
+	s.index = min(s.index, max(0, len(s.data)-1))
+}
 
 func (s *ProfielScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
@@ -230,8 +275,8 @@ func (s *ProfielScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 func (s *ProfielScreen) View() string {
 	if len(s.data) == 0 {
 		return components.EmptyState(
-			"Geen managed data",
-			"Haal data op: waterketen fetch --gebied delfshaven --laag riool",
+			"Geen managed BOB-lagen",
+			"Kaart- en querylagen zijn niet automatisch profieldata; laad een managed rioollaag met BOB.",
 			s.w,
 		)
 	}
@@ -271,9 +316,9 @@ func (s *ProfielScreen) View() string {
 	}
 	features := byStreet[deepest]
 	var b strings.Builder
-	b.WriteString(components.Strong(fmt.Sprintf("%s — diepste straat (%d buizen)", deepest, len(features))))
+	b.WriteString(components.Strong(fmt.Sprintf("%s — laagste buisbodem (%d buizen)", deepest, len(features))))
 	b.WriteByte('\n')
-	b.WriteString(components.Muted(fmt.Sprintf("diepste buisbodem: %.2f m NAP", deepestBOB)))
+	b.WriteString(components.Muted(fmt.Sprintf("managed buisbodem: %.2f m NAP · geen diepte onder maaiveld", deepestBOB)))
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	// Simple horizontal section: a dot per pipe at its BOB height. Depth runs

@@ -115,10 +115,10 @@ func NewCatalog() Catalog {
 		CatalogLayer{ID: "rioned-leiding", Label: "RIONED waterschapsleidingen", Official: "waterschap_leiding", Summary: "Een afzonderlijke collectie van waterschapsleidingen volgens GWSW.", Question: "Welke leidingen publiceert RIONED via PDOK?", Geometry: "lijnen", SourceID: "rioned_gwsw", Limit: "Een antwoord met limit=1 is geen totaaltelling en bewijst geen wijkdekking.", Use: "Broncontrole in Go; niet automatisch als extra netwerk op de kaart geladen.", Terms: []string{"rioned", "gwsw", "ogc"}},
 		CatalogLayer{ID: "zh-drinkwater-gebied", Label: "ZH drinkwaterverzorgingsgebied", Official: "water:DRINKWATER_BEDRIJVEN", Summary: "Een tweede levering van drinkwaterverzorgingsgebieden, naast Vewin.", Question: "Wie levert hier drinkwater?", Geometry: "vlakken", SourceID: "zh_drinkwater", Limit: "Geen leidingen en geen nieuw netwerk. Deze levering kan dienen als kruiscontrole op Vewin.", Use: "Broncontrole in Go; geen extra leidingkaart.", Terms: []string{"wfs", "layer"}},
 	)
-	c.Layers = append(c.Layers, CatalogLayer{ID:"rws-regiogebieden", Label:"RWS regiogebieden", Official:"regiogebieden_rijkswaterstaat / MapServer/0", Geometry:"vlakken", SourceID:"rws_regiogebieden",
-		Summary:"Beheergrenzen van Rijkswaterstaatdiensten en districten.", Question:"Welke Rijkswaterstaatregio beheert dit gebied?",
-		Limit:"Geen CBS-wijkgrenzen, verzorgingsgebied of leidingnet. De dienst publiceert geen licentieveld.",
-		Use:"Broncontrole in Go; geen lokale snapshotlaag zolang deze niet expliciet is opgenomen.", Terms:[]string{"arcgis","layer"}})
+	c.Layers = append(c.Layers, CatalogLayer{ID: "rws-regiogebieden", Label: "RWS regiogebieden", Official: "regiogebieden_rijkswaterstaat / MapServer/0", Geometry: "vlakken", SourceID: "rws_regiogebieden",
+		Summary: "Beheergrenzen van Rijkswaterstaatdiensten en districten.", Question: "Welke Rijkswaterstaatregio beheert dit gebied?",
+		Limit: "Geen CBS-wijkgrenzen, verzorgingsgebied of leidingnet. De dienst publiceert geen licentieveld.",
+		Use:   "Broncontrole in Go; geen lokale snapshotlaag zolang deze niet expliciet is opgenomen.", Terms: []string{"arcgis", "layer"}})
 	for _, base := range []struct{ id, label, official, summary, geometry string }{
 		{"straten", "Straten", "OSM highway", "Straatgeometrie als bovengrondse oriëntatie.", "lijnen"},
 		{"water", "Oppervlaktewater", "OSM natural=water / landuse=reservoir", "Vlakken voor water zoals singels, havens en reservoirs.", "vlakken"},

@@ -64,7 +64,11 @@ type CatalogLocal struct {
 }
 
 func (l CatalogLayer) Available() bool {
-	for _, local := range l.Local { if local.OnDisk { return true } }
+	for _, local := range l.Local {
+		if local.OnDisk {
+			return true
+		}
+	}
 	return false
 }
 
@@ -138,24 +142,32 @@ func LoadCatalog(root string) (Catalog, error) {
 func CatalogWithLocal(assets []AssetMeta, lib *Library) Catalog {
 	c := NewCatalog()
 	known := map[string]bool{}
-	for _, layer := range c.Layers { known[layer.ID] = true }
+	for _, layer := range c.Layers {
+		known[layer.ID] = true
+	}
 	for _, a := range assets {
-		if known[a.Layer] { continue }
+		if known[a.Layer] {
+			continue
+		}
 		label := a.LayerLabel
-		if label == "" { label = a.Layer }
-		c.Layers = append(c.Layers, CatalogLayer{ID:a.Layer, Label:label, SourceID:a.Source,
-			Official:a.SourceTypeName, Geometry:a.GeometryNote,
-			Summary:"Lokale managed levering; geen afzonderlijke catalogusuitleg.",
-			Limit:"Metadata en bestandstatus bewijzen geen volledigheid.", Use:"Managed data; herkomst en licentie staan bij de lokale levering."})
+		if label == "" {
+			label = a.Layer
+		}
+		c.Layers = append(c.Layers, CatalogLayer{ID: a.Layer, Label: label, SourceID: a.Source,
+			Official: a.SourceTypeName, Geometry: a.GeometryNote,
+			Summary: "Lokale managed levering; geen afzonderlijke catalogusuitleg.",
+			Limit:   "Metadata en bestandstatus bewijzen geen volledigheid.", Use: "Managed data; herkomst en licentie staan bij de lokale levering."})
 		known[a.Layer] = true
 	}
 	if lib != nil {
 		for _, name := range lib.LayerNames() {
-			if known[name] { continue }
-			c.Layers = append(c.Layers, CatalogLayer{ID:name, Label:name,
-				Summary:"Gepubliceerde snapshotlaag; geen afzonderlijke catalogusuitleg.",
-				Geometry:"geometrie uit de lokale levering", Limit:"Registratie is geen bewijs van een volledig fysiek netwerk.",
-				Use:"Leesbaar via de lokale kaartbibliotheek en gebiedsquery; herkomst en licentie staan bij de levering."})
+			if known[name] {
+				continue
+			}
+			c.Layers = append(c.Layers, CatalogLayer{ID: name, Label: name,
+				Summary:  "Gepubliceerde snapshotlaag; geen afzonderlijke catalogusuitleg.",
+				Geometry: "geometrie uit de lokale levering", Limit: "Registratie is geen bewijs van een volledig fysiek netwerk.",
+				Use: "Leesbaar via de lokale kaartbibliotheek en gebiedsquery; herkomst en licentie staan bij de levering."})
 			known[name] = true
 		}
 	}
@@ -164,17 +176,17 @@ func CatalogWithLocal(assets []AssetMeta, lib *Library) Catalog {
 		l.Local = []CatalogLocal{}
 		for _, a := range assets {
 			if a.Layer == l.ID {
-				l.Local = append(l.Local, CatalogLocal{Storage:"managed", Area: a.Area, OnDisk: a.ProcessedExists(), Count: a.FeatureCount, FetchedAt: a.FetchedAt, SourceURL: a.SourceURL, License: a.SourceLicense, CRS: a.CRS, Status: a.Status})
+				l.Local = append(l.Local, CatalogLocal{Storage: "managed", Area: a.Area, OnDisk: a.ProcessedExists(), Count: a.FeatureCount, FetchedAt: a.FetchedAt, SourceURL: a.SourceURL, License: a.SourceLicense, CRS: a.CRS, Status: a.Status})
 			}
 		}
 		if lib != nil {
 			// The area registry is a separate file, not a manifest.layers entry.
 			if l.ID == "gebieden" {
-				l.Local = append(l.Local, CatalogLocal{Storage:"gebiedenregister", Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: localFileExists(filepath.Join(lib.Root, "areas.gpkg")), Count: lib.Manifest.AreaCount, FetchedAt: lib.Manifest.CreatedAt, CRS: lib.Manifest.CRS, SourceURL: lib.Manifest.BoundarySource, Status: "gebiedenregister; datum = publicatie, niet brondatum"})
+				l.Local = append(l.Local, CatalogLocal{Storage: "gebiedenregister", Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: localFileExists(filepath.Join(lib.Root, "areas.gpkg")), Count: lib.Manifest.AreaCount, FetchedAt: lib.Manifest.CreatedAt, CRS: lib.Manifest.CRS, SourceURL: lib.Manifest.BoundarySource, Status: "gebiedenregister; datum = publicatie, niet brondatum"})
 				continue
 			}
 			if rec, ok := lib.Manifest.Layers[l.ID]; ok {
-				l.Local = append(l.Local, CatalogLocal{Storage:"snapshot", Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: localFileExists(lib.LayerPath(l.ID)), Count: rec.FeatureCount, FetchedAt: lib.Manifest.CreatedAt, SourceDate: rec.Source.Date, SourceURL: rec.Source.URL, License: rec.Source.License, CRS: lib.Manifest.CRS, Status: "snapshot; datum = publicatie, niet brondatum"})
+				l.Local = append(l.Local, CatalogLocal{Storage: "snapshot", Area: "kaartbibliotheek / " + lib.Snapshot, OnDisk: localFileExists(lib.LayerPath(l.ID)), Count: rec.FeatureCount, FetchedAt: lib.Manifest.CreatedAt, SourceDate: rec.Source.Date, SourceURL: rec.Source.URL, License: rec.Source.License, CRS: lib.Manifest.CRS, Status: "snapshot; datum = publicatie, niet brondatum"})
 			}
 		}
 	}

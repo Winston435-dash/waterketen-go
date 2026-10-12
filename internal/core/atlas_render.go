@@ -339,9 +339,12 @@ func layerLegendEntry(name string, features []Feature) LegendEntry {
 	default:
 		if _, known := layerColours[name]; !known && len(features) > 0 {
 			switch features[0].Geometry.Kind {
-			case "point", "multipoint": symbol = "•"
-			case "polygon", "multipolygon": symbol = "■"
-			case "collection": symbol = "◇"
+			case "point", "multipoint":
+				symbol = "•"
+			case "polygon", "multipolygon":
+				symbol = "■"
+			case "collection":
+				symbol = "◇"
 			}
 		}
 	}

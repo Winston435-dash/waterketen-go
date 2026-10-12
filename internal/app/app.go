@@ -245,6 +245,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
+	case screens.AreasMsg:
+		for i, screen := range m.screens {
+			if areas, ok := screen.(*screens.Gebieden); ok {
+				next, cmd := areas.Update(msg)
+				m.screens[i] = next
+				return m, tea.Batch(cmd, m.afterScreenUpdate())
+			}
+		}
+		return m, nil
 	case screens.SceneMsg:
 		if k := m.kaart(); k != nil {
 			if msg.Err != nil {
@@ -294,6 +303,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.Matches(msg, ui.Keys.Palette) {
 			m.palette = newCommandPalette(m, paletteGlobal)
 			return m, nil
+		}
+		if filter, ok := m.screens[m.active].(interface{ EditingFilter() bool }); ok && filter.EditingFilter() && msg.Type != tea.KeyCtrlC {
+			next, cmd := m.screens[m.active].Update(msg)
+			m.screens[m.active] = next
+			return m, tea.Batch(cmd, m.afterScreenUpdate())
 		}
 		if key.Matches(msg, ui.Keys.PanelPalette) {
 			k := m.kaart()
@@ -362,8 +376,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) afterScreenUpdate() tea.Cmd {
 	draw := m.maybeTriggerDraw()
 	var load, spin tea.Cmd
-	if query, ok := m.screens[m.active].(*screens.Query); ok {
-		load = query.LoadCmd()
+	if loader, ok := m.screens[m.active].(interface{ LoadCmd() tea.Cmd }); ok {
+		load = loader.LoadCmd()
 	}
 	if b, ok := m.screens[m.active].(spinnerScreener); ok && b.Busy() {
 		spin = m.startSpinner()

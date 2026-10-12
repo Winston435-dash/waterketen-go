@@ -215,8 +215,12 @@ func (l *Library) HasLayers(names ...string) []string {
 // LayerNames is the complete published vector inventory, including new layer
 // names that do not yet have a dedicated colour or a catalog explanation.
 func (l *Library) LayerNames() []string {
-	if l == nil { return nil }
+	if l == nil {
+		return nil
+	}
 	names := make([]string, 0, len(l.Manifest.Layers))
-	for name := range l.Manifest.Layers { names = append(names, name) }
+	for name := range l.Manifest.Layers {
+		names = append(names, name)
+	}
 	return OrderLayers(names)
 }

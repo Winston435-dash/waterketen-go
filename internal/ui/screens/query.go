@@ -386,17 +386,20 @@ func (s *Query) reveal(line int) {
 }
 func (s *Query) formLines(width int) []string {
 	lines := []string{components.Strong("GEBIED"), components.Strong("  " + s.area.Kind + " " + s.area.Name + "  ▾  g"), components.Muted("  " + s.area.Code + " · CBS"), "", components.Strong("LAGEN")}
-	for i, l := range s.layers {
-		if i == 4 {
-			break
+	for _, l := range s.layers {
+		if !slices.Contains(s.selected, l.ID) {
+			continue
 		}
-		mark := "[ ]"
-		if slices.Contains(s.selected, l.ID) {
-			mark = "[x]"
+		label := l.Label
+		if !l.Available {
+			label += " · niet lokaal"
 		}
-		lines = append(lines, "  "+mark+" "+l.Label)
+		lines = append(lines, "  [x] "+label)
 	}
-	lines = append(lines, components.Muted(fmt.Sprintf("  l: alle lagen · %d gekozen", len(s.selected))), "")
+	if len(s.selected) == 0 {
+		lines = append(lines, components.Muted("  Geen lagen gekozen"))
+	}
+	lines = append(lines, components.Muted(fmt.Sprintf("  l: %d snapshotkeuzes · %d gekozen", len(s.layers), len(s.selected))), "")
 	button := "  [ Query uitvoeren ]"
 	if !s.resultFocus {
 		button = components.Selected(button, width)

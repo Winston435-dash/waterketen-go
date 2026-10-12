@@ -160,11 +160,11 @@ func TestLibraryAtlasZoomShrinksWindowAndCount(t *testing.T) {
 }
 
 // TestLibraryAtlasLayerSetIsOrdered: the panel's chosen layer set must come out
-// in DrawOrder, so the map paints background under network — and an unknown
-// slug is dropped rather than drawn blind.
+// in DrawOrder, so the map paints background under network. New names are kept
+// after that established order, so future snapshot layers are not hidden.
 func TestLibraryAtlasLayerSetIsOrdered(t *testing.T) {
 	got := OrderLayers([]string{"riool", "oppervlaktewatergemalen", "straten", "onbekend", "water"})
-	want := []string{"water", "straten", "riool", "oppervlaktewatergemalen"}
+	want := []string{"water", "straten", "riool", "oppervlaktewatergemalen", "onbekend"}
 	if len(got) != len(want) {
 		t.Fatalf("OrderLayers = %v, verwacht %v", got, want)
 	}
