@@ -78,6 +78,8 @@ func NewInventory() Inventory {
 	m.KeyMap.CursorDown = ui.Keys.Down
 	m.KeyMap.NextPage = ui.Keys.PageDown
 	m.KeyMap.PrevPage = ui.Keys.PageUp
+	m.KeyMap.GoToStart = ui.Keys.Home
+	m.KeyMap.GoToEnd = ui.Keys.End
 	return Inventory{model: m}
 }
 func (i *Inventory) SetSize(width, height int) {
@@ -128,7 +130,7 @@ func (i *Inventory) Update(msg tea.Msg) tea.Cmd {
 }
 func (i Inventory) View() string {
 	if len(i.model.Items()) == 0 {
-		return SingleLine(Muted("Geen resultaten voor dit filter."), i.width)
+		return SingleLine(Muted("Geen resultaten."), i.width)
 	}
 	rows := strings.Split(i.model.View(), "\n")
 	if len(rows) > i.height {

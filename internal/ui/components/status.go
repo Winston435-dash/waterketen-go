@@ -11,7 +11,7 @@ import (
 type Status int
 
 const (
-	StatusOK   Status = iota // up / complete
+	StatusOK   Status = iota // reachable / file present; not proof of physical completeness
 	StatusWarn               // partial, degraded, truncated
 	StatusDown               // unreachable / failed
 	StatusIdle               // not wired, not probed, "gedetecteerd"

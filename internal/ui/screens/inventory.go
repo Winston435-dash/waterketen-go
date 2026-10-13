@@ -234,9 +234,13 @@ func layerInventoryItem(layer core.CatalogLayer, catalog core.Catalog) component
 			break
 		}
 	}
+	geometry,official:=layer.Geometry,layer.Official
+	if geometry=="" { geometry="onbekend" }
+	if official=="" { official="onbekend" }
+	if source=="" { source="lokale levering; herkomst onbekend" }
 	doc := []string{components.Strong(queryClean(layer.Label + " · " + layer.ID)),
-		components.Muted(queryClean("Geometrie: " + layer.Geometry + " · bron: " + source)),
-		components.Muted(queryClean("Officieel: " + layer.Official)), components.Strong(state),
+		components.Muted(queryClean("Geometrie: " + geometry + " · bron: " + source)),
+		components.Muted(queryClean("Officieel: " + official)), components.Strong(state),
 		components.Muted("Bestand aanwezig ≠ inhoud gevalideerd of volledig"), ""}
 	summary := state + " · " + license
 	if len(layer.Local) == 0 {
