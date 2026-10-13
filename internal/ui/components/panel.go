@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"waterketen/internal/ui"
 )
@@ -24,16 +25,29 @@ func Panel(title, body string, width, height int, active bool) string {
 	}
 	// Panels have no independent fill: the app shell supplies the shared black
 	// surface, so panels remain floating outlines rather than filled cards.
+	// v2 Width/Height include the frame, and its word wrapper can remove ink
+	// from styled leading/trailing spaces. Fit the already laid-out body ourselves
+	// so map cells (including blank cells) survive the stack migration unchanged.
+	innerW, innerH := max(0, width-4), max(0, height-2)
+	rows := strings.Split(body, "\n")
+	if len(rows) > innerH {
+		rows = rows[:innerH]
+	}
+	for len(rows) < innerH {
+		rows = append(rows, "")
+	}
+	for i, row := range rows {
+		row = ansi.Truncate(row, innerW, "")
+		rows[i] = row + strings.Repeat(" ", max(0, innerW-ansi.StringWidth(row)))
+	}
 	style := lipgloss.NewStyle().
 		Border(border, true).
 		BorderForeground(borderColor).
 		Foreground(ui.ColorText).
 		Padding(0, ui.SpacingXS).
-		Width(width - border.GetLeftSize() - border.GetRightSize()).
-		Height(height - border.GetTopSize() - border.GetBottomSize()).
 		MaxWidth(width).
 		MaxHeight(height)
-	rendered := style.Render(body)
+	rendered := style.Render(strings.Join(rows, "\n"))
 	return lipgloss.NewStyle().MaxWidth(width).MaxHeight(height).Render(
 		lipgloss.PlaceHorizontal(width, lipgloss.Left, withBorderTitle(rendered, title, borderColor)),
 	)
