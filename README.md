@@ -14,9 +14,10 @@ nooit randen, kleuren of spacing definiëren**.
 
 ## Stack
 
-- **Bubble Tea** — applicatie-architectuur (Elm-model).
-- **Bubbles** — hergebruikte componenten: `help`, `key`, `table`, `viewport`.
-- **Lip Gloss** — styling, via `internal/ui/theme.go` als token-bibliotheek.
+- **Bubble Tea v2** — applicatie-architectuur (Elm-model), declaratieve `tea.View`.
+- **Bubbles v2** — hergebruikte componenten: `help`, `key`, `table`, `viewport`.
+- **Lip Gloss v2** — styling, via `internal/ui/theme.go` als token-bibliotheek.
+  Imports komen uit `charm.land/.../v2`; ook Markdown-rendering gebruikt Glamour v2.
 - **Eigen `ui/` kit** — project-design-systeem:
   - `theme.go` — kleur/spacing/border-tokens.
   - `keymap.go` — alle toetsen.
@@ -49,7 +50,7 @@ ongewijzigd. Voor tekst gebruikt de TUI altijd de donkere themavariant.
    **data-ink**: `core.CellColour` is de enige kleurtabel voor de kaart;
    `ui/components.RenderAtlas` zet die om naar lipgloss en voegt alleen
    bold/underline toe. De kaart rendert daardoor byte-identiek na de refactor.
-5. **Sidebar is de legenda** voor paneel-keys. De `CommandBar` herhaalt
+5. **Header is de legenda** voor paneel-keys. De `CommandBar` herhaalt
    alleen wat het actuele scherm zelf niet al zichtbaar maakt.
 
 ## Status
@@ -230,12 +231,12 @@ de bestaande broncontroles bij het starten van de app blijven ongewijzigd.
 
 ## Mobiel (Termux / smalle terminals)
 
-De TUI is bruikbaar op een telefoon. Beneden ~76 kolommen of ~24 rijen wijkt de
-zijbalk voor de kaart — die is de inhoud, de zijbalk is comfort — en wat de
-zijbalk normaal vertelt, verhuist naar de twee vrije regels:
+De inhoud gebruikt op ieder formaat de volledige breedte. Alle paneeltoetsen
+staan in de header zolang ze passen; op een telefoon staan daar de actieve en
+naburige panelen. Context staat bij de inhoud:
 
 - **header**: `waterketen — 4 Analyse ‹ 5 Kaart › 6 Profiel` (de paneeltoetsen,
-  want de zijbalk wás de legenda)
+  zodat paneelnavigatie vindbaar blijft)
 - **paneltitel**: `Kaart · GM0599 · samen` (wat `Info()` op een breed scherm in de
   zijbalk zet)
 - **commandobar**: alleen de toetsen, geen beschrijvingen (`← · → · ↑ · ↓ · + · - · f · [ · ] · o · l · /`)

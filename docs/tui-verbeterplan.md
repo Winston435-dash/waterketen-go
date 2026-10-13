@@ -1,7 +1,24 @@
 # TUI-review en verbeterplan
 
-Status: voorstel; nog geen UI- of dependencywijzigingen uitgevoerd.
+Status: uitvoering van de zes geaccordeerde prioriteiten gestart.
 Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
+
+## Uitvoeringslog
+
+- [x] 1. Charm v2-stack: Bubble Tea 2.1.0, Bubbles 2.2.1, Lip Gloss 2.0.6,
+  Glamour 2.0.1. Invoer-/paste-/muismessages, views, componentafmetingen,
+  architectuurguards en tests gemigreerd. Build en tests groen.
+  Echte kaartcaptures op vier formaten: alle zichtbare cellen, kleuren,
+  nadruk, zwarte achtergrond en geometrie identiek. Op 30×12 ook byte-identiek;
+  op de andere formaten codeert de v2-renderer de onzichtbare voorgrondkleur
+  van spaties anders. De exacte diffs en `step1-verification.json` staan bij
+  de scratch-artefacten. Dit is een expliciete afwijking van de strikte
+  byte-identiteitsregel, geen stilzwijgend geslaagde bytecheck.
+- [ ] 2. Vindbare toetsen en correcte overlay-hulp.
+- [ ] 3. Kaartgeometrie en compacte legenda.
+- [ ] 4. Query-resultaten eerst.
+- [ ] 5. Scrollbaar BOB-overzicht.
+- [ ] 6. Compacte inventarissen en taakgericht opdrachtenpalet.
 
 ## Conclusie
 

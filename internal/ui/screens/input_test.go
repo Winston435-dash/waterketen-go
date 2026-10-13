@@ -8,15 +8,12 @@ import (
 	"waterketen/internal/core"
 )
 
-// space is the message Bubble Tea actually produces for the space bar: KeySpace,
-// NOT KeyRunes. Getting this wrong is the whole bug, so the tests build it exactly
-// as bubbletea/key.go does (len(runes)==1 && runes[0]==' ' → KeySpace).
+// space builds the v2 keypress for the space bar.
 func space() tea.KeyPressMsg {
 	return tea.KeyPressMsg{Code: tea.KeySpace, Text: " "}
 }
 
-// pasted is what a bracketed paste produces: KeyRunes with Paste set and the whole
-// string in Runes.
+// pasted is v2's separate bracketed-paste message, not a keypress.
 func pasted(s string) tea.PasteMsg {
 	return tea.PasteMsg{Content: s}
 }

@@ -12,9 +12,8 @@ import (
 
 // TestRenderAtlasEmitsNoBackground is the transparency guard for the map: the
 // atlas must set ink, bold and underline only, never a background, so the
-// app shell's shared black surface shows through. It forces a truecolor profile (tests
-// run without a TTY, where lipgloss would otherwise strip all colour) so the
-// assertion is made against the SGR the app really emits.
+// app shell's shared black surface shows through. Lip Gloss v2 emits full-fidelity
+// ANSI even without a TTY; downsampling belongs to the runtime output layer.
 func TestRenderAtlasEmitsNoBackground(t *testing.T) {
 	r := &core.Render{Cells: [][]core.Cell{
 		{{Rune: '⣿', Style: core.StyleForLayer("riool")}, {Rune: ' ', Style: core.StyleBlank}},
