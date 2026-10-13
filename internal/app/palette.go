@@ -339,7 +339,7 @@ func (m Model) executePaletteCommand(command paletteCommand) (tea.Model, tea.Cmd
 		m.active = index
 		return m, m.redrawMap()
 	case paletteQuit:
-		return m, tea.Quit
+		return m, m.quitCmd()
 	case paletteDispatchPanel:
 		m.active = index
 		next, cmd := m.screens[index].Update(command.key)

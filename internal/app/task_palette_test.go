@@ -3,6 +3,7 @@ package app
 import (
 	"strings"
 	"testing"
+	tea "charm.land/bubbletea/v2"
 	"waterketen/internal/ui/screens"
 )
 
@@ -28,6 +29,19 @@ func TestGlobalPaletteListsTasksNotScrollCommands(t *testing.T) {
 			t.Fatal("unloaded query advertised as executable")
 		}
 	}
+}
+
+func TestTaskPaletteQuitCancelsPendingQueryAndConsumesMouse(t *testing.T) {
+	m:=paletteModel(t,screens.ScreenOntdek);m=press(m,appKey("8"))
+	q:=m.screens[m.active].(*screens.Query)
+	if !q.Busy() { t.Fatal("test query not in flight") }
+	m=press(m,appKey("ctrl+p"));m=pressText(m,"Afsluiten")
+	next,cmd:=m.Update(appKey("enter"));m=next.(Model)
+	if q.Busy()||cmd==nil { t.Fatal("palette quit left query running") }
+	if _,ok:=cmd().(tea.QuitMsg);!ok { t.Fatal("palette quit did not quit") }
+	m=paletteModel(t,screens.ScreenOntdek);m=press(m,appKey("ctrl+p"))
+	next,_=m.Update(tea.MouseWheelMsg{Button:tea.MouseWheelDown});m=next.(Model)
+	if m.palette.cursor!=1 { t.Fatal("palette wheel was not owned by palette") }
 }
 
 func TestPaletteTextInputEditsInMiddle(t *testing.T) {

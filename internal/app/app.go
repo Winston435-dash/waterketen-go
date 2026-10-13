@@ -310,30 +310,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmd, m.afterScreenUpdate())
 		}
 		if key.Matches(msg, ui.Keys.PanelPalette) {
-			k := m.kaart()
-			if k == nil || m.screens[m.active].ID() != screens.ScreenKaart || !k.OverlayOpen() {
-				m.palette = newCommandPalette(m, palettePanel)
-				return m, nil
-			}
-		}
-		// An open overlay owns EVERY key: without this, typing a street name in
-		// the search would also switch panels on 'g', quit on 'q', and pan the
-		// map on the arrow keys.
-		if k := m.kaart(); k != nil && m.screens[m.active].ID() == screens.ScreenKaart &&
-			k.OverlayOpen() {
-			next, cmd := k.Update(msg)
-			m.screens[m.active] = next
-			return m, tea.Batch(cmd, m.afterScreenUpdate())
+			m.palette = newCommandPalette(m, palettePanel)
+			return m, nil
 		}
 		// Global keys first — they work regardless of active screen.
 		switch {
 		case key.Matches(msg, ui.Keys.Quit):
-			for _, screen := range m.screens {
-				if query, ok := screen.(*screens.Query); ok {
-					query.Cancel()
-				}
-			}
-			return m, tea.Quit
+			return m, m.quitCmd()
 		case key.Matches(msg, ui.Keys.Probe):
 			return m, m.beginProbe()
 		case key.Matches(msg, ui.Keys.Redraw):
@@ -388,6 +371,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	}
 	return m, nil
+}
+
+func (m Model) quitCmd() tea.Cmd {
+	for _,screen:=range m.screens { if query,ok:=screen.(*screens.Query);ok { query.Cancel() } }
+	return tea.Quit
 }
 
 // afterScreenUpdate reacts to a screen that may have started or finished work
