@@ -26,6 +26,7 @@ type KeyMap struct {
 	Quit         key.Binding
 	Enter        key.Binding
 	Toggle       key.Binding
+	Details      key.Binding
 	Palette      key.Binding
 	PanelPalette key.Binding
 
@@ -80,6 +81,7 @@ var Keys = KeyMap{
 	// enter in the picker silently do nothing.
 	Enter:        key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
 	Toggle:       key.NewBinding(key.WithKeys("space"), key.WithHelp("spatie", "schakel")),
+	Details:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "details")),
 	Palette:      key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("ctrl+p", "opdrachten")),
 	PanelPalette: key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "hulp")),
 

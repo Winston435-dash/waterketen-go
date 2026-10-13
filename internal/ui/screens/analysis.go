@@ -240,6 +240,7 @@ func NewProfiel(root string, assets []core.AssetMeta) *ProfielScreen {
 }
 
 func (s *ProfielScreen) ID() ScreenID { return ScreenProfiel }
+func (s *ProfielScreen) PaletteKeyMap() []key.Binding { if len(s.streets)==0 { return nil };return s.KeyMap() }
 func (s *ProfielScreen) KeyMap() []key.Binding {
 	if s.picker != nil {
 		return s.picker.KeyMap()

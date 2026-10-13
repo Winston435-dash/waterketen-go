@@ -1,6 +1,17 @@
 package components
 
-import "github.com/charmbracelet/x/ansi"
+import (
+	"strings"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// FitRows bounds an assembled small-screen slot without introducing wrap rows.
+func FitRows(text string,width,height int) string {
+	rows:=strings.Split(text,"\n")
+	if len(rows)>max(1,height) { rows=rows[:max(1,height)] }
+	for i,row:=range rows { rows[i]=SingleLine(row,width) }
+	return strings.Join(rows,"\n")
+}
 
 // WrappedText preserves styled content in scrollable panes. Unlike SingleLine,
 // it never discards the tail of a source name, licence or diagnostic.

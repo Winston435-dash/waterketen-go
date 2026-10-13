@@ -75,6 +75,10 @@ func (s *Query) ID() ScreenID            { return ScreenQuery }
 func (s *Query) Busy() bool              { return s.opening || s.running || s.pageLoading }
 func (s *Query) SetSpinner(frame string) { s.spinner = frame }
 func (s *Query) OverlayOpen() bool       { return s.picker != nil }
+func (s *Query) PaletteKeyMap() []key.Binding {
+	if !s.loaded||s.library==nil||s.area.Code==""||s.Busy() { return nil }
+	return s.KeyMap()
+}
 func (s *Query) Info() string {
 	if s.area.Code == "" {
 		return "offline gebiedsquery"

@@ -87,9 +87,9 @@ func TestGlobalPaletteSearchRunsPanelCommand(t *testing.T) {
 		}
 	}
 
-	m = pressText(m, "straat zoeken")
+	m = pressText(m, "Zoek straat")
 	view = ansi.Strip(m.viewContent())
-	if !strings.Contains(view, "straat zoeken") || strings.Contains(view, "Ga naar Bronnen") {
+	if !strings.Contains(view, "Zoek straat") || strings.Contains(view, "Ga naar Bronnen") {
 		t.Fatalf("global palette did not filter its commands:\n%s", view)
 	}
 

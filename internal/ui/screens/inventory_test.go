@@ -39,9 +39,11 @@ func TestLayersUnifyCatalogAndSnapshotAndKeepRemoteUnavailable(t *testing.T) {
 		t.Fatalf("wrong inventory count: %s", s.Info())
 	}
 	filterInventory(s, "putten")
+	s.Update(keys("enter"))
 	if view := ansi.Strip(s.View()); !strings.Contains(view, "42 objecten (metadata)") || !strings.Contains(view, "bestand aanwezig") {
 		t.Fatalf("snapshot omitted: %s", view)
 	}
+	s.Update(keys("esc")) // details -> list
 	s.Update(keys("esc"))
 	filterInventory(s, "damo-rwzi")
 	if view := ansi.Strip(s.View()); !strings.Contains(view, "geen lokale levering") || strings.Contains(view, "● DAMO") {
@@ -54,7 +56,7 @@ func TestLayersUnifyCatalogAndSnapshotAndKeepRemoteUnavailable(t *testing.T) {
 	}
 	s.Update(keys("esc"))
 	s.Update(keys("l"))
-	if view := ansi.Strip(s.body.View()); strings.Contains(view, "DAMO") || !strings.Contains(view, "Rioolputten") {
+	if view := ansi.Strip(s.View()); strings.Contains(view, "DAMO") || !strings.Contains(view, "Rioolputten") {
 		t.Fatalf("local-only filter wrong: %s", view)
 	}
 }

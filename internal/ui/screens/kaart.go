@@ -93,6 +93,8 @@ func NewKaart(root string, lib *core.Library, assets []core.AssetMeta) *Kaart {
 }
 
 func (s *Kaart) ID() ScreenID { return ScreenKaart }
+func (s *Kaart) Ready() bool { return s.scene!=nil&&!s.opening&&s.loads==0 }
+func (s *Kaart) PaletteKeyMap() []key.Binding { if !s.Ready() { return nil };return s.KeyMap() }
 func (s *Kaart) KeyMap() []key.Binding {
 	if s.legendOpen {
 		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End}

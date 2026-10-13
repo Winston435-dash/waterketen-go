@@ -100,16 +100,20 @@ type Bronnen struct {
 	prog    progress.Model // Bubbles' spring-animated bar for the probe run
 	w, h    int
 	body    viewport.Model
+	list    components.Inventory
+	details bool
 }
 
 func NewBronnen() *Bronnen {
-	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
+	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1)),list:components.NewInventory()}
 }
 
 func (s *Bronnen) ID() ScreenID { return ScreenBronnen }
 func (s *Bronnen) KeyMap() []key.Binding {
-	return []key.Binding{ui.Keys.Probe, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
+	if s.details { return []key.Binding{ui.Keys.Back,ui.Keys.Up,ui.Keys.Down,ui.Keys.PageUp,ui.Keys.PageDown,ui.Keys.Home,ui.Keys.End} }
+	return []key.Binding{ui.Keys.Probe,ui.Keys.Details,ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
 }
+func (s *Bronnen) ShortKeyMap() []key.Binding { if s.details { return s.KeyMap() };return []key.Binding{ui.Keys.Probe,ui.Keys.Details,ui.Keys.Up,ui.Keys.Down} }
 func (s *Bronnen) SetSize(w, h int) {
 	s.w, s.h = w, h
 	s.body.SetWidth(max(1, w-4))
@@ -166,14 +170,7 @@ type TickMsg = progress.FrameMsg
 // barWidth is the cell width of the probe bar: capped so it never runs the
 // whole panel, floored so it stays readable in a narrow terminal.
 func (s *Bronnen) barWidth() int {
-	w := s.w - 6
-	if w > 40 {
-		w = 40
-	}
-	if w < 20 {
-		w = 20
-	}
-	return w
+	return max(1,min(40,s.body.Width()-1-len(components.ProgressCount(s.want,s.want))))
 }
 
 // BeginProbe starts a run: clears the count and marks every wired source as
@@ -181,11 +178,13 @@ func (s *Bronnen) barWidth() int {
 // progress bar animates by returning FrameMsgs that must reach the runtime, so
 // the app batches this in.
 func (s *Bronnen) BeginProbe() tea.Cmd {
+	s.details=false
 	s.health = nil
 	s.probing = true
 	s.done = 0
 	s.want = len(core.WiredSources)
 	s.prog.SetWidth(s.barWidth())
+	s.refreshHealth()
 	return s.prog.SetPercent(0)
 }
 
@@ -194,6 +193,7 @@ func (s *Bronnen) BeginProbe() tea.Cmd {
 // makes it glide to the new value on its spring) and reports done=false.
 func (s *Bronnen) AddProbe(h core.SourceHealth) (done bool, cmd tea.Cmd) {
 	s.health = append(s.health, h)
+	s.refreshHealth()
 	if h.Status != core.HealthNotWired {
 		s.done++
 	}
@@ -249,31 +249,24 @@ func (s *Bronnen) Busy() bool { return s.probing }
 func (s *Bronnen) SetSpinner(frame string) { s.spinner = frame }
 
 func (s *Bronnen) Update(msg tea.Msg) (Screen, tea.Cmd) {
-	if s.probing {
-		return s, nil
+	if s.details {
+		if k,ok:=msg.(tea.KeyPressMsg);ok&&key.Matches(k,ui.Keys.Back) { s.details=false;return s,nil }
+		return s,scrollInventory(&s.body,msg)
 	}
-	if msg, ok := msg.(tea.KeyPressMsg); ok {
-		if key.Matches(msg, ui.Keys.Home) {
-			s.body.GotoTop()
-			return s, nil
-		}
-		if key.Matches(msg, ui.Keys.End) {
-			s.body.GotoBottom()
-			return s, nil
-		}
+	if k,ok:=msg.(tea.KeyPressMsg);ok&&key.Matches(k,ui.Keys.Enter) {
+		if item,ok:=s.list.Selected();ok { s.details=true;s.body.SetContent(components.WrappedText(item.Detail,s.body.Width()));s.body.GotoTop() }
+		return s,nil
 	}
-	var cmd tea.Cmd
-	s.body, cmd = s.body.Update(msg)
-	return s, cmd
+	return s,s.list.Update(msg)
 }
 
 func (s *Bronnen) View() string {
+	if s.details { return s.body.View() }
 	if s.probing {
 		// Bubbles' own animated bar: it glides to each new value on a spring.
 		// The counter beside it is the real thing — n sources answered of the
 		// real total — so the animation is decoration over honest progress.
-		return components.Busy(s.spinner, "Bronnen worden geprobeerd…") + "\n\n" +
-			"   " + s.prog.View() + " " + components.ProgressCount(s.done, s.want)
+		return components.FitRows(components.Busy(s.spinner,"Bronnen worden geprobeerd…")+"\n"+s.prog.View()+" "+components.ProgressCount(s.done,s.want)+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()),s.body.Width(),s.body.Height())
 	}
 	if len(s.health) == 0 {
 		return components.EmptyState(
@@ -282,11 +275,29 @@ func (s *Bronnen) View() string {
 			s.w,
 		)
 	}
-	return s.body.View()
+	return components.FitRows(components.Muted("Groen = bereikbaar, niet lokaal beschikbaar")+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()),s.body.Width(),s.body.Height())
 }
 
 func (s *Bronnen) refreshHealth() {
-	s.body.SetContent(components.WrappedText(s.renderHealth(), s.body.Width()))
+	rows:=s.body.Height()-2;if s.probing { rows-- }
+	s.list.SetSize(s.body.Width(),max(1,rows))
+	var items []components.InventoryItem
+	for _,h:=range s.health {
+		state:="niet bedraad";status:=components.StatusIdle
+		if h.Status==core.HealthUp { state="bereikbaar";status=components.StatusOK }
+		if h.Status==core.HealthDown { state="onbereikbaar";status=components.StatusDown }
+		license:=licenseOrUnknown(h.License)
+		count:="—";if h.Count>=0 { count=Thousands(h.Count) }
+		summary:=state+" · "+license
+		if h.Status!=core.HealthNotWired { summary=fmt.Sprintf("%s · %s dienstobjecten · %d ms · %s",state,count,h.LatencyMS,license) }
+		doc:=components.Strong(queryClean(h.Label))+"\nesc: bronnenlijst\n\nStatus: "+state+"\nLicentie: "+queryClean(license)+"\nDiensttelling: "+count+"\nProbe-aantallen kunnen landelijk zijn; dit zijn geen gebiedstellingen.\nBereikbaar ≠ gedownload of lokaal beschikbaar.\nBasis-URL (requests voegen parameters toe): "+queryClean(h.URL)
+		if h.Error!="" { doc+="\n"+components.Error(queryClean(h.Error)) }
+		if h.Note!="" { doc+="\n"+components.Muted(queryClean(h.Note)) }
+		id:=h.SourceID;if id=="" { id=h.Label }
+		items=append(items,components.InventoryItem{ID:id,Label:queryClean(h.Label),Summary:queryClean(summary),Detail:doc,Status:status})
+	}
+	s.list.SetItems(items)
+	if s.details { if item,ok:=s.list.Selected();ok { s.body.SetContent(components.WrappedText(item.Detail,s.body.Width())) } }
 }
 
 func (s *Bronnen) renderHealth() string {

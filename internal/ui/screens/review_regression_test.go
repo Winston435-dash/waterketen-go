@@ -170,21 +170,23 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 		t.Fatal("bad first page")
 	}
 	s.Update(keys("pgdown"))
-	if s.body.YOffset() == 0 {
+	if item,_:=s.list.Selected();item.Label=="Source 00" {
 		t.Fatal("page down did not scroll")
 	}
 	s.Update(keys("end"))
-	if !s.body.AtBottom() {
+	if item,_:=s.list.Selected();!strings.Contains(item.Summary,"niet bedraad") {
 		t.Fatal("end did not reach unwired sources")
 	}
 	// Walk every row, verifying bounded rendering and reachability.
 	s.Update(keys("home"))
 	seenLast := false
 	seenRestrictedLicence := false
-	for i := 0; i < s.body.TotalLineCount(); i++ {
+	for i := 0; i < len(s.health); i++ {
 		view := s.View()
 		seenLast = seenLast || strings.Contains(view, "Source 24")
-		seenRestrictedLicence = seenRestrictedLicence || strings.Contains(view, "CC BY-NC-ND")
+		s.Update(keys("enter"))
+		seenRestrictedLicence = seenRestrictedLicence || strings.Contains(s.View(), "CC BY-NC-ND")
+		s.Update(keys("esc"))
 		for _, line := range strings.Split(view, "\n") {
 			if lipgloss.Width(line) > 44 {
 				t.Fatal("source row exceeds viewport width")
@@ -199,7 +201,7 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 		t.Fatal("unwired licence is truncated rather than reachable")
 	}
 	s.Update(keys("home"))
-	if s.body.YOffset() != 0 {
+	if item,_:=s.list.Selected();item.Label!="Source 00" {
 		t.Fatal("home did not restore top")
 	}
 }
