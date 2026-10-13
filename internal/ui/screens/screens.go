@@ -72,10 +72,12 @@ func New(root string) []Screen {
 	metadataErr := errors.Join(assetErr, libErr)
 	analysis := NewAnalyse(root, assets)
 	analysis.SetLibrary(lib, catalog)
+	areas := NewGebieden(lib, assets)
+	areas.err = libErr
 	return []Screen{
 		NewBronnen(),
 		NewLagen(catalog, metadataErr),
-		NewGebieden(lib, assets),
+		areas,
 		analysis,
 		NewKaart(root, lib, assets),
 		NewProfiel(root, assets),

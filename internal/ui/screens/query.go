@@ -269,7 +269,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 				for _, l := range s.layers {
 					label := l.Label
 					if !l.Available {
-						label += " · niet in snapshot"
+						label += " · niet lokaal"
 					}
 					p.all = append(p.all, pickItem{key: l.ID, label: label, mark: slices.Contains(s.selected, l.ID)})
 				}

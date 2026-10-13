@@ -246,6 +246,9 @@ func (s *Gebieden) Info() string {
 		return "CBS-gebiedenregister"
 	}
 	if len(s.areas) > 0 {
+		if s.lib == nil {
+			return fmt.Sprintf("%d CBS-gebieden", len(s.areas))
+		}
 		return fmt.Sprintf("%d CBS-gebieden · snapshot %s", len(s.areas), s.lib.Snapshot)
 	}
 	return "geen CBS-register · managed gebiedsnamen"
@@ -310,7 +313,7 @@ func (s *Gebieden) refresh() {
 		})
 		lines = append(lines, components.Muted(fmt.Sprintf("%d gemeente · %d wijken · %d buurten", counts[core.KindGemeente], counts[core.KindWijk], counts[core.KindBuurt])),
 			components.Muted("Officiële CBS-grenzen · kies een gebied met g in Kaart of Query."), "")
-		if s.lib.Manifest.AreaCount != len(areas) {
+		if s.lib != nil && s.lib.Manifest.AreaCount != len(areas) {
 			lines = append(lines, components.Error(fmt.Sprintf("Manifest noemt %d gebieden; daadwerkelijk gelezen: %d", s.lib.Manifest.AreaCount, len(areas))), "")
 		}
 		shown := 0

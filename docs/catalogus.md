@@ -1714,6 +1714,8 @@ Licentie: onbekend — geen licentieveld in de dienst — gebruiksrechten niet v
 
 > Dienst bereikbaar ≠ gedownload ≠ zichtbaar op de kaart ≠ volledig netwerk.
 
+Laag: RWS regiogebieden (rws-regiogebieden) — Beheergrenzen van Rijkswaterstaatdiensten en districten.
+
 #### Technische verdieping
 
 Basisadres (parameters zijn nog nodig): https://geo.rijkswaterstaat.nl/arcgis/rest/services/GDR/regiogebieden_rijkswaterstaat/MapServer/0
@@ -2541,6 +2543,52 @@ service=WFS — standaard waarmee we de dienst aanspreken
 typeNames=water:DRINKWATER_BEDRIJVEN — officiële laag-ID
 
 version=2.0.0 — versie van die standaard
+
+### RWS regiogebieden (`rws-regiogebieden`)
+
+#### RWS regiogebieden
+
+Laag-ID: rws-regiogebieden · officieel: regiogebieden_rijkswaterstaat / MapServer/0
+
+Wat is het? Beheergrenzen van Rijkswaterstaatdiensten en districten.
+
+Beantwoordt: Welke Rijkswaterstaatregio beheert dit gebied?
+
+Op de kaart: vlakken
+
+> Wat vertelt het niet? Geen CBS-wijkgrenzen, verzorgingsgebied of leidingnet. De dienst publiceert geen licentieveld.
+
+In de tool: Broncontrole in Go; geen lokale snapshotlaag zolang deze niet expliciet is opgenomen.
+
+Herkomst: Rijkswaterstaat → RWS regiogebieden (ArcGIS)
+
+Licentie: onbekend — geen licentieveld in de dienst — gebruiksrechten niet vastgesteld; controleer de voorwaarden bij de bron
+
+#### Lokaal aanwezig / actualiteit
+
+Geen lokale levering gevonden. Brondatum en dekking zijn onbekend.
+
+#### Begrippen bij dit antwoord
+
+ArcGIS REST — FeatureServer / MapServer — Een webinterface van ArcGIS. Een FeatureServer publiceert objecten; sommige MapServer-lagen ondersteunen ook objectvragen.
+
+Laag / collectie — Een verzameling samenhangende kaartobjecten. Eén API-dienst kan meerdere lagen aanbieden.
+
+#### Technische verdieping
+
+Basisadres (parameters zijn nog nodig): https://geo.rijkswaterstaat.nl/arcgis/rest/services/GDR/regiogebieden_rijkswaterstaat/MapServer/0
+
+Volledige aanvraag: https://geo.rijkswaterstaat.nl/arcgis/rest/services/GDR/regiogebieden_rijkswaterstaat/MapServer/0/query?where=1%3D1&returnCountOnly=true&f=json
+
+Antwoord: JSON met een objecttelling; geen geometrie
+
+> Bereik: de opgegeven bronlaag, zonder wijkfilter. Geen bewijs van wijkdekking.
+
+f=json — formaat van het antwoord
+
+returnCountOnly=true — true vraagt alleen een telling
+
+where=1=1 — 1=1 selecteert alle objecten
 
 ### Straten (`straten`)
 

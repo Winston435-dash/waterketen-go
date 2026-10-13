@@ -45,7 +45,7 @@ func TestLayersUnifyCatalogAndSnapshotAndKeepRemoteUnavailable(t *testing.T) {
 	}
 	s.Update(keys("esc"))
 	filterInventory(s, "damo-rwzi")
-	if view := ansi.Strip(s.View()); !strings.Contains(view, "geen lokale levering") || strings.Contains(view, "bestand aanwezig") {
+	if view := ansi.Strip(s.View()); !strings.Contains(view, "geen lokale levering") || strings.Contains(view, "● DAMO") {
 		t.Fatalf("remote layer falsely available: %s", view)
 	}
 	s.Update(keys("esc"))

@@ -153,8 +153,15 @@ func CatalogWithLocal(assets []AssetMeta, lib *Library) Catalog {
 		if label == "" {
 			label = a.Layer
 		}
+		official, geometry := a.SourceTypeName, a.GeometryNote
+		if official == "" {
+			official = "niet vermeld in metadata"
+		}
+		if geometry == "" {
+			geometry = "geometrie uit de lokale levering"
+		}
 		c.Layers = append(c.Layers, CatalogLayer{ID: a.Layer, Label: label, SourceID: a.Source,
-			Official: a.SourceTypeName, Geometry: a.GeometryNote,
+			Official: official, Geometry: geometry, Question: "Welke objecten bevat deze lokale levering?",
 			Summary: "Lokale managed levering; geen afzonderlijke catalogusuitleg.",
 			Limit:   "Metadata en bestandstatus bewijzen geen volledigheid.", Use: "Managed data; herkomst en licentie staan bij de lokale levering."})
 		known[a.Layer] = true
@@ -165,6 +172,7 @@ func CatalogWithLocal(assets []AssetMeta, lib *Library) Catalog {
 				continue
 			}
 			c.Layers = append(c.Layers, CatalogLayer{ID: name, Label: name,
+				Official: "niet vermeld in manifest", Question: "Welke objecten bevat deze lokale levering?",
 				Summary:  "Gepubliceerde snapshotlaag; geen afzonderlijke catalogusuitleg.",
 				Geometry: "geometrie uit de lokale levering", Limit: "Registratie is geen bewijs van een volledig fysiek netwerk.",
 				Use: "Leesbaar via de lokale kaartbibliotheek en gebiedsquery; herkomst en licentie staan bij de levering."})
@@ -190,7 +198,7 @@ func CatalogWithLocal(assets []AssetMeta, lib *Library) Catalog {
 			}
 		}
 	}
-	return c, nil
+	return c
 }
 
 func (c Catalog) Explain(section CatalogSection, id string, technical bool) ([]CatalogLine, error) {

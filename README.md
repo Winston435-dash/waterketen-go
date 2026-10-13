@@ -147,6 +147,33 @@ empty=$(mktemp -d "${TMPDIR:-$HOME/.hermes/cache/scratch}/waterketen-docs.XXXXXX
 rmdir "$empty"
 ```
 
+## Lagen en gebieden: één lokale inventaris
+
+- **2 Lagen** gebruikt dezelfde catalogus als **7 Ontdek**: alle beschreven lagen,
+  alle managed leveringen en alle snapshotlagen, ook nieuwe laagnamen zonder
+  aparte uitleg. Groen betekent **bestand aanwezig**, niet inhoudelijk gevalideerd
+  of volledig. Ontbrekende bestanden en alleen beschreven bronlagen blijven apart
+  zichtbaar. `l` wisselt tussen alle lagen en alleen lagen met een lokaal bestand.
+- **3 Gebieden** leest daadwerkelijk `areas.gpkg`: gemeente, wijken en buurten
+  met CBS-code. Het aantal in de titel is het gelezen aantal; een afwijking van het
+  manifest wordt gemeld. Zonder CBS-register zijn alleen managed gebiedsnamen
+  zichtbaar, niet verzonnen officiële grenzen.
+- Beide overzichten scrollen met `↑`/`↓`, `PgUp`/`PgDown`, `Home` en `End`.
+  `/` opent het naam-/codefilter; `Enter` past toe, `Esc` annuleert tijdens typen
+  en wist daarbuiten het filter.
+- **4 Analyse** scheidt berekeningen over managed gebiedsbestanden van
+  **snapshotmetadata**. Snapshot-aantallen zijn geen geometrieanalyse; voor een
+  exacte gebiedstelling gebruik je **8 Query**. **6 Profiel** toont alleen managed
+  BOB-lagen en benoemt buishoogte in NAP, niet diepte onder straatmaaiveld.
+- **5 Kaart** en **8 Query** herkennen nieuwe gepubliceerde vectorlagen zonder
+  uitbreiding van een namen-allowlist. Bestaande kaartkleuren/tekenvolgorde blijven
+  gelijk; nieuwe lagen krijgen neutrale data-ink en een geometriepassende legenda.
+
+Een broncontrole downloadt geen dataset. Nieuwe DAMO-/RIONED-/IMWA-lagen moeten
+nog expliciet door de producer worden opgehaald en in een snapshot opgenomen
+voordat Kaart en Query ze lokaal kunnen gebruiken. Alternatieve leveringen worden
+niet opgeteld als extra fysiek netwerk.
+
 ## Query: gebied kiezen, lagen tellen
 
 Open paneel **8 Query**. `g` kiest een gemeente, wijk of buurt: zoek op naam
