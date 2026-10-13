@@ -109,7 +109,9 @@ func (s *Query) KeyMap() []key.Binding {
 	if s.resultFocus || s.mode != querySummary {
 		bindings[2] = ui.Keys.Inspect
 	}
-	if s.mode==queryObjects { bindings[2]=ui.Keys.Details }
+	if s.mode == queryObjects {
+		bindings[2] = ui.Keys.Details
+	}
 	if s.mode == queryDetails {
 		bindings = nil
 	}

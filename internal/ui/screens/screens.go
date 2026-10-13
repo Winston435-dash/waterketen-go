@@ -112,19 +112,25 @@ func (s *Bronnen) KeyMap() []key.Binding {
 	if s.details {
 		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End}
 	}
-	keys:=[]key.Binding{ui.Keys.Details, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
-	if !s.probing { keys=append([]key.Binding{ui.Keys.Probe},keys...) }
+	keys := []key.Binding{ui.Keys.Details, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
+	if !s.probing {
+		keys = append([]key.Binding{ui.Keys.Probe}, keys...)
+	}
 	return keys
 }
 func (s *Bronnen) ShortKeyMap() []key.Binding {
 	if s.details {
 		return s.KeyMap()
 	}
-	keys:=[]key.Binding{ui.Keys.Details,ui.Keys.Up,ui.Keys.Down}
-	if !s.probing { keys=append([]key.Binding{ui.Keys.Probe},keys...) }
+	keys := []key.Binding{ui.Keys.Details, ui.Keys.Up, ui.Keys.Down}
+	if !s.probing {
+		keys = append([]key.Binding{ui.Keys.Probe}, keys...)
+	}
 	return keys
 }
-func (s *Bronnen) PaletteKeyMap() []key.Binding { return inventoryPaletteKeys(s.KeyMap(),s.list,s.details,false) }
+func (s *Bronnen) PaletteKeyMap() []key.Binding {
+	return inventoryPaletteKeys(s.KeyMap(), s.list, s.details, false)
+}
 func (s *Bronnen) SetSize(w, h int) {
 	s.w, s.h = w, h
 	s.body.SetWidth(max(1, w-4))
@@ -336,7 +342,7 @@ func (s *Bronnen) refreshHealth() {
 		if id == "" {
 			id = h.Label
 		}
-		items = append(items, components.InventoryItem{ID: id, Label: queryClean(h.Label), Summary: queryClean(summary),CompactSummary:state+" · "+license, Detail: doc, Status: status})
+		items = append(items, components.InventoryItem{ID: id, Label: queryClean(h.Label), Summary: queryClean(summary), CompactSummary: state + " · " + license, Detail: doc, Status: status})
 	}
 	s.list.SetItems(items)
 	if s.details {

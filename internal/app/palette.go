@@ -146,7 +146,9 @@ func taskLabel(id screens.ScreenID, binding key.Binding) string {
 			return label
 		}
 		if k == "enter" {
-			if binding.Help().Desc=="details" { return "Lees bronattributen" }
+			if binding.Help().Desc == "details" {
+				return "Lees bronattributen"
+			}
 			if binding.Help().Desc == "objecten" {
 				return "Bekijk queryobjecten"
 			}
