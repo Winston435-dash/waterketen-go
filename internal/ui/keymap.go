@@ -52,6 +52,7 @@ type KeyMap struct {
 	Area     key.Binding
 	Layers   key.Binding
 	Legend   key.Binding
+	Street   key.Binding
 }
 
 // Keys is the app-wide binding table. Descriptions are Dutch, matching the UI.
@@ -102,4 +103,5 @@ var Keys = KeyMap{
 	Area:     key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "gebied")),
 	Layers:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "lagen")),
 	Legend:   key.NewBinding(key.WithKeys("L"), key.WithHelp("L", "legenda")),
+	Street:   key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "straat")),
 }
