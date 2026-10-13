@@ -374,7 +374,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) quitCmd() tea.Cmd {
-	for _,screen:=range m.screens { if query,ok:=screen.(*screens.Query);ok { query.Cancel() } }
+	for _, screen := range m.screens {
+		if query, ok := screen.(*screens.Query); ok {
+			query.Cancel()
+		}
+	}
 	return tea.Quit
 }
 

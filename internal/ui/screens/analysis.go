@@ -377,13 +377,13 @@ func (s *ProfielScreen) groupProfile() {
 
 func (s *ProfielScreen) refreshProfile() {
 	fs := s.byStreet[s.street]
-	lines := []string{components.Strong(fmt.Sprintf("%s · %d buizen", s.street, len(fs))),
+	lines := []string{components.SingleLine(components.Strong(fmt.Sprintf("%s · %d BOB-waarden", s.street, len(fs))), max(1, s.body.Width())),
 		components.Muted("BOB in m NAP · geen ruimtelijk profiel"),
 		components.Muted("Geen diepte onder maaiveld"),
 		components.Muted("Laagste BOB eerst · s kiest straat"), ""}
 	for i, f := range fs {
 		lines = append(lines, fmt.Sprintf("%4d.  %8.2f m NAP", i+1, f.BOB))
 	}
-	lines = append(lines, components.Muted(fmt.Sprintf("Einde · alle %d buizen weergegeven", len(fs))))
+	lines = append(lines, components.Muted(fmt.Sprintf("Einde · alle %d BOB-waarden", len(fs))))
 	s.body.SetContent(components.WrappedText(strings.Join(lines, "\n"), max(1, s.body.Width())))
 }

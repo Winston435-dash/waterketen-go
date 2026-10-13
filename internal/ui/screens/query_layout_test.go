@@ -63,7 +63,9 @@ func TestQueryHasSeparateRerunAction(t *testing.T) {
 }
 
 func TestQueryMouseWheelKeepsResultSelectionVisible(t *testing.T) {
-	s:=queryWithResults(t,30,10)
-	s.Update(tea.MouseWheelMsg{Button:tea.MouseWheelDown})
-	if s.resultCursor!=1||!strings.Contains(ansi.Strip(s.View()),"›") { t.Fatal("wheel hid result selection") }
+	s := queryWithResults(t, 30, 10)
+	s.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
+	if s.resultCursor != 1 || !strings.Contains(ansi.Strip(s.View()), "›") {
+		t.Fatal("wheel hid result selection")
+	}
 }

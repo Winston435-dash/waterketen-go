@@ -31,7 +31,26 @@ Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
   pijlen/PgUp/PgDown/Home/End, straatkeuze via `s` met zoeken/plakken en annuleren.
   Geen pseudo-doorsnede: NAP en “geen diepte onder maaiveld” blijven expliciet.
   Vier echte `step5-*`-captureformaten tonen de 54e Tjalklaanwaarde en straatkeuze.
-- [ ] 6. Compacte inventarissen en taakgericht opdrachtenpalet.
+- [x] 6. Compacte inventarissen en taakgericht opdrachtenpalet. Eén Bubbles-v2-
+  inventariscomponent voor Bronnen/Lagen/Gebieden: compacte desktopregels,
+  mobiele tweeregelige items en scrollbare volledige details via Enter.
+  Licenties blijven zichtbaar of direct bereikbaar; leveringen worden niet opgeteld.
+  Filters/palet gebruiken Bubbles textinput met cursorbewerking en native paste.
+  Globaal palet bevat benoemde taken, geen generieke scrollopdrachten; acties
+  waarvoor data nog niet gereed is worden niet als uitvoerbaar aangeboden.
+  Ontvangen bronresultaten blijven zichtbaar tijdens de echte voortgang.
+  De laatste captures vonden ook een verkeerde map-overlayhost: gecorrigeerd
+  op openen én resize, met volledige dialoogbreedte op telefoons.
+  Eindcontrole: alle acht panelen op vier geometrieën (`step6-verified-*`),
+  plus **52 interactieve eindcaptures** (`final-*`, `final-interactions-manifest.json`)
+  voor native paste, paletten, details, legenda, laagkiezers en gebiedsquery.
+  Reguliere tests, race-tests en de echte managed-data-integratietests
+  (`WATERKETEN_INTEGRATION=1`) groen; idle-kaartcaptures blijven stabiel.
+  De modulegraph bevat geen Charm-v1-modules meer.
+
+De zes afgesproken prioriteiten zijn uitgevoerd. Een echte ruimtelijke doorsnede
+en automatische contextoverdracht vanuit Ontdek zijn bewust geen onderdeel van
+deze zes stappen: de onderstaande aparte domeinvoorstellen blijven voorstellen.
 
 ## Conclusie
 

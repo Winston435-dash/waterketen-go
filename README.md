@@ -164,6 +164,17 @@ rmdir "$empty"
 - Beide overzichten scrollen met `↑`/`↓`, `PgUp`/`PgDown`, `Home` en `End`.
   `/` opent het naam-/codefilter; `Enter` past toe, `Esc` annuleert tijdens typen
   en wist daarbuiten het filter.
+- **Bronnen/Lagen/Gebieden** gebruiken dezelfde compacte inventaris: één regel
+  per item op desktop, twee regels op mobiel. `Enter` opent volledige details en
+  licenties; `Esc` keert terug met behoud van selectie. Tijdens broncontroles
+  blijven ontvangen resultaten zichtbaar. Lokale leveringen worden niet opgeteld.
+- **`?`** opent paneelhulp; **`ctrl+p`** opent een zoekbaar, taakgericht
+  opdrachtenpalet. Zoekvelden ondersteunen cursorbewerking en native terminal-paste.
+  Overlays bezitten de toetsen: Spatie schakelt laagvinkjes, Enter past toe,
+  Esc annuleert. Onbereikbare globale opdrachten staan niet in hun footer.
+- **Kaart `L`** opent de volledige, scrollbare legenda. Op korte schermen gebruikt
+  de legenda één regel zodat de kaart ruimte houdt; op desktop wordt haar echte
+  hoogte gereserveerd, zonder een vaste lege strook.
 - **4 Analyse** scheidt berekeningen over managed gebiedsbestanden van
   **snapshotmetadata**. Snapshot-aantallen zijn geen geometrieanalyse; voor een
   exacte gebiedstelling gebruik je **8 Query**. **6 Profiel** is een scrollbaar

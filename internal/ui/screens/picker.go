@@ -97,9 +97,9 @@ func (p *Picker) Searchable() bool { return p.mode == pickOne }
 func (p *Picker) Toggling() bool   { return p.mode == pickToggle }
 
 func (p *Picker) KeyMap() []key.Binding {
-	keys := []key.Binding{ui.Keys.Enter, ui.Keys.Back}
+	keys := []key.Binding{ui.Keys.Enter, ui.Keys.Cancel}
 	if p.Toggling() {
-		keys = append([]key.Binding{ui.Keys.Toggle}, keys...)
+		keys = []key.Binding{ui.Keys.Toggle, ui.Keys.Apply, ui.Keys.Cancel}
 	}
 	return append(keys, ui.Keys.Up, ui.Keys.Down)
 }
@@ -300,11 +300,7 @@ func (p *Picker) View() string {
 	return components.Modal("", title, b.String(), p.w, p.h, p.dialogWidth())
 }
 
-// dialogWidth is the dialog's outer width. The cap is p.w-8, not p.w-2: the dialog
-// is placed INSIDE the panel's content area, which is already p.w minus the panel
-// border (2), its padding (2) and room for the dialog's own chrome. Asking for
-// p.w-2 rendered a dialog wider than its host, and lipgloss wrapped the PANEL
-// border instead — measured on a 48-column phone.
+// dialogWidth uses the actual content host: full width on phones, capped desktop.
 func (p *Picker) dialogWidth() int {
 	return components.DialogWidth(72, p.w)
 }

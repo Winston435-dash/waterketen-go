@@ -27,6 +27,8 @@ type KeyMap struct {
 	Enter        key.Binding
 	Toggle       key.Binding
 	Details      key.Binding
+	Apply        key.Binding
+	Cancel       key.Binding
 	Palette      key.Binding
 	PanelPalette key.Binding
 
@@ -76,12 +78,13 @@ var Keys = KeyMap{
 	Redraw: key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "herteken")),
 	Back:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "terug")),
 	Quit:   key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "afsluiten")),
-	// Enter confirms a picker/overlay. It is NOT a global key: outside an
-	// overlay it does nothing, and a zero-value binding here would make every
-	// enter in the picker silently do nothing.
+	// Enter is contextual, never a global app action. Every binding is initialized;
+	// confirm, apply, details and execute may share the same physical Enter key.
 	Enter:        key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
 	Toggle:       key.NewBinding(key.WithKeys("space"), key.WithHelp("spatie", "schakel")),
 	Details:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "details")),
+	Apply:        key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "pas toe")),
+	Cancel:       key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "annuleer")),
 	Palette:      key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("ctrl+p", "opdrachten")),
 	PanelPalette: key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "hulp")),
 

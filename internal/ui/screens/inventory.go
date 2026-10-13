@@ -81,7 +81,7 @@ func (f *inventoryFilter) view(width int) string {
 }
 func inventoryKeys(editing bool) []key.Binding {
 	if editing {
-		return []key.Binding{ui.Keys.Enter, ui.Keys.Back}
+		return []key.Binding{ui.Keys.Apply, ui.Keys.Cancel}
 	}
 	return []key.Binding{ui.Keys.Filter, ui.Keys.Details, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Back, ui.Keys.Quit}
 }
@@ -234,10 +234,16 @@ func layerInventoryItem(layer core.CatalogLayer, catalog core.Catalog) component
 			break
 		}
 	}
-	geometry,official:=layer.Geometry,layer.Official
-	if geometry=="" { geometry="onbekend" }
-	if official=="" { official="onbekend" }
-	if source=="" { source="lokale levering; herkomst onbekend" }
+	geometry, official := layer.Geometry, layer.Official
+	if geometry == "" {
+		geometry = "onbekend"
+	}
+	if official == "" {
+		official = "onbekend"
+	}
+	if source == "" {
+		source = "lokale levering; herkomst onbekend"
+	}
 	doc := []string{components.Strong(queryClean(layer.Label + " · " + layer.ID)),
 		components.Muted(queryClean("Geometrie: " + geometry + " · bron: " + source)),
 		components.Muted(queryClean("Officieel: " + official)), components.Strong(state),
