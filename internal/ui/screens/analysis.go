@@ -48,7 +48,7 @@ func (s *AnalyseScreen) KeyMap() []key.Binding {
 func (s *AnalyseScreen) SetSize(w, h int) { s.w, s.h = w, h }
 func (s *AnalyseScreen) Info() string {
 	if s.library != nil {
-		return fmt.Sprintf("%d managed berekend · %d snapshot (metadata)", len(s.data), len(s.library.Manifest.Layers))
+		return fmt.Sprintf("%d managed · %d snapshotmetadata", len(s.data), len(s.library.Manifest.Layers))
 	}
 	return fmt.Sprintf("%d managed lagen berekend", len(s.data))
 }
