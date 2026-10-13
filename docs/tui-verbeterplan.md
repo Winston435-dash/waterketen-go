@@ -18,7 +18,10 @@ Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
   hebben voorrang, `? hulp` blijft zichtbaar, overlays tonen geen ontoegankelijke
   globale toetsen en laagkiezers tonen Spatie/Enter/Esc. ANSI-/graphemebewuste
   afkapping en titel-ellipsis getest. Vier echte `step2-*`-captureformaten gecontroleerd.
-- [ ] 3. Kaartgeometrie en compacte legenda.
+- [x] 3. Kaartgeometrie en compacte legenda. De componentlaag meet de werkelijke
+  legenda in plaats van zes vaste reserveregels. Op korte schermen één regel;
+  `L` opent een scrollbare volledige legenda. Op 30×12 zeven kaartregels in
+  plaats van twee. Vier echte `step3-*`-captureformaten en geometrie-/toetstests.
 - [ ] 4. Query-resultaten eerst.
 - [ ] 5. Scrollbaar BOB-overzicht.
 - [ ] 6. Compacte inventarissen en taakgericht opdrachtenpalet.
