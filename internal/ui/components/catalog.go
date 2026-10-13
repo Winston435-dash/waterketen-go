@@ -2,11 +2,12 @@ package components
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/glamour"
-	glamouransi "github.com/charmbracelet/glamour/ansi"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/glamour/v2"
+	glamouransi "charm.land/glamour/v2/ansi"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -18,7 +19,6 @@ func CatalogDocument(lines []core.CatalogLine, width int) string {
 	width = max(1, width)
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithStyles(catalogMarkdownStyles()),
-		glamour.WithColorProfile(lipgloss.ColorProfile()),
 		glamour.WithWordWrap(width),
 	)
 	if err != nil {
@@ -98,11 +98,9 @@ func catalogMarkdownStyles() glamouransi.StyleConfig {
 	}
 }
 
-func adaptiveMarkdownColor(color lipgloss.AdaptiveColor) string {
-	if lipgloss.HasDarkBackground() {
-		return color.Dark
-	}
-	return color.Light
+func adaptiveMarkdownColor(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("#%02x%02x%02x", r>>8, g>>8, b>>8)
 }
 
 // ptr returns a pointer to v — for glamour's pointer-taking style config, so a

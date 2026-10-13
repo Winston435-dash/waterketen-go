@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"waterketen/internal/core"
 	"waterketen/internal/ui/screens"
@@ -31,10 +31,10 @@ func TestInventoryFilterOwnsTypedGlobalKeysAndAllowsCtrlC(t *testing.T) {
 		m := paletteModel(t, id)
 		m = pressText(m, "/")
 		m = pressText(m, "q3j")
-		if m.screens[m.active].ID() != id || !strings.Contains(ansi.Strip(m.View()), "q3j") {
+		if m.screens[m.active].ID() != id || !strings.Contains(ansi.Strip(m.viewContent()), "q3j") {
 			t.Fatal("typing inventory filter quit or navigated")
 		}
-		_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+		_, cmd := m.Update(appKey("ctrl+c"))
 		if cmd == nil {
 			t.Fatal("ctrl+c cannot exit during filter editing")
 		}
@@ -49,7 +49,7 @@ func TestAreaPanelStartsLazyLoadOnEntry(t *testing.T) {
 	index := m.screenIndex(screens.ScreenGebieden)
 	regions := screens.NewGebieden(&core.Library{Root: t.TempDir()}, nil)
 	m.screens[index] = regions
-	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'3'}})
+	next, cmd := m.Update(appKey("3"))
 	m = next.(Model)
 	if cmd == nil || !regions.Busy() {
 		t.Fatal("area entry did not dispatch lazy read and spinner")

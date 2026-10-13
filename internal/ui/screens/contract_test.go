@@ -33,7 +33,7 @@ func TestScreensDoNotImportLipgloss(t *testing.T) {
 			if err != nil {
 				continue
 			}
-			if strings.Contains(path, "charmbracelet/lipgloss") {
+			if strings.Contains(path, "charmbracelet/lipgloss") || strings.HasPrefix(path, "charm.land/lipgloss/") {
 				t.Errorf("%s importeert lipgloss (%q) — schermen gebruiken ui/components", f, path)
 			}
 		}

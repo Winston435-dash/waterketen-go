@@ -1,9 +1,11 @@
 package components
 
 import (
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
+	"github.com/lucasb-eyer/go-colorful"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -93,7 +95,7 @@ func renderAtlasLegend(entries []core.LegendEntry, width int) string {
 // function adds only the emphasis the map needs — highlight is bright +
 // underlined, the compass/scale/labels are bold, never a filled box.
 func atlasStyle(s core.CellStyle) lipgloss.Style {
-	st := lipgloss.NewStyle().Foreground(lipgloss.Color(core.CellColour(s)))
+	st := lipgloss.NewStyle().Foreground(atlasInk(core.CellColour(s)))
 	switch s {
 	case core.StyleHighlight:
 		return st.Bold(true).Underline(true)
@@ -101,4 +103,16 @@ func atlasStyle(s core.CellStyle) lipgloss.Style {
 		return st.Bold(true)
 	}
 	return st
+}
+
+// atlasInk preserves the RGB bytes emitted by v1's termenv codec. Its float
+// conversion truncated some channels (e.g. #cc94ff -> 204;147;255). Keeping that
+// quantization here makes the migration ink-identical without a second palette:
+// core.CellColour remains the only owner of the colour values.
+func atlasInk(hex string) color.Color {
+	c, err := colorful.Hex(hex)
+	if err != nil {
+		return lipgloss.Color(hex)
+	}
+	return color.RGBA{R: uint8(c.R * 255), G: uint8(c.G * 255), B: uint8(c.B * 255), A: 255}
 }

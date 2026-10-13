@@ -3,8 +3,8 @@ package app
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/ui"
 	"waterketen/internal/ui/components"
@@ -35,7 +35,7 @@ type paletteCommand struct {
 	action   paletteAction
 	target   screens.ScreenID
 	targeted bool
-	key      tea.KeyMsg
+	key      tea.KeyPressMsg
 }
 
 type commandPalette struct {
@@ -138,7 +138,7 @@ func isBinding(binding key.Binding, candidates ...key.Binding) bool {
 
 // keyNames maps the key names a binding's Keys() reports back to their key
 // types, so the palette can replay a command's shortcut as a real key message.
-var keyNames = map[string]tea.KeyType{
+var keyNames = map[string]rune{
 	"up":        tea.KeyUp,
 	"down":      tea.KeyDown,
 	"left":      tea.KeyLeft,
@@ -152,21 +152,31 @@ var keyNames = map[string]tea.KeyType{
 	"backspace": tea.KeyBackspace,
 	"space":     tea.KeySpace,
 	" ":         tea.KeySpace,
-	"shift+tab": tea.KeyShiftTab,
-	"ctrl+c":    tea.KeyCtrlC,
-	"ctrl+p":    tea.KeyCtrlP,
-	"ctrl+j":    tea.KeyCtrlJ,
-	"ctrl+k":    tea.KeyCtrlK,
+	"tab":       tea.KeyTab,
 }
 
-func keyMessage(name string) (tea.KeyMsg, bool) {
-	if keyType, ok := keyNames[name]; ok {
-		return tea.KeyMsg{Type: keyType}, true
+func keyMessage(name string) (tea.KeyPressMsg, bool) {
+	var mod tea.KeyMod
+	for _, prefix := range []struct {
+		name string
+		mod  tea.KeyMod
+	}{{"ctrl+", tea.ModCtrl}, {"shift+", tea.ModShift}, {"alt+", tea.ModAlt}} {
+		if strings.HasPrefix(name, prefix.name) {
+			mod |= prefix.mod
+			name = strings.TrimPrefix(name, prefix.name)
+		}
+	}
+	if code, ok := keyNames[name]; ok {
+		return tea.KeyPressMsg{Code: code, Mod: mod}, true
 	}
 	if runes := []rune(name); len(runes) == 1 {
-		return tea.KeyMsg{Type: tea.KeyRunes, Runes: runes}, true
+		text := name
+		if mod != 0 {
+			text = ""
+		}
+		return tea.KeyPressMsg{Code: runes[0], Text: text, Mod: mod}, true
 	}
-	return tea.KeyMsg{}, false
+	return tea.KeyPressMsg{}, false
 }
 
 func (p *commandPalette) filteredCommands() []paletteCommand {
@@ -201,29 +211,29 @@ func (p *commandPalette) move(delta int) {
 	p.cursor = (p.cursor + delta + len(commands)) % len(commands)
 }
 
-func (m Model) updatePalette(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) updatePalette(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	p := m.palette
-	switch msg.Type {
-	case tea.KeyEsc:
+	switch msg.String() {
+	case "esc":
 		m.palette = nil
 		return m, nil
-	case tea.KeyCtrlP:
+	case "ctrl+p":
 		if p.scope == palettePanel {
 			m.palette = newCommandPalette(m, paletteGlobal)
 		}
 		return m, nil
-	case tea.KeyUp:
+	case "up":
 		p.move(-1)
-	case tea.KeyDown:
+	case "down":
 		p.move(1)
-	case tea.KeyEnter:
+	case "enter":
 		command, ok := p.selectedCommand()
 		if !ok {
 			return m, nil
 		}
 		m.palette = nil
 		return m.executePaletteCommand(command)
-	case tea.KeyBackspace:
+	case "backspace":
 		if p.query != "" {
 			runes := []rune(p.query)
 			p.query = string(runes[:len(runes)-1])

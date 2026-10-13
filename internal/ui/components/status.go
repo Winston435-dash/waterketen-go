@@ -1,7 +1,8 @@
 package components
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
+	"image/color"
 
 	"waterketen/internal/ui"
 )
@@ -21,7 +22,7 @@ const (
 // their own ●/✓.
 func Badge(status Status, label string) string {
 	var mark string
-	var fg lipgloss.TerminalColor
+	var fg color.Color
 	switch status {
 	case StatusOK:
 		mark, fg = "●", ui.ColorOK

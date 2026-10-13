@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
 	"waterketen/internal/core"
@@ -27,17 +27,16 @@ func paletteModel(t *testing.T, active screens.ScreenID) Model {
 	return m.applySize()
 }
 
-func press(m Model, msg tea.KeyMsg) Model {
+func appKey(name string) tea.KeyPressMsg { msg, _ := keyMessage(name); return msg }
+
+func press(m Model, msg tea.Msg) Model {
 	next, _ := m.Update(msg)
 	return next.(Model)
 }
 
 func pressText(m Model, text string) Model {
 	for _, r := range text {
-		msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}}
-		if r == ' ' {
-			msg = tea.KeyMsg{Type: tea.KeySpace}
-		}
+		msg := tea.KeyPressMsg{Code: r, Text: string(r)}
 		next, _ := m.Update(msg)
 		m = next.(Model)
 	}
@@ -46,9 +45,9 @@ func pressText(m Model, text string) Model {
 
 func TestGlobalPaletteNavigationCommandChangesPanel(t *testing.T) {
 	m := paletteModel(t, screens.ScreenOntdek)
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = press(m, appKey("ctrl+p"))
 	m = pressText(m, "Ga naar Kaart")
-	m = press(m, tea.KeyMsg{Type: tea.KeyEnter})
+	m = press(m, appKey("enter"))
 	if got := m.screens[m.active].ID(); got != screens.ScreenKaart {
 		t.Fatalf("navigation command selected %v, want Kaart", got)
 	}
@@ -56,9 +55,9 @@ func TestGlobalPaletteNavigationCommandChangesPanel(t *testing.T) {
 
 func TestGlobalPaletteRefreshStartsProbeWithoutChangingPanel(t *testing.T) {
 	m := paletteModel(t, screens.ScreenOntdek)
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = press(m, appKey("ctrl+p"))
 	m = pressText(m, "Ververs bronnen")
-	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	next, cmd := m.Update(appKey("enter"))
 	m = next.(Model)
 	if cmd == nil {
 		t.Fatal("refresh command did not dispatch source probes")
@@ -79,9 +78,9 @@ func TestGlobalPaletteRefreshStartsProbeWithoutChangingPanel(t *testing.T) {
 
 func TestGlobalPaletteSearchRunsPanelCommand(t *testing.T) {
 	m := paletteModel(t, screens.ScreenOntdek)
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
+	m = press(m, appKey("ctrl+p"))
 
-	view := ansi.Strip(m.View())
+	view := ansi.Strip(m.viewContent())
 	for _, want := range []string{"Opdrachten", "Ververs bronnen", "Ga naar Bronnen"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("global palette view does not contain %q:\n%s", want, view)
@@ -89,28 +88,28 @@ func TestGlobalPaletteSearchRunsPanelCommand(t *testing.T) {
 	}
 
 	m = pressText(m, "straat zoeken")
-	view = ansi.Strip(m.View())
+	view = ansi.Strip(m.viewContent())
 	if !strings.Contains(view, "straat zoeken") || strings.Contains(view, "Ga naar Bronnen") {
 		t.Fatalf("global palette did not filter its commands:\n%s", view)
 	}
 
-	m = press(m, tea.KeyMsg{Type: tea.KeyEnter})
+	m = press(m, appKey("enter"))
 	if got := m.screens[m.active].ID(); got != screens.ScreenKaart {
 		t.Fatalf("selected map command left active panel at %v", got)
 	}
 	if k := m.kaart(); k == nil || !k.OverlayOpen() {
 		t.Fatal("selecting the map search command did not open map search")
 	}
-	if strings.Contains(ansi.Strip(m.View()), "Ververs bronnen") {
+	if strings.Contains(ansi.Strip(m.viewContent()), "Ververs bronnen") {
 		t.Fatal("palette remained visible after selecting a command")
 	}
 }
 
 func TestPanelPaletteIsScopedToActivePanel(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	m = press(m, appKey("?"))
 
-	view := ansi.Strip(m.View())
+	view := ansi.Strip(m.viewContent())
 	if !strings.Contains(view, "straat zoeken") {
 		t.Fatalf("panel palette is missing map commands:\n%s", view)
 	}
@@ -119,7 +118,7 @@ func TestPanelPaletteIsScopedToActivePanel(t *testing.T) {
 	}
 
 	m = pressText(m, "/")
-	m = press(m, tea.KeyMsg{Type: tea.KeyEnter})
+	m = press(m, appKey("enter"))
 	if k := m.kaart(); k == nil || !k.OverlayOpen() {
 		t.Fatal("selecting the panel search command did not open map search")
 	}
@@ -127,10 +126,10 @@ func TestPanelPaletteIsScopedToActivePanel(t *testing.T) {
 
 func TestPaletteEscapeClosesWithoutDispatchingToPanel(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
-	m = press(m, tea.KeyMsg{Type: tea.KeyEsc})
+	m = press(m, appKey("ctrl+p"))
+	m = press(m, appKey("esc"))
 
-	if strings.Contains(ansi.Strip(m.View()), "Ververs bronnen") {
+	if strings.Contains(ansi.Strip(m.viewContent()), "Ververs bronnen") {
 		t.Fatal("palette remained visible after escape")
 	}
 	if got := m.screens[m.active].ID(); got != screens.ScreenKaart {
@@ -143,8 +142,8 @@ func TestPaletteEscapeClosesWithoutDispatchingToPanel(t *testing.T) {
 
 func TestInventoryPanelPaletteCanSwitchToGlobal(t *testing.T) {
 	m := paletteModel(t, screens.ScreenLagen)
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-	view := ansi.Strip(m.View())
+	m = press(m, appKey("?"))
+	view := ansi.Strip(m.viewContent())
 	if !strings.Contains(view, "Lagen · lokaal/alle") || !strings.Contains(view, "Lagen · filter") {
 		t.Fatalf("inventory panel palette omits its new actions:\n%s", view)
 	}
@@ -152,17 +151,17 @@ func TestInventoryPanelPaletteCanSwitchToGlobal(t *testing.T) {
 		t.Fatalf("panel palette has the wrong scope or no global hint:\n%s", view)
 	}
 
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
-	if view := ansi.Strip(m.View()); !strings.Contains(view, "Ververs bronnen") {
+	m = press(m, appKey("ctrl+p"))
+	if view := ansi.Strip(m.viewContent()); !strings.Contains(view, "Ververs bronnen") {
 		t.Fatalf("ctrl+p did not expand to global commands:\n%s", view)
 	}
 }
 
 func TestPanelPaletteIncludesZoomCommands(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	m = press(m, appKey("?"))
 	m = pressText(m, "zoom in")
-	view := ansi.Strip(m.View())
+	view := ansi.Strip(m.viewContent())
 	if !strings.Contains(view, "Kaart · zoom in") {
 		t.Fatalf("panel palette omitted an advertised map action:\n%s", view)
 	}
@@ -172,7 +171,7 @@ func TestGlobalPaletteBindingsStayVisibleOnNarrowTerminals(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
 	m.width = 30
 	m = m.applySize()
-	lines := strings.Split(ansi.Strip(m.View()), "\n")
+	lines := strings.Split(ansi.Strip(m.viewContent()), "\n")
 	footer := lines[len(lines)-1]
 	if !strings.Contains(footer, "ctrl+p") || !strings.Contains(footer, "?") {
 		t.Fatalf("palette shortcuts disappeared from the narrow footer: %q", footer)
@@ -181,17 +180,17 @@ func TestGlobalPaletteBindingsStayVisibleOnNarrowTerminals(t *testing.T) {
 
 func TestGlobalPaletteOwnsKeysAboveMapSearch(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+	m = press(m, appKey("/"))
 	if k := m.kaart(); k == nil || !k.OverlayOpen() {
 		t.Fatal("test setup did not open map search")
 	}
 
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlP})
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-	if view := ansi.Strip(m.View()); !strings.Contains(view, "Zoek · q") {
+	m = press(m, appKey("ctrl+p"))
+	m = press(m, appKey("q"))
+	if view := ansi.Strip(m.viewContent()); !strings.Contains(view, "Zoek · q") {
 		t.Fatalf("palette did not own the typed key:\n%s", view)
 	}
-	m = press(m, tea.KeyMsg{Type: tea.KeyEsc})
+	m = press(m, appKey("esc"))
 	if k := m.kaart(); k == nil || !k.OverlayOpen() {
 		t.Fatal("closing the palette also closed the underlying map search")
 	}

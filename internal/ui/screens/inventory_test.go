@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 	"waterketen/internal/core"
 )
@@ -102,7 +101,7 @@ func TestInventoryFilterAcceptsUnicodeAndCancelRestoresPrevious(t *testing.T) {
 	f := inventoryFilter{query: "old"}
 	f.update(keys("/"))
 	f.update(pasted(" café"))
-	f.update(tea.KeyMsg{Type: tea.KeyBackspace})
+	f.update(keys("backspace"))
 	if f.query != "old caf" {
 		t.Fatalf("bad unicode backspace: %q", f.query)
 	}
@@ -127,7 +126,7 @@ func TestInventoryPanesFitAllSizesAndReachLastArea(t *testing.T) {
 		regions.Update(AreasMsg{Areas: areas})
 		for _, s := range []Screen{layers, regions} {
 			s.SetSize(box[0], box[1])
-			s.Update(tea.KeyMsg{Type: tea.KeyEnd})
+			s.Update(keys("end"))
 			view := s.View()
 			if len(strings.Split(view, "\n")) > max(2, box[1]-2) {
 				t.Fatalf("%T %v: view too tall", s, box)

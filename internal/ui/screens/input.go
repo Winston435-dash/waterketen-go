@@ -1,34 +1,37 @@
 package screens
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "charm.land/bubbletea/v2"
+	"strings"
+)
 
-// TypedText returns the characters a key message contributes to a text field,
-// or "" when the key is not text. It is shared by every text field — the
-// street search, the picker and the app's command palette — so a space
-// (KeySpace, not KeyRunes) can never be dropped in one of them.
-//
-// This exists because a SPACE is not a KeyRunes event. Bubble Tea parses " " into
-// Key{Type: KeySpace, Runes: []rune{' '}} (bubbletea/key.go: len(runes)==1 &&
-// runes[0]==' ' → KeySpace). A handler that only tests `msg.Type == tea.KeyRunes`
-// therefore silently DROPS every space: typing "west zeedijk" produced
-// "westzeedijk" (and a leading space produced nothing at all). That was the bug on
-// '/' in panel 5.
-//
-// Pasted text arrives as KeyRunes with Paste set and the whole run in Runes, so it
-// flows through here too — pasting a street name works for free.
-func TypedText(msg tea.KeyMsg) string {
-	switch msg.Type {
-	case tea.KeySpace:
-		return " "
-	case tea.KeyRunes:
-		return string(msg.Runes)
+// TypedText accepts printable keys and v2's separate bracketed-paste messages.
+// Control shortcuts never become text. Flatten pasted newlines in single-line fields.
+func TypedText(msg tea.Msg) string {
+	var text string
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		if msg.Mod.Contains(tea.ModCtrl) || msg.Mod.Contains(tea.ModAlt) {
+			return ""
+		}
+		text = msg.Text
+		if msg.Code == tea.KeySpace {
+			text = " "
+		}
+	case tea.PasteMsg:
+		text = msg.Content
 	}
-	return ""
+	return strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\r' || r == '\t' {
+			return ' '
+		}
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, text)
 }
 
-// isSpace reports whether the key is a space. Screens that treat space as a COMMAND
-// (toggling a layer in the picker) must use this rather than comparing
-// msg.String(): a pasted space stringifies to "[…]" instead of " ".
-func isSpace(msg tea.KeyMsg) bool {
-	return msg.Type == tea.KeySpace
+func isSpace(msg tea.KeyPressMsg) bool {
+	return msg.Code == tea.KeySpace && msg.Mod == 0
 }

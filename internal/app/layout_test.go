@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // mobile is the set of terminal geometries this app must survive. It is not a
@@ -32,7 +32,7 @@ func renderSize(t *testing.T, w, h int) []string {
 	m := New(t.TempDir())
 	m.width, m.height, m.ready = w, h, true
 	m = m.applySize()
-	return strings.Split(m.View(), "\n")
+	return strings.Split(m.viewContent(), "\n")
 }
 
 // TestViewNeverExceedsTerminal is the mobile contract: lipgloss renders each

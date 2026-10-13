@@ -1,31 +1,21 @@
 package components
 
 import (
-	"io"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/cellbuf"
-	"github.com/muesli/termenv"
 
 	"waterketen/internal/ui"
 )
-
-var backgroundRenderer = func() *lipgloss.Renderer {
-	r := lipgloss.NewRenderer(io.Discard)
-	// Palette entry 0 can be tinted by the terminal theme. Use RGB black,
-	// rather than the terminal's configurable ANSI "black" or default colour.
-	r.SetColorProfile(termenv.TrueColor)
-	return r
-}()
 
 // AppSurface supplies the shell's background without changing content or data
 // ink. Every row is self-contained because Bubble Tea redraws rows independently.
 // Nested bold/text styles often reset all SGR attributes; reapply the background
 // after those resets so padding and text never expose the terminal's default.
 func AppSurface(view string) string {
-	paint := backgroundRenderer.NewStyle().Background(ui.ColorBackground).Render(" ")
+	paint := lipgloss.NewStyle().Background(ui.ColorBackground).Render(" ")
 	background, _, _ := strings.Cut(paint, " ")
 	p := ansi.GetParser()
 	defer ansi.PutParser(p)

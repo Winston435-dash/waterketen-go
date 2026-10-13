@@ -4,9 +4,10 @@
 package components
 
 import (
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/ui"
 )
@@ -39,7 +40,7 @@ func Panel(title, body string, width, height int, active bool) string {
 }
 
 // withBorderTitle paints `title` over the panel's top border line.
-func withBorderTitle(rendered, title string, color lipgloss.TerminalColor) string {
+func withBorderTitle(rendered, title string, color color.Color) string {
 	if title == "" {
 		return rendered
 	}

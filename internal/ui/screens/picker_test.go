@@ -4,26 +4,24 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/core"
 )
 
-func keys(s string) tea.KeyMsg {
-	switch s {
-	case "enter":
-		return tea.KeyMsg{Type: tea.KeyEnter}
-	case "up":
-		return tea.KeyMsg{Type: tea.KeyUp}
-	case "down":
-		return tea.KeyMsg{Type: tea.KeyDown}
-	case "esc":
-		return tea.KeyMsg{Type: tea.KeyEscape}
-	case " ":
-		return tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}}
+func keys(s string) tea.KeyPressMsg {
+	code, ok := map[string]rune{"enter": tea.KeyEnter, "up": tea.KeyUp, "down": tea.KeyDown,
+		"esc": tea.KeyEscape, "pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown,
+		"home": tea.KeyHome, "end": tea.KeyEnd, "right": tea.KeyRight, "backspace": tea.KeyBackspace}[s]
+	if ok {
+		return tea.KeyPressMsg{Code: code}
 	}
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s)}
+	runes := []rune(s)
+	if len(runes) == 0 {
+		return tea.KeyPressMsg{}
+	}
+	return tea.KeyPressMsg{Code: runes[0], Text: s}
 }
 
 func areaPicker(t *testing.T) *Picker {

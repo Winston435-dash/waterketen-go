@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -95,7 +95,7 @@ func (s *AnalyseScreen) SetSpinner(frame string) { s.spinner = frame }
 
 func (s *AnalyseScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		contentH := max(1, s.h-4)
 		total := len(s.lines)
 		switch {
@@ -258,7 +258,7 @@ func (s *ProfielScreen) SetData(data []*LayerData) {
 
 func (s *ProfielScreen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	switch m := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if len(s.data) == 0 {
 			return s, nil
 		}

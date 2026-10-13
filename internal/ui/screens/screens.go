@@ -10,10 +10,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -103,7 +103,7 @@ type Bronnen struct {
 }
 
 func NewBronnen() *Bronnen {
-	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(1, 1)}
+	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
 }
 
 func (s *Bronnen) ID() ScreenID { return ScreenBronnen }
@@ -112,10 +112,11 @@ func (s *Bronnen) KeyMap() []key.Binding {
 }
 func (s *Bronnen) SetSize(w, h int) {
 	s.w, s.h = w, h
-	s.body.Width, s.body.Height = max(1, w-4), max(1, h-2)
+	s.body.SetWidth(max(1, w-4))
+	s.body.SetHeight(max(1, h-2))
 	s.refreshHealth()
 	if s.probing {
-		s.prog.Width = s.barWidth()
+		s.prog.SetWidth(s.barWidth())
 	}
 }
 func (s *Bronnen) Info() string {
@@ -184,7 +185,7 @@ func (s *Bronnen) BeginProbe() tea.Cmd {
 	s.probing = true
 	s.done = 0
 	s.want = len(core.WiredSources)
-	s.prog.Width = s.barWidth()
+	s.prog.SetWidth(s.barWidth())
 	return s.prog.SetPercent(0)
 }
 
@@ -210,9 +211,7 @@ func (s *Bronnen) Tick(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	m, cmd := s.prog.Update(msg)
-	if pm, ok := m.(progress.Model); ok {
-		s.prog = pm
-	}
+	s.prog = m
 	return cmd
 }
 
@@ -253,7 +252,7 @@ func (s *Bronnen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	if s.probing {
 		return s, nil
 	}
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		if key.Matches(msg, ui.Keys.Home) {
 			s.body.GotoTop()
 			return s, nil
@@ -287,7 +286,7 @@ func (s *Bronnen) View() string {
 }
 
 func (s *Bronnen) refreshHealth() {
-	s.body.SetContent(components.WrappedText(s.renderHealth(), s.body.Width))
+	s.body.SetContent(components.WrappedText(s.renderHealth(), s.body.Width()))
 }
 
 func (s *Bronnen) renderHealth() string {

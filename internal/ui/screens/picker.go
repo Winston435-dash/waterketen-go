@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -170,7 +170,16 @@ func (p *Picker) move(delta int) {
 // area, or applies the toggled layer set. esc always cancels. Toggling a
 // checkbox without any way to say "done" was the first bug here — the set could
 // never be applied, and reaching for esc threw it away.
-func (p *Picker) Update(msg tea.KeyMsg) (PickerResult, bool) {
+func (p *Picker) Update(event tea.Msg) (PickerResult, bool) {
+	msg, ok := event.(tea.KeyPressMsg)
+	if !ok {
+		if p.Searchable() {
+			p.query += TypedText(event)
+			p.cursor = 0
+			p.refilter()
+		}
+		return PickerResult{}, false
+	}
 	switch {
 	case key.Matches(msg, ui.Keys.Back):
 		return p.result(false), true
@@ -182,7 +191,7 @@ func (p *Picker) Update(msg tea.KeyMsg) (PickerResult, bool) {
 	case key.Matches(msg, ui.Keys.Down), msg.String() == "ctrl+j":
 		p.move(1)
 		return PickerResult{}, false
-	case msg.Type == tea.KeyBackspace:
+	case msg.Code == tea.KeyBackspace:
 		if p.Searchable() && p.query != "" {
 			// One RUNE, not one byte: a multi-byte character would be split and the
 			// query corrupted (see StreetSearch.Update).

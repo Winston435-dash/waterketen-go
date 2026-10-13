@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/ui"
 )
@@ -34,7 +34,7 @@ func NewSpinner() spinner.Model {
 // number of cells the bar occupies; the caller clamps it to the panel.
 func NewProgress(width int) progress.Model {
 	return progress.New(
-		progress.WithGradient(ui.GradientBarA, ui.GradientBarB),
+		progress.WithColors(lipgloss.Color(ui.GradientBarA), lipgloss.Color(ui.GradientBarB)),
 		progress.WithWidth(width),
 		progress.WithoutPercentage(), // the panel shows its own "n/totaal" count
 		progress.WithFillCharacters('█', '░'),

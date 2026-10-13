@@ -4,8 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/ui/screens"
 )
@@ -17,7 +16,7 @@ func TestHeaderNavigationFitsTerminal(t *testing.T) {
 		m.width, m.height, m.ready = width, 26, true
 		m = m.applySize()
 		for _, entry := range screens.Screens {
-			next, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(entry.Key)})
+			next, _ := m.Update(appKey(entry.Key))
 			m = next.(Model)
 			if m.screens[m.active].ID() != entry.ID {
 				t.Fatalf("key %s did not select %s", entry.Key, entry.Title)

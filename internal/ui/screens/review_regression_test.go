@@ -7,8 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"waterketen/internal/core"
 )
 
@@ -32,7 +31,7 @@ func TestMapPanUsesOneVisibleSpanAtEveryZoom(t *testing.T) {
 			}
 			frame := before.Frame(bounds, width, height)
 			want := (frame.Bounds.MaxX - frame.Bounds.MinX) * .18
-			s.Update(tea.KeyMsg{Type: tea.KeyRight})
+			s.Update(keys("right"))
 			if got := s.view.CX - before.CX; math.Abs(got-want) > 1e-9 || s.view.CY != before.CY {
 				t.Fatalf("library=%v zoom=%v: moved %v, want %v", library, zoom, got, want)
 			}
@@ -133,7 +132,7 @@ func TestAnalysisAndProfileSurviveSmallTerminalsWithData(t *testing.T) {
 			profile.SetSize(box[0], box[1])
 			analysis.View()
 			profile.View()
-			analysis.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+			analysis.Update(keys("pgdown"))
 			analysis.View()
 		})
 	}
@@ -170,16 +169,16 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 	if !strings.Contains(s.View(), "Source 00") || strings.Contains(s.View(), "Source 24") {
 		t.Fatal("bad first page")
 	}
-	s.Update(tea.KeyMsg{Type: tea.KeyPgDown})
-	if s.body.YOffset == 0 {
+	s.Update(keys("pgdown"))
+	if s.body.YOffset() == 0 {
 		t.Fatal("page down did not scroll")
 	}
-	s.Update(tea.KeyMsg{Type: tea.KeyEnd})
+	s.Update(keys("end"))
 	if !s.body.AtBottom() {
 		t.Fatal("end did not reach unwired sources")
 	}
 	// Walk every row, verifying bounded rendering and reachability.
-	s.Update(tea.KeyMsg{Type: tea.KeyHome})
+	s.Update(keys("home"))
 	seenLast := false
 	seenRestrictedLicence := false
 	for i := 0; i < s.body.TotalLineCount(); i++ {
@@ -191,7 +190,7 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 				t.Fatal("source row exceeds viewport width")
 			}
 		}
-		s.Update(tea.KeyMsg{Type: tea.KeyDown})
+		s.Update(keys("down"))
 	}
 	if !seenLast {
 		t.Fatal("last wired source cannot be reached")
@@ -199,8 +198,8 @@ func TestBronnenScrollsToAllSourcesAndLicences(t *testing.T) {
 	if !seenRestrictedLicence {
 		t.Fatal("unwired licence is truncated rather than reachable")
 	}
-	s.Update(tea.KeyMsg{Type: tea.KeyHome})
-	if s.body.YOffset != 0 {
+	s.Update(keys("home"))
+	if s.body.YOffset() != 0 {
 		t.Fatal("home did not restore top")
 	}
 }

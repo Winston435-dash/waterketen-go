@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/charmbracelet/bubbles/key"
+import "charm.land/bubbles/v2/key"
 
 // KeyMap is the single source of truth for every binding in the app. Screens
 // declare which of these they use; the CommandBar renders them. A key that is

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -481,7 +481,19 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			return s, s.FailLoad(m.Err)
 		}
 		return s, s.CommitLoad(m.Scene)
-	case tea.KeyMsg:
+	case tea.PasteMsg:
+		if s.picker != nil {
+			s.picker.Update(msg)
+			return s, nil
+		}
+		if s.search != nil {
+			_, _, changed := s.search.Update(msg)
+			if changed {
+				return s, s.SearchCmd(s.search.query)
+			}
+		}
+		return s, nil
+	case tea.KeyPressMsg:
 		if s.search != nil {
 			focus, done, changed := s.search.Update(m)
 			if done {
@@ -517,7 +529,7 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	return s, nil
 }
 
-func (s *Kaart) handleKey(m tea.KeyMsg) tea.Cmd {
+func (s *Kaart) handleKey(m tea.KeyPressMsg) tea.Cmd {
 	if s.scene == nil {
 		return nil
 	}
@@ -607,6 +619,7 @@ func (s *Kaart) zoomView(factor, col, row float64, w, h int) tea.Cmd {
 }
 
 func (s *Kaart) handleMouse(m tea.MouseMsg) tea.Cmd {
+	mouse := m.Mouse()
 	if s.scene == nil || !s.hasView {
 		return nil
 	}
@@ -616,16 +629,16 @@ func (s *Kaart) handleMouse(m tea.MouseMsg) tea.Cmd {
 		bounds = s.atlas.Area.Bounds
 	}
 	frame := s.view.Frame(bounds, w, h)
-	switch m.Button {
-	case tea.MouseButtonWheelUp:
-		return s.zoomView(1.25, float64(m.X)-2, float64(m.Y)-2, w, h)
-	case tea.MouseButtonWheelDown:
-		return s.zoomView(0.8, float64(m.X)-2, float64(m.Y)-2, w, h)
-	case tea.MouseButtonLeft:
-		if m.Action != tea.MouseActionPress {
+	switch mouse.Button {
+	case tea.MouseWheelUp:
+		return s.zoomView(1.25, float64(mouse.X)-2, float64(mouse.Y)-2, w, h)
+	case tea.MouseWheelDown:
+		return s.zoomView(0.8, float64(mouse.X)-2, float64(mouse.Y)-2, w, h)
+	case tea.MouseLeft:
+		if _, click := m.(tea.MouseClickMsg); !click {
 			return nil
 		}
-		x, y := frame.World(float64(m.X)-2, float64(m.Y)-2)
+		x, y := frame.World(float64(mouse.X)-2, float64(mouse.Y)-2)
 		if f := s.scene.Nearest(x, y, frame.MetresPerDot*5, s.active, s.overlay, nil); f != nil {
 			s.selected = f
 			s.street = ""

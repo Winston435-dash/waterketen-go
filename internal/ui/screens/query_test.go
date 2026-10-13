@@ -28,9 +28,9 @@ func TestQueryPickersFitTheContentViewport(t *testing.T) {
 		t.Run(command, func(t *testing.T) {
 			s := readyQuery(t)
 			s.Update(keys(command))
-			fitsHost(t, "querypicker", s.View(), s.width, s.body.Height)
+			fitsHost(t, "querypicker", s.View(), s.width, s.body.Height())
 			s.SetSize(48, 24)
-			fitsHost(t, "querypicker na resize", s.View(), s.width, s.body.Height)
+			fitsHost(t, "querypicker na resize", s.View(), s.width, s.body.Height())
 		})
 	}
 }

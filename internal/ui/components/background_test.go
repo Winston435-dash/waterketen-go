@@ -4,18 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/cellbuf"
-	"github.com/muesli/termenv"
 
 	"waterketen/internal/core"
 )
 
 func TestAppSurfacePaintsEveryCellBlackAfterNestedStyleResets(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.TrueColor)
-	defer lipgloss.SetColorProfile(old)
 	content := Strong("Title") + "   " + Muted("text") + "\n" +
 		RenderAtlas(&core.Render{Cells: [][]core.Cell{{{Rune: '⣿', Style: core.StyleForLayer("riool")}, {Rune: ' ', Style: core.StyleBlank}}}}) + "\n" +
 		"before\x1b[0;39mcombined reset\x1b[49mdefault reset   "
@@ -31,10 +26,7 @@ func TestAppSurfacePaintsEveryCellBlackAfterNestedStyleResets(t *testing.T) {
 	}
 }
 
-func TestAppSurfaceUsesRGBBlackEvenWithAnANSI256Profile(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.ANSI256)
-	defer lipgloss.SetColorProfile(old)
+func TestAppSurfaceUsesRGBBlackBeforeOutputDownsampling(t *testing.T) {
 	out := AppSurface("   \n x ")
 	if !strings.Contains(out, "48;2;0;0;0") {
 		t.Fatalf("background uses configurable palette black instead of RGB black: %q", out)

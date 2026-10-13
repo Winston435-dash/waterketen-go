@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // Modal renders `content` as a floating dialog over `background` (both full

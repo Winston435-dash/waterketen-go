@@ -5,8 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/core"
 )
@@ -17,10 +16,6 @@ import (
 // run without a TTY, where lipgloss would otherwise strip all colour) so the
 // assertion is made against the SGR the app really emits.
 func TestRenderAtlasEmitsNoBackground(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.TrueColor)
-	defer lipgloss.SetColorProfile(old)
-
 	r := &core.Render{Cells: [][]core.Cell{
 		{{Rune: '⣿', Style: core.StyleForLayer("riool")}, {Rune: ' ', Style: core.StyleBlank}},
 		{{Rune: 'N', Style: core.StyleNorth}, {Rune: 'X', Style: core.StyleHighlight}},
@@ -38,10 +33,6 @@ func TestRenderAtlasEmitsNoBackground(t *testing.T) {
 // TestRenderAtlasPreservesGridAndRuns checks the text survives: stripping SGR
 // must give back exactly the grid, newlines included.
 func TestRenderAtlasPreservesGridAndRuns(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.TrueColor)
-	defer lipgloss.SetColorProfile(old)
-
 	const n = 12
 	cells := make([][]core.Cell, 2)
 	cells[0] = make([]core.Cell, n)
@@ -58,10 +49,6 @@ func TestRenderAtlasPreservesGridAndRuns(t *testing.T) {
 }
 
 func TestRenderAtlasShowsColoredGemalenDotLegend(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.TrueColor)
-	defer lipgloss.SetColorProfile(old)
-
 	cells := make([]core.Cell, 40)
 	for i := range cells {
 		cells[i] = core.Cell{Rune: ' ', Style: core.StyleBlank}

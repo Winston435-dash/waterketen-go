@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/ui"
 	"waterketen/internal/ui/components"
@@ -47,7 +47,16 @@ func (s *StreetSearch) SetSize(w, h int) { s.w, s.h = w, h }
 // the overlay should close, and whether the QUERY changed so the caller knows to
 // run a new search. Without that last flag the caller would search on every
 // keystroke — including the arrows and enter.
-func (s *StreetSearch) Update(msg tea.KeyMsg) (focus string, done, changed bool) {
+func (s *StreetSearch) Update(event tea.Msg) (focus string, done, changed bool) {
+	msg, ok := event.(tea.KeyPressMsg)
+	if !ok {
+		if text := TypedText(event); text != "" {
+			s.query += text
+			s.busy = true
+			return "", false, true
+		}
+		return "", false, false
+	}
 	switch {
 	case key.Matches(msg, ui.Keys.Back):
 		return "", true, false
@@ -56,7 +65,7 @@ func (s *StreetSearch) Update(msg tea.KeyMsg) (focus string, done, changed bool)
 			return "", false, false
 		}
 		return s.matches[0], true, false
-	case msg.Type == tea.KeyBackspace:
+	case msg.Code == tea.KeyBackspace:
 		if s.query == "" {
 			return "", false, false
 		}

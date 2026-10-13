@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -21,14 +21,22 @@ type inventoryFilter struct {
 	editing         bool
 }
 
-func (f *inventoryFilter) update(msg tea.KeyMsg) bool {
+func (f *inventoryFilter) update(event tea.Msg) bool {
+	msg, isKey := event.(tea.KeyPressMsg)
+	if !isKey {
+		if f.editing {
+			f.query += TypedText(event)
+			return true
+		}
+		return false
+	}
 	if f.editing {
 		switch {
 		case key.Matches(msg, ui.Keys.Enter):
 			f.editing = false
 		case key.Matches(msg, ui.Keys.Back):
 			f.query, f.editing = f.previous, false
-		case msg.Type == tea.KeyBackspace:
+		case msg.Code == tea.KeyBackspace:
 			runes := []rune(f.query)
 			if len(runes) > 0 {
 				f.query = string(runes[:len(runes)-1])
@@ -72,7 +80,7 @@ func inventoryKeys(editing bool) []key.Binding {
 }
 
 func scrollInventory(body *viewport.Model, msg tea.Msg) tea.Cmd {
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		if key.Matches(msg, ui.Keys.Home) {
 			body.GotoTop()
 			return nil
@@ -98,7 +106,7 @@ type Lagen struct {
 }
 
 func NewLagen(catalog core.Catalog, err error) *Lagen {
-	return &Lagen{catalog: catalog, err: err, body: viewport.New(1, 1)}
+	return &Lagen{catalog: catalog, err: err, body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
 }
 func (s *Lagen) ID() ScreenID        { return ScreenLagen }
 func (s *Lagen) EditingFilter() bool { return s.filter.editing }
@@ -110,7 +118,8 @@ func (s *Lagen) KeyMap() []key.Binding {
 	return keys
 }
 func (s *Lagen) SetSize(w, h int) {
-	s.body.Width, s.body.Height = max(1, w-4), max(1, h-3)
+	s.body.SetWidth(max(1, w-4))
+	s.body.SetHeight(max(1, h-3))
 	s.refresh()
 }
 func (s *Lagen) Info() string {
@@ -123,12 +132,12 @@ func (s *Lagen) Info() string {
 	return fmt.Sprintf("%d bekend · %d met lokaal bestand", len(s.catalog.Layers), local)
 }
 func (s *Lagen) Update(msg tea.Msg) (Screen, tea.Cmd) {
-	if msg, ok := msg.(tea.KeyMsg); ok {
-		if s.filter.update(msg) {
-			s.refresh()
-			s.body.GotoTop()
-			return s, nil
-		}
+	if s.filter.update(msg) {
+		s.refresh()
+		s.body.GotoTop()
+		return s, nil
+	}
+	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		if key.Matches(msg, ui.Keys.LocalOnly) {
 			s.localOnly = !s.localOnly
 			s.refresh()
@@ -204,9 +213,9 @@ func (s *Lagen) refresh() {
 	if shown == 0 {
 		lines = append(lines, components.Muted("Geen lagen voor dit filter."))
 	}
-	s.body.SetContent(components.WrappedText(strings.Join(lines, "\n"), s.body.Width))
+	s.body.SetContent(components.WrappedText(strings.Join(lines, "\n"), s.body.Width()))
 }
-func (s *Lagen) View() string { return s.filter.view(s.body.Width) + "\n" + s.body.View() }
+func (s *Lagen) View() string { return s.filter.view(s.body.Width()) + "\n" + s.body.View() }
 
 // Gebieden reads the actual CBS registry, lazily and off the event loop. Its
 // count is the number read, not a manifest promise; all names/codes are searchable.
@@ -227,7 +236,7 @@ type AreasMsg struct {
 }
 
 func NewGebieden(lib *core.Library, assets []core.AssetMeta) *Gebieden {
-	return &Gebieden{lib: lib, assets: assets, loaded: lib == nil, body: viewport.New(1, 1)}
+	return &Gebieden{lib: lib, assets: assets, loaded: lib == nil, body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
 }
 func (s *Gebieden) ID() ScreenID            { return ScreenGebieden }
 func (s *Gebieden) EditingFilter() bool     { return s.filter.editing }
@@ -235,7 +244,8 @@ func (s *Gebieden) Busy() bool              { return s.opening }
 func (s *Gebieden) SetSpinner(frame string) { s.spinner = frame }
 func (s *Gebieden) KeyMap() []key.Binding   { return inventoryKeys(s.filter.editing) }
 func (s *Gebieden) SetSize(w, h int) {
-	s.body.Width, s.body.Height = max(1, w-4), max(1, h-3)
+	s.body.SetWidth(max(1, w-4))
+	s.body.SetHeight(max(1, h-3))
 	s.refresh()
 }
 func (s *Gebieden) Info() string {
@@ -270,7 +280,7 @@ func (s *Gebieden) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.loaded, s.opening, s.areas, s.err = true, false, msg.Areas, msg.Err
 		s.refresh()
 		return s, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg, tea.PasteMsg:
 		if s.filter.update(msg) {
 			s.refresh()
 			s.body.GotoTop()
@@ -347,11 +357,11 @@ func (s *Gebieden) refresh() {
 			lines = append(lines, components.Muted("Geen managed gebieden beschikbaar."))
 		}
 	}
-	s.body.SetContent(components.WrappedText(strings.Join(lines, "\n"), s.body.Width))
+	s.body.SetContent(components.WrappedText(strings.Join(lines, "\n"), s.body.Width()))
 }
 func (s *Gebieden) View() string {
 	if s.opening {
 		return components.Busy(s.spinner, "CBS-gebieden worden gelezen…")
 	}
-	return s.filter.view(s.body.Width) + "\n" + s.body.View()
+	return s.filter.view(s.body.Width()) + "\n" + s.body.View()
 }

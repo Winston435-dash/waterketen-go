@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
 	"waterketen/internal/ui/components"
@@ -69,7 +69,7 @@ type QueryObjectsMsg struct {
 }
 
 func NewQuery(root string) *Query {
-	return &Query{root: root, selected: []string{"rioolgemalen", "putten", "riool"}, body: viewport.New(1, 1)}
+	return &Query{root: root, selected: []string{"rioolgemalen", "putten", "riool"}, body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
 }
 func (s *Query) ID() ScreenID            { return ScreenQuery }
 func (s *Query) Busy() bool              { return s.opening || s.running || s.pageLoading }
@@ -83,9 +83,10 @@ func (s *Query) Info() string {
 }
 func (s *Query) SetSize(w, h int) {
 	s.width = max(1, w-4)
-	s.body.Width, s.body.Height = s.width, max(1, h-2)
+	s.body.SetWidth(s.width)
+	s.body.SetHeight(max(1, h-2))
 	if s.picker != nil {
-		s.picker.SetSize(s.width, s.body.Height)
+		s.picker.SetSize(s.width, s.body.Height())
 	}
 	s.refresh()
 }
@@ -235,7 +236,12 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.refresh()
 		s.revealObject()
 		return s, nil
-	case tea.KeyMsg:
+	case tea.PasteMsg:
+		if s.picker != nil {
+			s.picker.Update(msg)
+		}
+		return s, nil
+	case tea.KeyPressMsg:
 		if s.picker != nil {
 			res, done := s.picker.Update(msg)
 			if done {
@@ -260,7 +266,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		case key.Matches(msg, ui.Keys.Area):
 			if len(s.areas) > 0 {
 				s.picker = NewAreaPicker(s.areas)
-				s.picker.SetSize(s.width, s.body.Height)
+				s.picker.SetSize(s.width, s.body.Height())
 			}
 			return s, nil
 		case key.Matches(msg, ui.Keys.QueryLayers):
@@ -273,7 +279,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 					}
 					p.all = append(p.all, pickItem{key: l.ID, label: label, mark: slices.Contains(s.selected, l.ID)})
 				}
-				p.SetSize(s.width, s.body.Height)
+				p.SetSize(s.width, s.body.Height())
 				s.picker = p
 			}
 			return s, nil
@@ -318,7 +324,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		}
 		if s.mode == queryObjects {
 			old := s.objectCursor
-			s.objectCursor = queryMove(msg, s.objectCursor, s.result.Layers[s.resultCursor].Count, max(1, s.body.Height-3))
+			s.objectCursor = queryMove(msg, s.objectCursor, s.result.Layers[s.resultCursor].Count, max(1, s.body.Height()-3))
 			if old != s.objectCursor {
 				return s, s.pageCmd()
 			}
@@ -348,7 +354,7 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	return s, cmd
 }
 
-func queryMove(msg tea.KeyMsg, cursor, total, page int) int {
+func queryMove(msg tea.KeyPressMsg, cursor, total, page int) int {
 	switch {
 	case key.Matches(msg, ui.Keys.Up):
 		cursor--
@@ -370,18 +376,18 @@ func queryMove(msg tea.KeyMsg, cursor, total, page int) int {
 // is taller than the viewport. Do not push the selection off a one-row viewport.
 func (s *Query) revealObject() {
 	line := 2 + s.objectCursor - s.pageOffset
-	if s.body.Height > 1 && len(s.objects) > 0 && s.objectCursor-s.pageOffset == len(s.objects)-1 {
+	if s.body.Height() > 1 && len(s.objects) > 0 && s.objectCursor-s.pageOffset == len(s.objects)-1 {
 		line++
 	}
 	s.reveal(line)
 }
 
 func (s *Query) reveal(line int) {
-	if line < s.body.YOffset {
+	if line < s.body.YOffset() {
 		s.body.SetYOffset(line)
 	}
-	if line >= s.body.YOffset+s.body.Height {
-		s.body.SetYOffset(line - s.body.Height + 1)
+	if line >= s.body.YOffset()+s.body.Height() {
+		s.body.SetYOffset(line - s.body.Height() + 1)
 	}
 }
 func (s *Query) formLines(width int) []string {

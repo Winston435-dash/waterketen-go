@@ -19,10 +19,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
@@ -291,7 +291,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if query, ok := m.screens[m.active].(*screens.Query); ok && query.OverlayOpen() {
 			next, cmd := query.Update(msg)
 			m.screens[m.active] = next
@@ -304,7 +304,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.palette = newCommandPalette(m, paletteGlobal)
 			return m, nil
 		}
-		if filter, ok := m.screens[m.active].(interface{ EditingFilter() bool }); ok && filter.EditingFilter() && msg.Type != tea.KeyCtrlC {
+		if filter, ok := m.screens[m.active].(interface{ EditingFilter() bool }); ok && filter.EditingFilter() && msg.String() != "ctrl+c" {
 			next, cmd := m.screens[m.active].Update(msg)
 			m.screens[m.active] = next
 			return m, tea.Batch(cmd, m.afterScreenUpdate())
@@ -359,6 +359,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		// Forward to the active screen.
+		next, cmd := m.screens[m.active].Update(msg)
+		m.screens[m.active] = next
+		return m, tea.Batch(cmd, m.afterScreenUpdate())
+	case tea.PasteMsg:
+		if m.palette != nil {
+			m.palette.query += screens.TypedText(msg)
+			m.palette.cursor = 0
+			return m, nil
+		}
 		next, cmd := m.screens[m.active].Update(msg)
 		m.screens[m.active] = next
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
@@ -470,7 +479,14 @@ func (m Model) panelBox() (int, int) {
 	return l.panelW, l.panelH
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
+	v := tea.NewView(m.viewContent())
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+func (m Model) viewContent() string {
 	if !m.ready {
 		return components.AppSurface("initialiseren…")
 	}
@@ -569,8 +585,7 @@ func screenTitle(s screens.Screen) string {
 func Run(root string) error {
 	// The app owns a black surface even when the terminal's default is light.
 	// Keep adaptive foreground tokens on their legible dark-background variant.
-	lipgloss.SetHasDarkBackground(true)
-	p := tea.NewProgram(New(root), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(New(root))
 	_, err := p.Run()
 	return err
 }

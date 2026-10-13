@@ -11,7 +11,7 @@
 // written down.
 package ui
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 // --- Color tokens -----------------------------------------------------------
 
@@ -21,17 +21,17 @@ import "github.com/charmbracelet/lipgloss"
 // The app shell paints a true-black background, independent of the terminal's
 // default palette. Components remain transparent over that one shared surface.
 var (
-	ColorBackground = lipgloss.Color("#000000")                                 // app-wide surface, including blank cells
-	ColorPrimary    = lipgloss.AdaptiveColor{Light: "#c81ec8", Dark: "#ff7bf5"} // Charm-pink accent (active UI, busy)
-	ColorMuted      = lipgloss.AdaptiveColor{Light: "#536171", Dark: "#9aa8b8"} // secondary UI text
-	ColorText       = lipgloss.AdaptiveColor{Light: "#1a2530", Dark: "#d2e2ee"} // body text
-	ColorError      = lipgloss.AdaptiveColor{Light: "#b3261e", Dark: "#ff6d64"} // probe failures, impossible values
-	ColorWarning    = lipgloss.AdaptiveColor{Light: "#8c6d0b", Dark: "#ffa95c"} // drinkwater accent doubles as warning
-	ColorOK         = lipgloss.AdaptiveColor{Light: "#1e7d32", Dark: "#6fe38f"} // source up, probe healthy
-	ColorSurface    = lipgloss.AdaptiveColor{Light: "#f2f5f7", Dark: "#0b1725"} // reserved fill — NOT used by default
-	ColorSurfaceHi  = lipgloss.AdaptiveColor{Light: "#e2eaef", Dark: "#102235"} // reserved fill — NOT used by default
-	ColorBorder     = lipgloss.AdaptiveColor{Light: "#8a99aa", Dark: "#475569"} // calm border
-	ColorActiveBg   = lipgloss.AdaptiveColor{Light: "#d0e4ee", Dark: "#173850"} // reserved fill — NOT used by default
+	ColorBackground = lipgloss.Color("#000000") // app-wide surface, including blank cells
+	ColorPrimary    = lipgloss.Color("#ff7bf5") // Charm-pink accent (active UI, busy)
+	ColorMuted      = lipgloss.Color("#9aa8b8") // secondary UI text
+	ColorText       = lipgloss.Color("#d2e2ee") // body text
+	ColorError      = lipgloss.Color("#ff6d64") // probe failures, impossible values
+	ColorWarning    = lipgloss.Color("#ffa95c") // warning
+	ColorOK         = lipgloss.Color("#6fe38f") // source up, probe healthy
+	ColorSurface    = lipgloss.Color("#0b1725") // reserved fill — NOT used by default
+	ColorSurfaceHi  = lipgloss.Color("#102235") // reserved fill — NOT used by default
+	ColorBorder     = lipgloss.Color("#475569") // calm border
+	ColorActiveBg   = lipgloss.Color("#173850") // reserved fill — NOT used by default
 )
 
 // Progress-bar gradient endpoints. These are Bubbles' own default gradient

@@ -4,18 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/muesli/termenv"
 
 	"waterketen/internal/core"
 )
 
 func TestCatalogDocumentRendersMarkdownWithoutPaintingBackgrounds(t *testing.T) {
-	old := lipgloss.ColorProfile()
-	lipgloss.SetColorProfile(termenv.TrueColor)
-	defer lipgloss.SetColorProfile(old)
-
 	got := CatalogDocument([]core.CatalogLine{
 		{Text: "Riool onbekend", Kind: "heading"},
 		{Text: "Gebruik laag-id; schrijf **plain** letterlijk.", Kind: "plain"},
@@ -32,7 +26,7 @@ func TestCatalogDocumentRendersMarkdownWithoutPaintingBackgrounds(t *testing.T) 
 	if strings.Contains(plain, "## ") || strings.Contains(plain, "_Gepubliceerd") {
 		t.Errorf("markdown syntax was not rendered: %q", plain)
 	}
-	if !strings.Contains(got, ";1m") {
+	if !strings.Contains(got, ";1m") && !strings.Contains(got, "\x1b[1m") {
 		t.Fatalf("Glamour did not apply markdown emphasis: %q", got)
 	}
 	if !strings.Contains(got, "\x1b[") {

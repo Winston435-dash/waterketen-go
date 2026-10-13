@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"waterketen/internal/ui/screens"
 )
 
@@ -15,7 +14,7 @@ func TestQueryLoadsOnEntryAndCompletesWhileInactive(t *testing.T) {
 	}
 	m.width, m.height, m.ready = 110, 26, true
 	m = m.applySize()
-	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("8")})
+	next, cmd := m.Update(appKey("8"))
 	m = next.(Model)
 	if cmd == nil {
 		t.Fatal("query metadata was not dispatched on panel entry")
@@ -24,7 +23,7 @@ func TestQueryLoadsOnEntryAndCompletesWhileInactive(t *testing.T) {
 	if _, ok := msg.(screens.QueryOpenMsg); !ok {
 		t.Fatalf("expected query metadata, got %T", msg)
 	}
-	next, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("1")})
+	next, _ = m.Update(appKey("1"))
 	m = next.(Model)
 	next, _ = m.Update(msg)
 	m = next.(Model)

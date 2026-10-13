@@ -3,9 +3,9 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/lipgloss/v2"
 
 	"waterketen/internal/ui"
 )
@@ -55,7 +55,7 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 		return ""
 	}
 	if width >= compactWidth {
-		c.help.Width = width
+		c.help.SetWidth(width)
 		c.help.ShowAll = false
 		return SingleLine(c.help.ShortHelpView(bindings), width)
 	}

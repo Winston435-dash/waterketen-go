@@ -27,7 +27,7 @@ func TestCoreDoesNotImportUI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if strings.HasPrefix(path, "waterketen/internal/ui") || strings.HasPrefix(path, "waterketen/internal/app") || strings.Contains(path, "charmbracelet/lipgloss") || strings.Contains(path, "charmbracelet/bubbletea") || strings.Contains(path, "charmbracelet/bubbles") {
+			if strings.HasPrefix(path, "waterketen/internal/ui") || strings.HasPrefix(path, "waterketen/internal/app") || strings.HasPrefix(path, "charm.land/") || strings.Contains(path, "charmbracelet/lipgloss") || strings.Contains(path, "charmbracelet/bubbletea") || strings.Contains(path, "charmbracelet/bubbles") {
 				t.Errorf("%s imports UI dependency %s", file, path)
 			}
 		}

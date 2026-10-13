@@ -3,7 +3,7 @@ package screens
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
 )
@@ -11,14 +11,14 @@ import (
 // space is the message Bubble Tea actually produces for the space bar: KeySpace,
 // NOT KeyRunes. Getting this wrong is the whole bug, so the tests build it exactly
 // as bubbletea/key.go does (len(runes)==1 && runes[0]==' ' → KeySpace).
-func space() tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}}
+func space() tea.KeyPressMsg {
+	return tea.KeyPressMsg{Code: tea.KeySpace, Text: " "}
 }
 
 // pasted is what a bracketed paste produces: KeyRunes with Paste set and the whole
 // string in Runes.
-func pasted(s string) tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s), Paste: true}
+func pasted(s string) tea.PasteMsg {
+	return tea.PasteMsg{Content: s}
 }
 
 // TestTypedTextAcceptsSpaceAndRunes is the guard for the reported bug: '/' dropped
@@ -28,19 +28,19 @@ func TestTypedTextAcceptsSpaceAndRunes(t *testing.T) {
 	if got := TypedText(space()); got != " " {
 		t.Errorf("TypedText(spatie) = %q, verwacht \" \"", got)
 	}
-	if got := TypedText(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}); got != "a" {
+	if got := TypedText(tea.KeyPressMsg{Code: 'a', Text: "a"}); got != "a" {
 		t.Errorf("TypedText('a') = %q", got)
 	}
 	if got := TypedText(pasted("west zeedijk")); got != "west zeedijk" {
 		t.Errorf("TypedText(plak) = %q", got)
 	}
 	// Non-text keys contribute nothing.
-	for _, m := range []tea.KeyMsg{
-		{Type: tea.KeyEnter}, {Type: tea.KeyEscape}, {Type: tea.KeyUp},
-		{Type: tea.KeyBackspace}, {Type: tea.KeyTab},
+	for _, m := range []tea.KeyPressMsg{
+		{Code: tea.KeyEnter}, {Code: tea.KeyEscape}, {Code: tea.KeyUp},
+		{Code: tea.KeyBackspace}, {Code: tea.KeyTab},
 	} {
 		if got := TypedText(m); got != "" {
-			t.Errorf("TypedText(%v) = %q, verwacht leeg", m.Type, got)
+			t.Errorf("TypedText(%v) = %q, verwacht leeg", m.Code, got)
 		}
 	}
 }
@@ -51,13 +51,13 @@ func TestStreetSearchAcceptsSpaces(t *testing.T) {
 	s := &StreetSearch{}
 	s.SetSize(100, 30)
 	for _, r := range "west" {
-		s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		s.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
 	}
 	if _, _, changed := s.Update(space()); !changed {
 		t.Fatal("een spatie startte geen zoekopdracht — dit was de gerapporteerde bug")
 	}
 	for _, r := range "zeedijk" {
-		s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		s.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
 	}
 	if s.query != "west zeedijk" {
 		t.Errorf("query = %q, verwacht \"west zeedijk\"", s.query)
@@ -80,9 +80,9 @@ func TestStreetSearchBackspaceRemovesARune(t *testing.T) {
 	s := &StreetSearch{}
 	s.SetSize(100, 30)
 	for _, r := range "café" {
-		s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		s.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
 	}
-	s.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	s.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
 	if s.query != "caf" {
 		t.Errorf("na backspace: query=%q, verwacht \"caf\" (geen halve é)", s.query)
 	}
@@ -107,7 +107,7 @@ func TestAreaPickerAcceptsSpaces(t *testing.T) {
 	})
 	p.SetSize(100, 30)
 	for _, r := range "s " {
-		p.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		p.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
 	}
 	if p.query != "s " {
 		t.Errorf("query = %q, verwacht \"s \"", p.query)

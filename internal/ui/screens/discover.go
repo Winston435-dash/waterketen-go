@@ -3,9 +3,9 @@ package screens
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 	"waterketen/internal/core"
 	"waterketen/internal/ui"
 	"waterketen/internal/ui/components"
@@ -30,7 +30,7 @@ func NewOntdek(root string) *Ontdek {
 }
 
 func NewOntdekCatalog(catalog core.Catalog, err error) *Ontdek {
-	return &Ontdek{catalog: catalog, loadErr: err, menu: viewport.New(1, 1), document: viewport.New(1, 1)}
+	return &Ontdek{catalog: catalog, loadErr: err, menu: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1)), document: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1))}
 }
 func (s *Ontdek) ID() ScreenID { return ScreenOntdek }
 func (s *Ontdek) Info() string {
@@ -58,8 +58,10 @@ func (s *Ontdek) SetSize(w, h int) {
 		menuWidth = min(38, s.width/3)
 		docWidth = s.width - menuWidth - 3
 	}
-	s.menu.Width, s.document.Width = menuWidth, docWidth
-	s.menu.Height, s.document.Height = max(1, h-4), max(1, h-4)
+	s.menu.SetWidth(menuWidth)
+	s.document.SetWidth(docWidth)
+	s.menu.SetHeight(max(1, h-4))
+	s.document.SetHeight(max(1, h-4))
 	s.refresh()
 }
 
@@ -69,17 +71,17 @@ func (s *Ontdek) refresh() {
 		return
 	}
 	s.selected = min(max(0, s.selected), len(entries)-1)
-	menu, starts := components.CatalogMenu(entries, s.selected, s.menu.Width)
+	menu, starts := components.CatalogMenu(entries, s.selected, s.menu.Width())
 	s.menu.SetContent(menu)
 	start := starts[s.selected]
 	end := s.menu.TotalLineCount()
 	if s.selected+1 < len(starts) {
 		end = starts[s.selected+1] - 1
 	}
-	if start < s.menu.YOffset {
+	if start < s.menu.YOffset() {
 		s.menu.SetYOffset(start)
-	} else if end > s.menu.YOffset+s.menu.Height {
-		s.menu.SetYOffset(max(start, end-s.menu.Height))
+	} else if end > s.menu.YOffset()+s.menu.Height() {
+		s.menu.SetYOffset(max(start, end-s.menu.Height()))
 	}
 	lines, err := s.catalog.Explain(s.section, entries[s.selected].ID, s.technical)
 	if err != nil {
@@ -88,11 +90,11 @@ func (s *Ontdek) refresh() {
 	if s.loadErr != nil {
 		lines = append([]core.CatalogLine{{Text: "Lokale metadata kon niet volledig worden gelezen: " + s.loadErr.Error(), Kind: "warning"}}, lines...)
 	}
-	s.document.SetContent(components.CatalogDocument(lines, s.document.Width))
+	s.document.SetContent(components.CatalogDocument(lines, s.document.Width()))
 }
 
 func (s *Ontdek) Update(msg tea.Msg) (Screen, tea.Cmd) {
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		switch {
 		case key.Matches(msg, ui.Keys.NextTopic), key.Matches(msg, ui.Keys.PrevTopic):
 			delta := 1
@@ -132,7 +134,7 @@ func (s *Ontdek) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		}
 	}
 	if s.reading {
-		if msg, ok := msg.(tea.KeyMsg); ok {
+		if msg, ok := msg.(tea.KeyPressMsg); ok {
 			switch {
 			case key.Matches(msg, ui.Keys.Home):
 				s.document.GotoTop()
@@ -152,7 +154,7 @@ func (s *Ontdek) Update(msg tea.Msg) (Screen, tea.Cmd) {
 func (s *Ontdek) View() string {
 	body := s.menu.View()
 	if s.wide {
-		body = components.CatalogColumns(body, s.document.View(), s.menu.Width)
+		body = components.CatalogColumns(body, s.document.View(), s.menu.Width())
 	} else if s.reading {
 		body = s.document.View()
 	}

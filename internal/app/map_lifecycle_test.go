@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
 	"waterketen/internal/core"
@@ -25,7 +25,7 @@ func mapLifecycleModel(t *testing.T) Model {
 }
 
 func lifecycleKey(m Model, r rune) Model {
-	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+	next, _ := m.Update(appKey(string(r)))
 	return next.(Model)
 }
 
@@ -82,7 +82,7 @@ func TestPanelReturnQueuesFreshDrawAfterStaleDrawCompletes(t *testing.T) {
 	next, _ = m.Update(screens.DrawnMsg{Render: lifecycleRender('░'), Generation: 1})
 	m = next.(Model)
 
-	next, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'5'}})
+	next, cmd := m.Update(appKey("5"))
 	m = next.(Model)
 	if cmd == nil {
 		t.Fatal("returning to Kaart did not queue a draw for the latest scene")
