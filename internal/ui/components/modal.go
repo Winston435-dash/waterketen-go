@@ -5,9 +5,11 @@ import (
 	"waterketen/internal/ui"
 )
 
-func DialogWidth(preferred,host int) int {
-	if host<ui.CompactDialogWidth { return max(1,host) }
-	return max(1,min(preferred,host-2*ui.SpacingLG))
+func DialogWidth(preferred, host int) int {
+	if host < ui.CompactDialogWidth {
+		return max(1, host)
+	}
+	return max(1, min(preferred, host-2*ui.SpacingLG))
 }
 
 // Modal renders `content` as a floating dialog over `background` (both full

@@ -136,7 +136,7 @@ func (s *StreetSearch) View() string {
 // the dialog lives inside the panel's content area, so a dialog wider than its host
 // makes lipgloss wrap the panel border instead of the dialog.
 func (s *StreetSearch) dialogWidth() int {
-	return components.DialogWidth(72,s.w)
+	return components.DialogWidth(72, s.w)
 }
 
 func (s *StreetSearch) innerWidth() int {
@@ -168,8 +168,8 @@ func (s *Kaart) OpenSearch() {
 		return
 	}
 	s.search = &StreetSearch{epoch: s.epoch}
-	w,h:=s.overlaySize()
-	s.search.SetSize(w,h)
+	w, h := s.overlaySize()
+	s.search.SetSize(w, h)
 }
 
 // CloseSearch closes the overlay.

@@ -1,6 +1,7 @@
 package screens
 
 import (
+	"fmt"
 	"github.com/charmbracelet/x/ansi"
 	"strings"
 	"testing"
@@ -35,7 +36,7 @@ func TestSourcesShowPartialResultsWhileProbing(t *testing.T) {
 	s.BeginProbe()
 	s.AddProbe(core.SourceHealth{SourceID: "fixture", Label: "Eerste bron", Status: core.HealthUp, License: "CC0", Count: 42})
 	view := ansi.Strip(s.View())
-	if !strings.Contains(view, "Eerste bron") || !strings.Contains(view, "1/17") {
+	if !strings.Contains(view, "Eerste bron") || !strings.Contains(view, fmt.Sprintf("1/%d", len(core.WiredSources))) {
 		t.Fatalf("partial results hidden: %s", view)
 	}
 	s.Update(keys("enter"))

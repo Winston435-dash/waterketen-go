@@ -275,6 +275,17 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		s.refresh()
 		s.revealObject()
 		return s, nil
+	case tea.MouseWheelMsg:
+		if s.picker != nil {
+			return s, nil
+		}
+		if (s.mode == queryObjects || s.mode == querySummary && s.resultFocus) && (msg.Button == tea.MouseWheelUp || msg.Button == tea.MouseWheelDown) {
+			code := tea.KeyDown
+			if msg.Button == tea.MouseWheelUp {
+				code = tea.KeyUp
+			}
+			return s.Update(tea.KeyPressMsg{Code: code})
+		}
 	case tea.PasteMsg:
 		if s.picker != nil {
 			s.picker.Update(msg)

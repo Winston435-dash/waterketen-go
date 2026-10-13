@@ -103,6 +103,15 @@ func (i *Inventory) Selected() (InventoryItem, bool) {
 	return item, ok
 }
 func (i *Inventory) Update(msg tea.Msg) tea.Cmd {
+	if wheel, ok := msg.(tea.MouseWheelMsg); ok {
+		switch wheel.Button {
+		case tea.MouseWheelUp:
+			i.model.CursorUp()
+		case tea.MouseWheelDown:
+			i.model.CursorDown()
+		}
+		return nil
+	}
 	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		if key.Matches(msg, ui.Keys.Home) {
 			i.model.Select(0)

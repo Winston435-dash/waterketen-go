@@ -374,6 +374,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.screens[m.active] = next
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	case tea.MouseMsg:
+		if m.palette != nil {
+			switch msg.Mouse().Button {
+			case tea.MouseWheelUp:
+				m.palette.move(-1)
+			case tea.MouseWheelDown:
+				m.palette.move(1)
+			}
+			return m, nil
+		}
 		next, cmd := m.screens[m.active].Update(msg)
 		m.screens[m.active] = next
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
