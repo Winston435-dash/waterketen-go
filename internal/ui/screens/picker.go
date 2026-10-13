@@ -263,6 +263,9 @@ func (p *Picker) View() string {
 		}
 		b.WriteByte('\n')
 	}
+	if p.Toggling() && len(p.filtered) > rows {
+		b.WriteString(components.SingleLine(components.Muted(fmt.Sprintf("↑/↓ meer lagen · %d–%d van %d", start+1, min(start+rows, len(p.filtered)), len(p.filtered))), innerW))
+	}
 	b.WriteByte('\n')
 	b.WriteString(components.SingleLine(components.Muted(p.hint), innerW))
 	title := p.title

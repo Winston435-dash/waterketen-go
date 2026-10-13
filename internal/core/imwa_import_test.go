@@ -211,3 +211,50 @@ func TestIMWAImportFailureLeavesCurrentSnapshotUntouched(t *testing.T) {
 		t.Fatal("failed staging snapshot left behind")
 	}
 }
+
+func TestIMWAImportKeepsValidEmptyLayers(t *testing.T) {
+	root := imwaImportLibrary(t)
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `<FeatureCollection numberMatched="0"/>`)
+	}))
+	defer s.Close()
+	result, err := importIMWA(context.Background(), root, s.URL, s.Client(), 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lib, err := OpenLibrary(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, object := range imwaMapTypes {
+		name := "hwh-kunstwerken-" + object
+		if _, ok := result.Counts[name]; !ok || !localFileExists(lib.LayerPath(name)) {
+			t.Fatal("empty layer vanished", name)
+		}
+	}
+}
+
+func TestIMWAImportCancellationAndChangedCountsDoNotPublish(t *testing.T) {
+	root := imwaImportLibrary(t)
+	s := imwaTestServer(t, "")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := importIMWA(ctx, root, s.URL, s.Client(), 2); err == nil {
+		t.Fatal("canceled import published")
+	}
+	hits := 0
+	changing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("resultType") == "hits" {
+			fmt.Fprintf(w, `<FeatureCollection numberMatched="%d"/>`, hits)
+			hits++
+		}
+	}))
+	defer changing.Close()
+	if _, _, err := downloadIMWA(context.Background(), changing.Client(), changing.URL, "duiker", BBox{MaxX: 10, MaxY: 10}, 2, filepath.Join(t.TempDir(), "raw.geojson")); err == nil {
+		t.Fatal("changed source count accepted")
+	}
+	lib, err := OpenLibrary(root)
+	if err != nil || lib.Snapshot != "original" {
+		t.Fatalf("failed import published: %+v %v", lib, err)
+	}
+}

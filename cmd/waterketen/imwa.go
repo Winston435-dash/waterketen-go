@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -17,7 +20,9 @@ func libraryCmd() *cobra.Command {
 		Short: "haal IMWA-duikers, -gemalen, -sluizen en -stuwen op voor Rotterdam",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			result, err := core.ImportIMWA(cmd.Context(), dataRoot(cmd))
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+			result, err := core.ImportIMWA(ctx, dataRoot(cmd))
 			if err != nil {
 				return err
 			}

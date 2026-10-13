@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -231,8 +232,19 @@ func validateIMWALayer(path string) (int, error) {
 		return 0, err
 	}
 	count := 0
-	if err := table.Each(func(r Row) { count++ }); err != nil {
+	valid := true
+	if err := table.Each(func(r Row) {
+		bounds, ok := r.Geometry.Bounds()
+		valid = valid && ok
+		for _, coordinate := range []float64{bounds.MinX, bounds.MinY, bounds.MaxX, bounds.MaxY} {
+			valid = valid && !math.IsNaN(coordinate) && !math.IsInf(coordinate, 0)
+		}
+		count++
+	}); err != nil {
 		return 0, err
+	}
+	if !valid {
+		return 0, fmt.Errorf("laag bevat ongeldige geometriecoördinaten")
 	}
 	rows, err := table.Count()
 	if err != nil {
@@ -286,6 +298,9 @@ func imwaResponse(ctx context.Context, client *http.Client, u *url.URL) ([]byte,
 }
 
 func downloadIMWA(ctx context.Context, client *http.Client, endpoint, object string, bounds BBox, pageSize int, path string) (int, string, error) {
+	if pageSize <= 0 {
+		return 0, "", fmt.Errorf("ongeldige WFS-paginagrootte")
+	}
 	u, err := imwaRequest(endpoint, object, bounds)
 	if err != nil {
 		return 0, "", err
@@ -347,6 +362,25 @@ func downloadIMWA(ctx context.Context, client *http.Client, endpoint, object str
 		}
 		offset += len(page.Features)
 	}
+	// Do not publish a partial delivery if the source changed size while paging.
+	q.Del("startIndex")
+	q.Del("outputFormat")
+	q.Del("sortBy")
+	q.Del("count")
+	q.Set("resultType", "hits")
+	u.RawQuery = q.Encode()
+	data, err = imwaResponse(ctx, client, u)
+	if err != nil {
+		return 0, "", err
+	}
+	finalTotal, err := countFromText(string(data), "wfs")
+	if err != nil || finalTotal != total {
+		return 0, "", fmt.Errorf("WFS-telling veranderde tijdens ophalen: %d → %d (%v)", total, finalTotal, err)
+	}
+	q.Del("resultType")
+	q.Set("outputFormat", "application/json")
+	q.Set("sortBy", "guid")
+	q.Set("count", strconv.Itoa(pageSize))
 	// A valid empty delivery must still produce a GeoPackage, not disappear.
 	if features == nil {
 		features = []json.RawMessage{}

@@ -76,7 +76,11 @@ func NewCatalog() Catalog {
 	}
 	for _, s := range WiredSources {
 		d := descriptions[s.ID]
-		c.Sources = append(c.Sources, CatalogSource{Source: s, Provider: d[0], Summary: d[1], Limit: d[2], Access: "Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus."})
+		access := "Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus."
+		if s.ID == "hwh_kunstwerken_imwa" {
+			access = "Live broncontrole aangesloten; duikers, gemalen, sluizen en stuwen ophalen met waterketen-go bibliotheek imwa. Dit is geen lokale downloadstatus."
+		}
+		c.Sources = append(c.Sources, CatalogSource{Source: s, Provider: d[0], Summary: d[1], Limit: d[2], Access: access})
 	}
 	for _, u := range UnwiredSources {
 		d := descriptions[u.ID]
@@ -157,12 +161,13 @@ func NewCatalog() Catalog {
 		{"hwh-peilgebied", "Peilgebied (IMWA)", "waterschappen-waterbeheergebieden-imwa:peilgebied", "Gebieden met één afgesproken waterpeil.", "vlakken", "hwh_waterbeheergebieden_imwa", "37.418 gemeten. Grenzen vallen niet samen met waterschapsgrenzen."},
 		{"hwh-peilbesluitgebied", "Peilbesluitgebied (IMWA)", "waterschappen-waterbeheergebieden-imwa:peilbesluitgebied", "Het deel waarvoor formeel een peilbesluit geldt.", "vlakken", "hwh_waterbeheergebieden_imwa", "3.937 gemeten: het besluitdeel, geen groter peilgebied."},
 	} {
-		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welk water, welke kering en welk peilgebied liggen bij dit gebied?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Broncontrole in Go; geen automatische kaartlaag of analyse.", Terms: []string{"imwa", "kering", "peilgebied", "wfs"}})
+		use := "Broncontrole in Go; geen automatische kaartlaag of analyse."
 		for _, object := range imwaMapTypes {
 			if extra.id == "hwh-kunstwerken-"+object {
-				c.Layers[len(c.Layers)-1].Use = "Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen."
+				use = "Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen."
 			}
 		}
+		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welk water, welke kering en welk peilgebied liggen bij dit gebied?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: use, Terms: []string{"imwa", "kering", "peilgebied", "wfs"}})
 	}
 	// DAMO and RIONED each publish a family of object types. The types the
 	// register already described (put, rioleringsgebied, zuiveringseenheid) keep

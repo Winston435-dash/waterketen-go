@@ -796,11 +796,11 @@ Wat is het? Door waterschappen beheerde gemalen in het watersysteem.
 
 Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
 
-Op de kaart: punten
+Op de kaart: punten, lijnen of vlakken (bronafhankelijk)
 
 > Wat vertelt het niet? 8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal.
 
-In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+In de tool: Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen.
 
 Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
 
@@ -1544,7 +1544,7 @@ Door waterschappen beheerde kunstwerken volgens IMWA: gemalen, stuwen, sluizen, 
 
 > Beperking: De probe telt alleen de gemaal-laag; de dienst bevat 18 objectsoorten. Registratie zegt niets over actuele bediening of toestand.
 
-Toegang in de tool: Live broncontrole aangesloten; ophalen waar ondersteund via Python. Dit is geen lokale downloadstatus.
+Toegang in de tool: Live broncontrole aangesloten; duikers, gemalen, sluizen en stuwen ophalen met waterketen-go bibliotheek imwa. Dit is geen lokale downloadstatus.
 
 Licentie: CC0 — vrij hergebruik; bewaar de herkomst
 
@@ -3196,11 +3196,11 @@ Wat is het? Door waterschappen beheerde gemalen in het watersysteem.
 
 Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
 
-Op de kaart: punten
+Op de kaart: punten, lijnen of vlakken (bronafhankelijk)
 
 > Wat vertelt het niet? 8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal.
 
-In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+In de tool: Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen.
 
 Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
 
@@ -3250,11 +3250,11 @@ Wat is het? Stuwen die het waterpeil in een watergang regelen.
 
 Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
 
-Op de kaart: punten
+Op de kaart: punten, lijnen of vlakken (bronafhankelijk)
 
 > Wat vertelt het niet? 53.142 gemeten: de grootste groep. Een stuw regelt peil, geen afvalwatertransport.
 
-In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+In de tool: Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen.
 
 Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
 
@@ -3304,11 +3304,11 @@ Wat is het? Sluizen in het waterbeheer en de scheepvaart.
 
 Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
 
-Op de kaart: punten
+Op de kaart: punten, lijnen of vlakken (bronafhankelijk)
 
 > Wat vertelt het niet? 889 gemeten. Geen zuivering of gemaal; een eigen objecttype.
 
-In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+In de tool: Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen.
 
 Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
 
@@ -3358,11 +3358,11 @@ Wat is het? Duikers: watergangen die onder een weg of kering door kruisen.
 
 Beantwoordt: Welk water, welke kering en welk peilgebied liggen bij dit gebied?
 
-Op de kaart: punten
+Op de kaart: punten, lijnen of vlakken (bronafhankelijk)
 
 > Wat vertelt het niet? Een duiker is geen rioolbuis, ook al ligt hij ondergronds.
 
-In de tool: Broncontrole in Go; geen automatische kaartlaag of analyse.
+In de tool: Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen.
 
 Herkomst: Het Waterschapshuis via PDOK → Waterschappen Kunstwerken IMWA (gemaal)
 

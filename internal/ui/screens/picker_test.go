@@ -199,3 +199,23 @@ func TestLayerPickerSeparatesIMWAFromExistingPumps(t *testing.T) {
 		t.Fatalf("IMWA display label lost source key: %+v", result)
 	}
 }
+
+func TestLayerPickerDisclosesAndReachesLayersBelowTheWindow(t *testing.T) {
+	available := core.OrderLayers([]string{"groen", "water", "gebouwen", "spoor", "straten", "riool", "drinkwaterleidingen", "putten", "gemalen", "oppervlaktewatergemalen", "hwh-kunstwerken-duiker", "hwh-kunstwerken-gemaal", "hwh-kunstwerken-sluis", "hwh-kunstwerken-stuw"})
+	p := NewLayerPicker(available, nil, available)
+	p.SetSize(68, 40)
+	if !strings.Contains(p.View(), "↑/↓ meer lagen · 1–12 van 14") {
+		t.Fatal("hidden layers have no scroll indication")
+	}
+	for range 13 {
+		p.Update(keys("down"))
+	}
+	if !strings.Contains(p.View(), "IMWA — sluizen") || !strings.Contains(p.View(), "IMWA — stuwen") || !strings.Contains(p.View(), "3–14 van 14") {
+		t.Fatal("last IMWA layers not reachable")
+	}
+	p.Update(keys(" "))
+	result, _ := p.Update(keys("enter"))
+	if len(result.Marked) != 1 || result.Marked[0] != "hwh-kunstwerken-stuw" {
+		t.Fatalf("last layer not selectable: %+v", result)
+	}
+}
