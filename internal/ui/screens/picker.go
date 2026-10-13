@@ -96,6 +96,12 @@ func (p *Picker) SetSize(w, h int) {
 func (p *Picker) Searchable() bool { return p.mode == pickOne }
 func (p *Picker) Toggling() bool   { return p.mode == pickToggle }
 
+func (p *Picker) KeyMap() []key.Binding {
+	keys := []key.Binding{ui.Keys.Enter, ui.Keys.Back}
+	if p.Toggling() { keys = append([]key.Binding{ui.Keys.Toggle}, keys...) }
+	return append(keys, ui.Keys.Up, ui.Keys.Down)
+}
+
 // PickerResult is the outcome of closing a picker. Confirm is false when the
 // user backed out, in which case the caller must change nothing: reading
 // "marked layers" after an escape would apply a half-finished edit.

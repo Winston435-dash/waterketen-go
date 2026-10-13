@@ -92,7 +92,7 @@ func NewKaart(root string, lib *core.Library, assets []core.AssetMeta) *Kaart {
 func (s *Kaart) ID() ScreenID { return ScreenKaart }
 func (s *Kaart) KeyMap() []key.Binding {
 	if s.picker != nil {
-		return []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
+		return s.picker.KeyMap()
 	}
 	if s.search != nil {
 		return []key.Binding{ui.Keys.Enter, ui.Keys.Back}
@@ -107,6 +107,13 @@ func (s *Kaart) KeyMap() []key.Binding {
 		bindings = append(bindings, ui.Keys.Area, ui.Keys.Layers)
 	}
 	return bindings
+}
+
+func (s *Kaart) ShortKeyMap() []key.Binding {
+	if s.OverlayOpen() { return s.KeyMap() }
+	keys := []key.Binding{ui.Keys.Search}
+	if s.atlas != nil { keys = append(keys, ui.Keys.Area, ui.Keys.Layers) }
+	return append(keys, ui.Keys.ZoomIn, ui.Keys.ZoomOut, ui.Keys.Fit, ui.Keys.Up, ui.Keys.Down, ui.Keys.Back)
 }
 
 func (s *Kaart) SetSize(w, h int) {

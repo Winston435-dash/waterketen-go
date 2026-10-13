@@ -54,10 +54,37 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 	if width < 1 {
 		return ""
 	}
+	// Keep the route to full pane help at the right edge. Important content
+	// actions go first; global palette/nav hints must not crowd them out.
+	var suffix string
+	if len(bindings) > 0 && bindings[len(bindings)-1].Help().Key == "?" {
+		suffix = barInk.Render("?") + " " + Muted("hulp")
+		bindings = bindings[:len(bindings)-1]
+	}
+	room := width
+	if suffix != "" { room = max(0, width-lipgloss.Width(suffix)-lipgloss.Width(barSep)) }
 	if width >= compactWidth {
-		c.help.SetWidth(width)
+		c.help.SetWidth(room)
 		c.help.ShowAll = false
-		return SingleLine(c.help.ShortHelpView(bindings), width)
+		content := c.help.ShortHelpView(bindings)
+		if suffix != "" {
+			if content != "" { content += barSep }
+			content += suffix
+		}
+		return SingleLine(content, width)
+	}
+	// Try concise descriptions for the primary three actions first. Fall back
+	// to complete key tokens rather than printing a half-word on small screens.
+	primary := bindings[:min(3, len(bindings))]
+	var described []string
+	for _, binding := range primary {
+		desc := binding.Help().Desc
+		if desc == "straat zoeken" { desc = "zoek" }
+		described = append(described, barInk.Render(binding.Help().Key)+" "+Muted(desc))
+	}
+	if full := strings.Join(described, barSep); len(primary) > 0 && lipgloss.Width(full) <= room {
+		if suffix != "" { full += barSep + suffix }
+		return SingleLine(full, width)
 	}
 	parts := make([]string, 0, len(bindings))
 	for _, b := range bindings {
@@ -67,7 +94,12 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 	}
 	// Clip by WHOLE bindings, not mid-token: a footer ending in a dangling "·"
 	// reads as a rendering bug. SingleLine is the last-resort clip.
-	return SingleLine(clipParts(parts, lipgloss.Width(barSep), width), width)
+	content := clipParts(parts, lipgloss.Width(barSep), room)
+	if suffix != "" {
+		if content != "" { content += barSep }
+		content += suffix
+	}
+	return SingleLine(content, width)
 }
 
 // clipParts joins parts with a separator, dropping trailing parts that would not

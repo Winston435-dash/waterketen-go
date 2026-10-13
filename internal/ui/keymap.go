@@ -25,6 +25,7 @@ type KeyMap struct {
 	Back         key.Binding
 	Quit         key.Binding
 	Enter        key.Binding
+	Toggle       key.Binding
 	Palette      key.Binding
 	PanelPalette key.Binding
 
@@ -75,8 +76,9 @@ var Keys = KeyMap{
 	// overlay it does nothing, and a zero-value binding here would make every
 	// enter in the picker silently do nothing.
 	Enter:        key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "kies")),
+	Toggle:       key.NewBinding(key.WithKeys("space"), key.WithHelp("spatie", "schakel")),
 	Palette:      key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("ctrl+p", "opdrachten")),
-	PanelPalette: key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "paneelopdrachten")),
+	PanelPalette: key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "hulp")),
 
 	NextTopic: key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "categorie →")),
 	PrevTopic: key.NewBinding(key.WithKeys("["), key.WithHelp("[", "← categorie")),

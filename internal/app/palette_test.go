@@ -173,12 +173,12 @@ func TestGlobalPaletteBindingsStayVisibleOnNarrowTerminals(t *testing.T) {
 	m = m.applySize()
 	lines := strings.Split(ansi.Strip(m.viewContent()), "\n")
 	footer := lines[len(lines)-1]
-	if !strings.Contains(footer, "ctrl+p") || !strings.Contains(footer, "?") {
-		t.Fatalf("palette shortcuts disappeared from the narrow footer: %q", footer)
+	if !strings.Contains(footer, "?") || !strings.Contains(footer, "/") {
+		t.Fatalf("primary action/full-help route disappeared from narrow footer: %q", footer)
 	}
 }
 
-func TestGlobalPaletteOwnsKeysAboveMapSearch(t *testing.T) {
+func TestMapSearchOwnsGlobalShortcutKeys(t *testing.T) {
 	m := paletteModel(t, screens.ScreenKaart)
 	m = press(m, appKey("/"))
 	if k := m.kaart(); k == nil || !k.OverlayOpen() {
@@ -187,11 +187,11 @@ func TestGlobalPaletteOwnsKeysAboveMapSearch(t *testing.T) {
 
 	m = press(m, appKey("ctrl+p"))
 	m = press(m, appKey("q"))
-	if view := ansi.Strip(m.viewContent()); !strings.Contains(view, "Zoek · q") {
-		t.Fatalf("palette did not own the typed key:\n%s", view)
+	if m.palette != nil || !strings.Contains(ansi.Strip(m.viewContent()), "straat: q") {
+		t.Fatal("map search leaked keys into global palette")
 	}
 	m = press(m, appKey("esc"))
-	if k := m.kaart(); k == nil || !k.OverlayOpen() {
-		t.Fatal("closing the palette also closed the underlying map search")
+	if k := m.kaart(); k == nil || k.OverlayOpen() {
+		t.Fatal("escape did not close map search")
 	}
 }

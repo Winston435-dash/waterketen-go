@@ -292,13 +292,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case tea.KeyPressMsg:
-		if query, ok := m.screens[m.active].(*screens.Query); ok && query.OverlayOpen() {
-			next, cmd := query.Update(msg)
-			m.screens[m.active] = next
-			return m, tea.Batch(cmd, m.afterScreenUpdate())
-		}
 		if m.palette != nil {
 			return m.updatePalette(msg)
+		}
+		if overlay, ok := m.screens[m.active].(interface{ OverlayOpen() bool }); ok && overlay.OverlayOpen() {
+			next, cmd := m.screens[m.active].Update(msg)
+			m.screens[m.active] = next
+			return m, tea.Batch(cmd, m.afterScreenUpdate())
 		}
 		if key.Matches(msg, ui.Keys.Palette) {
 			m.palette = newCommandPalette(m, paletteGlobal)
@@ -492,14 +492,19 @@ func (m Model) viewContent() string {
 	}
 	header := m.renderHeader()
 	body := m.renderBody()
-	bindings := m.screens[m.active].KeyMap()
+	screen := m.screens[m.active]
+	bindings := screen.KeyMap()
+	if short, ok := screen.(interface{ ShortKeyMap() []key.Binding }); ok { bindings = short.ShortKeyMap() }
 	if m.palette != nil {
 		bindings = []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
 		if m.palette.scope == palettePanel {
 			bindings = append(bindings, ui.Keys.Palette)
 		}
 	} else {
-		bindings = append([]key.Binding{ui.Keys.Palette, ui.Keys.PanelPalette}, bindings...)
+		locked := false
+		if overlay, ok := screen.(interface{ OverlayOpen() bool }); ok { locked = overlay.OverlayOpen() }
+		if filter, ok := screen.(interface{ EditingFilter() bool }); ok { locked = locked || filter.EditingFilter() }
+		if !locked { bindings = append(bindings, ui.Keys.PanelPalette) }
 	}
 	bar := m.cmdBar.View(m.width, bindings)
 	return components.AppSurface(lipgloss.JoinVertical(lipgloss.Left, header, body, bar))

@@ -78,7 +78,7 @@ func withBorderTitle(rendered, title string, color color.Color) string {
 		if room < 2 {
 			return rendered
 		}
-		label = sliceRunes(label, 0, room)
+		label = SingleLine(label, room)
 		labelWidth = lipgloss.Width(label)
 	}
 	head := sliceRunes(first, 0, corner)
@@ -106,43 +106,8 @@ func SingleLine(s string, width int) string {
 	if i := strings.IndexByte(s, '\n'); i >= 0 {
 		s = s[:i]
 	}
-	out := make([]rune, 0, width)
-	col, inEsc, truncated := 0, false, false
-	for _, r := range s {
-		if r == 0x1b {
-			inEsc = true
-		}
-		if inEsc {
-			out = append(out, r)
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEsc = false
-			}
-			continue
-		}
-		w := runeWidth(r)
-		if col+w > width {
-			truncated = true
-			break
-		}
-		out = append(out, r)
-		col += w
-	}
-	if truncated && width >= 2 {
-		// Drop cells to make room for the ellipsis, counting only printable ones.
-		out = trimCells(out, width-1)
-		col = 0
-		for _, r := range out {
-			if r != 0x1b {
-				col += runeWidth(r)
-			}
-		}
-		out = append(out, '…')
-		col++
-	}
-	for ; col < width; col++ {
-		out = append(out, ' ')
-	}
-	return string(out)
+	out := ansi.Truncate(s, width, "…")
+	return out + strings.Repeat(" ", max(0, width-ansi.StringWidth(out)))
 }
 
 // trimCells returns the prefix of out that occupies at most `max` printable cells,
@@ -192,31 +157,12 @@ func runeWidth(r rune) int {
 // sliceRunes returns the printable cell range [from, to) of a single-line
 // rendered string. Lip Gloss widths are cell widths; we walk ANSI-aware.
 func sliceRunes(s string, from, to int) string {
-	return lipgloss.NewStyle().MaxWidth(to).Render(truncateLeft(s, from))
+	return ansi.Cut(s, from, to)
 }
 
 // truncateLeft drops the first n printable cells of a single line.
 func truncateLeft(s string, n int) string {
-	out := make([]rune, 0, len(s))
-	col := 0
-	inEsc := false
-	for _, r := range s {
-		if r == 0x1b {
-			inEsc = true
-		}
-		if inEsc {
-			out = append(out, r)
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEsc = false
-			}
-			continue
-		}
-		if col >= n {
-			out = append(out, r)
-		}
-		col++
-	}
-	return string(out)
+	return ansi.Cut(s, n, ansi.StringWidth(s))
 }
 
 // EmptyState is the single pattern for "there is nothing here": a muted glyph,

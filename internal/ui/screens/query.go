@@ -92,7 +92,7 @@ func (s *Query) SetSize(w, h int) {
 }
 func (s *Query) KeyMap() []key.Binding {
 	if s.picker != nil {
-		return []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
+		return s.picker.KeyMap()
 	}
 	bindings := []key.Binding{ui.Keys.Area, ui.Keys.QueryLayers, ui.Keys.RunQuery}
 	if s.resultFocus || s.mode != querySummary {
@@ -103,6 +103,13 @@ func (s *Query) KeyMap() []key.Binding {
 	}
 	bindings = append(bindings, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Back, ui.Keys.Quit)
 	return bindings
+}
+
+func (s *Query) ShortKeyMap() []key.Binding {
+	if s.picker != nil { return s.picker.KeyMap() }
+	keys := s.KeyMap()
+	if s.mode == queryDetails { return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down} }
+	return append(keys[:min(3,len(keys))], ui.Keys.Back)
 }
 
 // LoadCmd lazily opens the published library when panel 8 is first entered.
