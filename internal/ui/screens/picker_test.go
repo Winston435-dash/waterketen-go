@@ -13,7 +13,7 @@ import (
 func keys(s string) tea.KeyPressMsg {
 	code, ok := map[string]rune{"enter": tea.KeyEnter, "up": tea.KeyUp, "down": tea.KeyDown,
 		"esc": tea.KeyEscape, "pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown,
-		"home": tea.KeyHome, "end": tea.KeyEnd, "right": tea.KeyRight, "backspace": tea.KeyBackspace}[s]
+		"home": tea.KeyHome, "end": tea.KeyEnd, "left": tea.KeyLeft, "right": tea.KeyRight, "backspace": tea.KeyBackspace}[s]
 	if ok {
 		return tea.KeyPressMsg{Code: code}
 	}

@@ -364,8 +364,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.afterScreenUpdate())
 	case tea.PasteMsg:
 		if m.palette != nil {
-			msg.Content=screens.TypedText(msg)
-			m.palette.input,_=m.palette.input.Update(msg)
+			msg.Content = screens.TypedText(msg)
+			m.palette.input, _ = m.palette.input.Update(msg)
 			m.palette.query = m.palette.input.Value()
 			m.palette.cursor = 0
 			return m, nil

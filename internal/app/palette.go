@@ -50,8 +50,8 @@ type commandPalette struct {
 
 func newCommandPalette(m Model, scope paletteScope) *commandPalette {
 	p := &commandPalette{scope: scope, scopeName: "alle panelen"}
-	p.input=components.SearchInput("Zoek · ")
-	p.input.SetWidth(max(1,m.width-8))
+	p.input = components.SearchInput("Zoek · ")
+	p.input.SetWidth(max(1, m.width-8))
 	if scope == palettePanel {
 		p.scopeName = screenTitle(m.screens[m.active])
 		p.commands = panelPaletteCommands(m.screens[m.active], false)
@@ -68,9 +68,13 @@ func newCommandPalette(m Model, scope paletteScope) *commandPalette {
 			targeted: true,
 		})
 	}
-	if !m.probeRunning() { p.commands=append(p.commands,paletteCommand{group:"Algemeen",label:"Ververs bronnen",shortcut:"v",action:paletteProbe}) }
-	if k:=m.kaart();k!=nil&&k.Ready() { p.commands=append(p.commands,paletteCommand{group:"Algemeen",label:"Her-teken kaart",shortcut:"r",action:paletteRedraw,target:screens.ScreenKaart,targeted:true}) }
-	p.commands=append(p.commands,paletteCommand{group:"Algemeen",label:"Afsluiten",shortcut:"q",action:paletteQuit})
+	if !m.probeRunning() {
+		p.commands = append(p.commands, paletteCommand{group: "Algemeen", label: "Ververs bronnen", shortcut: "v", action: paletteProbe})
+	}
+	if k := m.kaart(); k != nil && k.Ready() {
+		p.commands = append(p.commands, paletteCommand{group: "Algemeen", label: "Her-teken kaart", shortcut: "r", action: paletteRedraw, target: screens.ScreenKaart, targeted: true})
+	}
+	p.commands = append(p.commands, paletteCommand{group: "Algemeen", label: "Afsluiten", shortcut: "q", action: paletteQuit})
 	for _, screen := range m.screens {
 		p.commands = append(p.commands, panelPaletteCommands(screen, true)...)
 	}
@@ -81,8 +85,12 @@ func newCommandPalette(m Model, scope paletteScope) *commandPalette {
 // global palette also lists these, but keeps app-wide keys in its own section.
 func panelPaletteCommands(screen screens.Screen, omitAppKeys bool) []paletteCommand {
 	var commands []paletteCommand
-	bindings:=screen.KeyMap()
-	if omitAppKeys { if available,ok:=screen.(interface{ PaletteKeyMap() []key.Binding });ok { bindings=available.PaletteKeyMap() } }
+	bindings := screen.KeyMap()
+	if omitAppKeys {
+		if available, ok := screen.(interface{ PaletteKeyMap() []key.Binding }); ok {
+			bindings = available.PaletteKeyMap()
+		}
+	}
 	for _, binding := range bindings {
 		if !binding.Enabled() || isBinding(binding, ui.Keys.NextPanel, ui.Keys.PrevPanel,
 			ui.Keys.Quit, ui.Keys.Palette, ui.Keys.PanelPalette) {
@@ -91,7 +99,9 @@ func panelPaletteCommands(screen screens.Screen, omitAppKeys bool) []paletteComm
 		if omitAppKeys && isBinding(binding, ui.Keys.Probe, ui.Keys.Redraw) {
 			continue
 		}
-		if omitAppKeys && isBinding(binding,ui.Keys.Up,ui.Keys.Down,ui.Keys.PanLeft,ui.Keys.PanRight,ui.Keys.PageUp,ui.Keys.PageDown,ui.Keys.Home,ui.Keys.End,ui.Keys.Back,ui.Keys.NextLayer,ui.Keys.PrevLayer,ui.Keys.NextTopic,ui.Keys.PrevTopic) { continue }
+		if omitAppKeys && isBinding(binding, ui.Keys.Up, ui.Keys.Down, ui.Keys.PanLeft, ui.Keys.PanRight, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Back, ui.Keys.NextLayer, ui.Keys.PrevLayer, ui.Keys.NextTopic, ui.Keys.PrevTopic) {
+			continue
+		}
 		keys := binding.Keys()
 		if len(keys) == 0 {
 			continue
@@ -101,8 +111,10 @@ func panelPaletteCommands(screen screens.Screen, omitAppKeys bool) []paletteComm
 			continue
 		}
 		help := binding.Help()
-		label:=help.Desc
-		if omitAppKeys { label=taskLabel(screen.ID(),binding) }
+		label := help.Desc
+		if omitAppKeys {
+			label = taskLabel(screen.ID(), binding)
+		}
 		action := paletteDispatchPanel
 		if isBinding(binding, ui.Keys.Probe) {
 			action = paletteProbe
@@ -122,24 +134,56 @@ func panelPaletteCommands(screen screens.Screen, omitAppKeys bool) []paletteComm
 	return commands
 }
 
-func taskLabel(id screens.ScreenID,binding key.Binding)string {
-	k:=binding.Help().Key
+func taskLabel(id screens.ScreenID, binding key.Binding) string {
+	k := binding.Help().Key
 	switch id {
 	case screens.ScreenKaart:
-		if label:=map[string]string{"/":"Zoek straat","g":"Kies kaartgebied","t":"Kies kaartlagen","L":"Lees kaartlegenda","+":"Zoom in","-":"Zoom uit","f":"Maak kaart passend","o":"Wissel samen/solo","l":"Toon/verberg straatnamen"}[k];label!="" { return label }
+		if label := map[string]string{"/": "Zoek straat", "g": "Kies kaartgebied", "t": "Kies kaartlagen", "L": "Lees kaartlegenda", "+": "Zoom in", "-": "Zoom uit", "f": "Maak kaart passend", "o": "Wissel samen/solo", "l": "Toon/verberg straatnamen"}[k]; label != "" {
+			return label
+		}
 	case screens.ScreenQuery:
-		if label:=map[string]string{"g":"Kies querygebied","l":"Kies querylagen","ctrl+r":"Herhaal gebiedstelling"}[k];label!="" { return label }
-		if k=="enter" { if binding.Help().Desc=="objecten" { return "Bekijk queryobjecten" };return "Voer gebiedstelling uit" }
+		if label := map[string]string{"g": "Kies querygebied", "l": "Kies querylagen", "ctrl+r": "Herhaal gebiedstelling"}[k]; label != "" {
+			return label
+		}
+		if k == "enter" {
+			if binding.Help().Desc=="details" { return "Lees bronattributen" }
+			if binding.Help().Desc == "objecten" {
+				return "Bekijk queryobjecten"
+			}
+			return "Voer gebiedstelling uit"
+		}
 	case screens.ScreenProfiel:
-		if k=="s" { return "Kies BOB-straat" }
+		if k == "s" {
+			return "Kies BOB-straat"
+		}
 	case screens.ScreenLagen:
-		if k=="l" { return "Toon lokale/alle lagen" };if k=="/" { return "Filter lagen" };if k=="enter" { return "Lees laagdetails" }
+		if k == "l" {
+			return "Toon lokale/alle lagen"
+		}
+		if k == "/" {
+			return "Filter lagen"
+		}
+		if k == "enter" {
+			return "Lees laagdetails"
+		}
 	case screens.ScreenGebieden:
-		if k=="/" { return "Filter gebieden" };if k=="enter" { return "Lees gebiedsdetails" }
+		if k == "/" {
+			return "Filter gebieden"
+		}
+		if k == "enter" {
+			return "Lees gebiedsdetails"
+		}
 	case screens.ScreenBronnen:
-		if k=="enter" { return "Lees brondetails en licentie" }
+		if k == "enter" {
+			return "Lees brondetails en licentie"
+		}
 	case screens.ScreenOntdek:
-		if k=="enter" { return "Lees geselecteerde uitleg" };if k=="t" { return "Toon/verberg technische uitleg" }
+		if k == "enter" {
+			return "Lees geselecteerde uitleg"
+		}
+		if k == "t" {
+			return "Toon/verberg technische uitleg"
+		}
 	}
 	return binding.Help().Desc
 }
@@ -265,9 +309,12 @@ func (m Model) updatePalette(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	default:
 		// screens.TypedText, not a KeyRunes test: a SPACE arrives as KeySpace
 		// and would otherwise be silently dropped while typing a command.
-		old:=p.query
-		p.input,_=p.input.Update(msg);p.query=p.input.Value()
-		if old!=p.query { p.cursor=0 }
+		old := p.query
+		p.input, _ = p.input.Update(msg)
+		p.query = p.input.Value()
+		if old != p.query {
+			p.cursor = 0
+		}
 	}
 	return m, nil
 }
@@ -314,7 +361,7 @@ func (p *commandPalette) View(width, height int) string {
 	if width < 1 || height < 1 {
 		return ""
 	}
-	p.input.SetWidth(max(1,width-8))
+	p.input.SetWidth(max(1, width-8))
 	prompt := p.input.View()
 	if height == 1 {
 		return components.SingleLine(prompt, width)

@@ -91,11 +91,8 @@ func withBorderTitle(rendered, title string, color color.Color) string {
 // the primitive for the header and the command bar, which are each one row of the
 // app's fixed anatomy.
 //
-// It exists because lipgloss Width() PADS but does not truncate, and Padding is
-// added ON TOP of Width — so `Width(n).Padding(0,1)` renders n+2 cells and the
-// terminal wraps it onto a second row. On a phone that extra row pushed the
-// command bar off the bottom of the screen. Measured: the header and bar were
-// both 2 rows wide at 30x12.
+// Width alone does not truncate. The original v1 padding bug made these slots
+// wrap on 30x12; v2 still needs explicit ANSI/grapheme-aware truncation here.
 //
 // A truncated string ends in "…" (when there is room for one). A silently chopped
 // CBS code — "(BU0599108" — reads as a typo rather than a clipped line.
@@ -110,59 +107,10 @@ func SingleLine(s string, width int) string {
 	return out + strings.Repeat(" ", max(0, width-ansi.StringWidth(out)))
 }
 
-// trimCells returns the prefix of out that occupies at most `max` printable cells,
-// keeping every escape sequence intact.
-func trimCells(out []rune, max int) []rune {
-	col, inEsc := 0, false
-	for i, r := range out {
-		if r == 0x1b {
-			inEsc = true
-		}
-		if inEsc {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEsc = false
-			}
-			continue
-		}
-		if col+runeWidth(r) > max {
-			return out[:i]
-		}
-		col += runeWidth(r)
-	}
-	return out
-}
-
-// runeWidth is the terminal cell width of one rune: 0 for combining marks, 2 for
-// the East-Asian wide and braille-adjacent blocks the map uses, else 1.
-func runeWidth(r rune) int {
-	switch {
-	case r == 0:
-		return 0
-	case r < 0x20:
-		return 0
-	case r >= 0x0300 && r <= 0x036f: // combining diacritics
-		return 0
-	case r >= 0x1100 && r <= 0x115f, // Hangul Jamo
-		r >= 0x2e80 && r <= 0xa4cf, // CJK
-		r >= 0xac00 && r <= 0xd7a3, // Hangul
-		r >= 0xf900 && r <= 0xfaff,
-		r >= 0xfe30 && r <= 0xfe6f,
-		r >= 0xff00 && r <= 0xff60,
-		r >= 0xffe0 && r <= 0xffe6:
-		return 2
-	}
-	return 1
-}
-
 // sliceRunes returns the printable cell range [from, to) of a single-line
 // rendered string. Lip Gloss widths are cell widths; we walk ANSI-aware.
 func sliceRunes(s string, from, to int) string {
 	return ansi.Cut(s, from, to)
-}
-
-// truncateLeft drops the first n printable cells of a single line.
-func truncateLeft(s string, n int) string {
-	return ansi.Cut(s, n, ansi.StringWidth(s))
 }
 
 // EmptyState is the single pattern for "there is nothing here": a muted glyph,

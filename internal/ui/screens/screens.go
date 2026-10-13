@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/progress"
@@ -105,15 +104,27 @@ type Bronnen struct {
 }
 
 func NewBronnen() *Bronnen {
-	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1)),list:components.NewInventory()}
+	return &Bronnen{prog: components.NewProgress(40), body: viewport.New(viewport.WithWidth(1), viewport.WithHeight(1)), list: components.NewInventory()}
 }
 
 func (s *Bronnen) ID() ScreenID { return ScreenBronnen }
 func (s *Bronnen) KeyMap() []key.Binding {
-	if s.details { return []key.Binding{ui.Keys.Back,ui.Keys.Up,ui.Keys.Down,ui.Keys.PageUp,ui.Keys.PageDown,ui.Keys.Home,ui.Keys.End} }
-	return []key.Binding{ui.Keys.Probe,ui.Keys.Details,ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
+	if s.details {
+		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End}
+	}
+	keys:=[]key.Binding{ui.Keys.Details, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.NextPanel, ui.Keys.Quit}
+	if !s.probing { keys=append([]key.Binding{ui.Keys.Probe},keys...) }
+	return keys
 }
-func (s *Bronnen) ShortKeyMap() []key.Binding { if s.details { return s.KeyMap() };return []key.Binding{ui.Keys.Probe,ui.Keys.Details,ui.Keys.Up,ui.Keys.Down} }
+func (s *Bronnen) ShortKeyMap() []key.Binding {
+	if s.details {
+		return s.KeyMap()
+	}
+	keys:=[]key.Binding{ui.Keys.Details,ui.Keys.Up,ui.Keys.Down}
+	if !s.probing { keys=append([]key.Binding{ui.Keys.Probe},keys...) }
+	return keys
+}
+func (s *Bronnen) PaletteKeyMap() []key.Binding { return inventoryPaletteKeys(s.KeyMap(),s.list,s.details,false) }
 func (s *Bronnen) SetSize(w, h int) {
 	s.w, s.h = w, h
 	s.body.SetWidth(max(1, w-4))
@@ -170,7 +181,7 @@ type TickMsg = progress.FrameMsg
 // barWidth is the cell width of the probe bar: capped so it never runs the
 // whole panel, floored so it stays readable in a narrow terminal.
 func (s *Bronnen) barWidth() int {
-	return max(1,min(40,s.body.Width()-1-len(components.ProgressCount(s.want,s.want))))
+	return max(1, min(40, s.body.Width()-1-len(components.ProgressCount(s.want, s.want))))
 }
 
 // BeginProbe starts a run: clears the count and marks every wired source as
@@ -178,7 +189,7 @@ func (s *Bronnen) barWidth() int {
 // progress bar animates by returning FrameMsgs that must reach the runtime, so
 // the app batches this in.
 func (s *Bronnen) BeginProbe() tea.Cmd {
-	s.details=false
+	s.details = false
 	s.health = nil
 	s.probing = true
 	s.done = 0
@@ -250,23 +261,32 @@ func (s *Bronnen) SetSpinner(frame string) { s.spinner = frame }
 
 func (s *Bronnen) Update(msg tea.Msg) (Screen, tea.Cmd) {
 	if s.details {
-		if k,ok:=msg.(tea.KeyPressMsg);ok&&key.Matches(k,ui.Keys.Back) { s.details=false;return s,nil }
-		return s,scrollInventory(&s.body,msg)
+		if k, ok := msg.(tea.KeyPressMsg); ok && key.Matches(k, ui.Keys.Back) {
+			s.details = false
+			return s, nil
+		}
+		return s, scrollInventory(&s.body, msg)
 	}
-	if k,ok:=msg.(tea.KeyPressMsg);ok&&key.Matches(k,ui.Keys.Enter) {
-		if item,ok:=s.list.Selected();ok { s.details=true;s.body.SetContent(components.WrappedText(item.Detail,s.body.Width()));s.body.GotoTop() }
-		return s,nil
+	if k, ok := msg.(tea.KeyPressMsg); ok && key.Matches(k, ui.Keys.Enter) {
+		if item, ok := s.list.Selected(); ok {
+			s.details = true
+			s.body.SetContent(components.WrappedText(item.Detail, s.body.Width()))
+			s.body.GotoTop()
+		}
+		return s, nil
 	}
-	return s,s.list.Update(msg)
+	return s, s.list.Update(msg)
 }
 
 func (s *Bronnen) View() string {
-	if s.details { return s.body.View() }
+	if s.details {
+		return s.body.View()
+	}
 	if s.probing {
 		// Bubbles' own animated bar: it glides to each new value on a spring.
 		// The counter beside it is the real thing — n sources answered of the
 		// real total — so the animation is decoration over honest progress.
-		return components.FitRows(components.Busy(s.spinner,"Bronnen worden geprobeerd…")+"\n"+s.prog.View()+" "+components.ProgressCount(s.done,s.want)+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()),s.body.Width(),s.body.Height())
+		return components.FitRows(components.Busy(s.spinner, "Bronnen worden geprobeerd…")+"\n"+s.prog.View()+" "+components.ProgressCount(s.done, s.want)+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()), s.body.Width(), s.body.Height())
 	}
 	if len(s.health) == 0 {
 		return components.EmptyState(
@@ -275,83 +295,55 @@ func (s *Bronnen) View() string {
 			s.w,
 		)
 	}
-	return components.FitRows(components.Muted("Groen = bereikbaar, niet lokaal beschikbaar")+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()),s.body.Width(),s.body.Height())
+	return components.FitRows(components.Muted("Groen = bereikbaar, niet lokaal beschikbaar")+"\n"+s.list.View()+"\n"+components.Muted(s.list.Position()), s.body.Width(), s.body.Height())
 }
 
 func (s *Bronnen) refreshHealth() {
-	rows:=s.body.Height()-2;if s.probing { rows-- }
-	s.list.SetSize(s.body.Width(),max(1,rows))
-	var items []components.InventoryItem
-	for _,h:=range s.health {
-		state:="niet bedraad";status:=components.StatusIdle
-		if h.Status==core.HealthUp { state="bereikbaar";status=components.StatusOK }
-		if h.Status==core.HealthDown { state="onbereikbaar";status=components.StatusDown }
-		license:=licenseOrUnknown(h.License)
-		count:="—";if h.Count>=0 { count=Thousands(h.Count) }
-		summary:=state+" · "+license
-		if h.Status!=core.HealthNotWired { summary=fmt.Sprintf("%s · %s dienstobjecten · %d ms · %s",state,count,h.LatencyMS,license) }
-		doc:=components.Strong(queryClean(h.Label))+"\nesc: bronnenlijst\n\nStatus: "+state+"\nLicentie: "+queryClean(license)+"\nDiensttelling: "+count+"\nProbe-aantallen kunnen landelijk zijn; dit zijn geen gebiedstellingen.\nBereikbaar ≠ gedownload of lokaal beschikbaar.\nBasis-URL (requests voegen parameters toe): "+queryClean(h.URL)
-		if h.Error!="" { doc+="\n"+components.Error(queryClean(h.Error)) }
-		if h.Note!="" { doc+="\n"+components.Muted(queryClean(h.Note)) }
-		id:=h.SourceID;if id=="" { id=h.Label }
-		items=append(items,components.InventoryItem{ID:id,Label:queryClean(h.Label),Summary:queryClean(summary),Detail:doc,Status:status})
+	rows := s.body.Height() - 2
+	if s.probing {
+		rows--
 	}
-	s.list.SetItems(items)
-	if s.details { if item,ok:=s.list.Selected();ok { s.body.SetContent(components.WrappedText(item.Detail,s.body.Width())) } }
-}
-
-func (s *Bronnen) renderHealth() string {
-	var b strings.Builder
-	b.WriteString(components.Muted("Groen = dienst bereikbaar, niet gedownload of lokaal beschikbaar."))
-	b.WriteByte('\n')
-	b.WriteString(components.Muted("Probe-aantallen kunnen landelijk zijn; dit zijn geen gebiedstellingen."))
-	b.WriteByte('\n')
-	b.WriteByte('\n')
+	s.list.SetSize(s.body.Width(), max(1, rows))
+	var items []components.InventoryItem
 	for _, h := range s.health {
-		if h.Status == core.HealthNotWired {
-			continue // unwired section below
+		state := "niet bedraad"
+		status := components.StatusIdle
+		if h.Status == core.HealthUp {
+			state = "bereikbaar"
+			status = components.StatusOK
 		}
-		status := components.StatusOK
-		if h.Status != core.HealthUp {
+		if h.Status == core.HealthDown {
+			state = "onbereikbaar"
 			status = components.StatusDown
 		}
+		license := licenseOrUnknown(h.License)
 		count := "—"
 		if h.Count >= 0 {
 			count = Thousands(h.Count)
 		}
-		line := fmt.Sprintf("%-22s %11s  %5d ms", h.Label, count, h.LatencyMS)
-		b.WriteString(components.Badge(status, line))
-		b.WriteByte('\n')
-		// Licence belongs next to the source it applies to: CC0, CC-BY-SA and
-		// "unknown" are different permissions, not decoration.
-		b.WriteString(components.Muted("   licentie: " + licenseOrUnknown(h.License)))
-		b.WriteByte('\n')
+		summary := state + " · " + license
+		if h.Status != core.HealthNotWired {
+			summary = fmt.Sprintf("%s · %s dienstobjecten · %d ms · %s", state, count, h.LatencyMS, license)
+		}
+		doc := components.Strong(queryClean(h.Label)) + "\nesc: bronnenlijst\n\nStatus: " + state + "\nLicentie: " + queryClean(license) + "\nDiensttelling: " + count + "\nProbe-aantallen kunnen landelijk zijn; dit zijn geen gebiedstellingen.\nBereikbaar ≠ gedownload of lokaal beschikbaar.\nBasis-URL (requests voegen parameters toe): " + queryClean(h.URL)
 		if h.Error != "" {
-			b.WriteString("   ")
-			b.WriteString(components.Error(h.Error))
-			b.WriteByte('\n')
+			doc += "\n" + components.Error(queryClean(h.Error))
+		}
+		if h.Note != "" {
+			doc += "\n" + components.Muted(queryClean(h.Note))
+		}
+		id := h.SourceID
+		if id == "" {
+			id = h.Label
+		}
+		items = append(items, components.InventoryItem{ID: id, Label: queryClean(h.Label), Summary: queryClean(summary),CompactSummary:state+" · "+license, Detail: doc, Status: status})
+	}
+	s.list.SetItems(items)
+	if s.details {
+		if item, ok := s.list.Selected(); ok {
+			s.body.SetContent(components.WrappedText(item.Detail, s.body.Width()))
 		}
 	}
-	unwired := []core.SourceHealth{}
-	for _, h := range s.health {
-		if h.Status == core.HealthNotWired {
-			unwired = append(unwired, h)
-		}
-	}
-	if len(unwired) > 0 {
-		b.WriteByte('\n')
-		b.WriteString(components.Strong("Gedetecteerd, niet bedraad:"))
-		b.WriteByte('\n')
-		for _, h := range unwired {
-			b.WriteString(components.Muted("  " + h.Label))
-			b.WriteByte('\n')
-			b.WriteString(components.Muted("   licentie: " + licenseOrUnknown(h.License)))
-			b.WriteByte('\n')
-			b.WriteString(components.Muted("   " + h.Note))
-			b.WriteByte('\n')
-		}
-	}
-	return strings.TrimRight(b.String(), "\n")
 }
 
 // licenseOrUnknown renders an absent licence as unknown instead of an empty

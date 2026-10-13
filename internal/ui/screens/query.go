@@ -76,7 +76,9 @@ func (s *Query) Busy() bool              { return s.opening || s.running || s.pa
 func (s *Query) SetSpinner(frame string) { s.spinner = frame }
 func (s *Query) OverlayOpen() bool       { return s.picker != nil }
 func (s *Query) PaletteKeyMap() []key.Binding {
-	if !s.loaded||s.library==nil||s.area.Code==""||s.Busy() { return nil }
+	if !s.loaded || s.library == nil || s.area.Code == "" || s.Busy() {
+		return nil
+	}
 	return s.KeyMap()
 }
 func (s *Query) Info() string {
@@ -107,6 +109,7 @@ func (s *Query) KeyMap() []key.Binding {
 	if s.resultFocus || s.mode != querySummary {
 		bindings[2] = ui.Keys.Inspect
 	}
+	if s.mode==queryObjects { bindings[2]=ui.Keys.Details }
 	if s.mode == queryDetails {
 		bindings = nil
 	}
@@ -126,7 +129,7 @@ func (s *Query) ShortKeyMap() []key.Binding {
 		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down}
 	}
 	if s.mode == queryObjects {
-		return []key.Binding{ui.Keys.Inspect, ui.Keys.Back, ui.Keys.Up, ui.Keys.Down}
+		return []key.Binding{ui.Keys.Details, ui.Keys.Back, ui.Keys.Up, ui.Keys.Down}
 	}
 	if s.result != nil && s.resultFocus {
 		return []key.Binding{ui.Keys.Inspect, ui.Keys.Rerun, ui.Keys.Back, ui.Keys.Area, ui.Keys.QueryLayers}

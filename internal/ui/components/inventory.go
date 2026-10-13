@@ -16,6 +16,7 @@ import (
 // InventoryItem keeps list ink in the kit and domain text in its screen.
 type InventoryItem struct {
 	ID, Label, Summary, Detail string
+	CompactLabel, CompactSummary string
 	Status                     Status
 }
 
@@ -38,12 +39,14 @@ func (d inventoryDelegate) Render(w io.Writer, m list.Model, index int, item lis
 	}
 	mark := "  "
 	label := i.Label
+	if d.compact && i.CompactLabel!="" { label=i.CompactLabel }
 	if index == m.Index() {
 		mark = "› "
 		label = Selected(label, lipgloss.Width(label))
 	}
 	if d.compact {
-		fmt.Fprint(w, SingleLine(mark+Badge(i.Status, label), m.Width())+"\n"+SingleLine("    "+Muted(i.Summary), m.Width()))
+		summary:=i.Summary;if i.CompactSummary!="" { summary=i.CompactSummary }
+		fmt.Fprint(w, SingleLine(mark+Badge(i.Status, label), m.Width())+"\n"+SingleLine("    "+Muted(summary), m.Width()))
 	} else {
 		labelW := max(1, m.Width()/3)
 		fmt.Fprint(w, SingleLine(mark+Badge(i.Status, SingleLine(label, labelW))+"  "+Muted(i.Summary), m.Width()))

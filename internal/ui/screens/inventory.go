@@ -85,6 +85,14 @@ func inventoryKeys(editing bool) []key.Binding {
 	}
 	return []key.Binding{ui.Keys.Filter, ui.Keys.Details, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Back, ui.Keys.Quit}
 }
+
+func inventoryPaletteKeys(keys []key.Binding,list components.Inventory,details,editing bool) []key.Binding {
+	if details||editing { return nil }
+	_,selected:=list.Selected()
+	var available []key.Binding
+	for _,binding:=range keys { if binding.Help().Key=="enter"&&!selected { continue };available=append(available,binding) }
+	return available
+}
 func scrollInventory(body *viewport.Model, msg tea.Msg) tea.Cmd {
 	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		if key.Matches(msg, ui.Keys.Home) {
@@ -115,6 +123,7 @@ func NewLagen(catalog core.Catalog, err error) *Lagen {
 }
 func (s *Lagen) ID() ScreenID        { return ScreenLagen }
 func (s *Lagen) EditingFilter() bool { return s.filter.editing }
+func (s *Lagen) PaletteKeyMap() []key.Binding { return inventoryPaletteKeys(s.KeyMap(),s.list,s.details,s.filter.editing) }
 func (s *Lagen) KeyMap() []key.Binding {
 	if s.details {
 		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End}
@@ -227,7 +236,8 @@ func layerInventoryItem(layer core.CatalogLayer, catalog core.Catalog) component
 	if len(layer.Local) == 1 {
 		local := layer.Local[0]
 		license = licenseOrUnknown(local.License)
-		summary = fmt.Sprintf("%s · %s objecten (metadata) · %s", state, Thousands(local.Count), license)
+		unit:="objecten";if local.Storage=="gebiedenregister" { unit="gebieden" }
+		summary = fmt.Sprintf("%s · %s %s (metadata) · %s", state, Thousands(local.Count),unit, license)
 	} else if len(layer.Local) > 1 {
 		summary = fmt.Sprintf("%s · %d leveringen · licenties per levering", state, len(layer.Local))
 	}
@@ -242,7 +252,9 @@ func layerInventoryItem(layer core.CatalogLayer, catalog core.Catalog) component
 		}
 		doc = append(doc, queryClean(fmt.Sprintf("%s · %s: %s %s (metadata) · %s", local.Storage, local.Area, Thousands(local.Count), unit, localState)), "Licentie levering: "+queryClean(licenseOrUnknown(local.License)), "")
 	}
-	return components.InventoryItem{ID: layer.ID, Label: queryClean(layer.Label), Summary: queryClean(summary), Detail: strings.Join(doc, "\n"), Status: status}
+	compact:=state+" · "+license
+	if len(layer.Local)>1 { compact=fmt.Sprintf("%d leveringen · licenties: enter",len(layer.Local)) }
+	return components.InventoryItem{ID: layer.ID, Label: queryClean(layer.Label), Summary: queryClean(summary),CompactSummary:queryClean(compact), Detail: strings.Join(doc, "\n"), Status: status}
 }
 func (s *Lagen) View() string {
 	width := s.body.Width()
@@ -256,7 +268,7 @@ func (s *Lagen) View() string {
 	if s.err != nil {
 		context = queryClean(s.err.Error())
 	}
-	return components.FitRows(s.filter.view(width)+"\n"+components.SingleLine(components.Muted(context),width)+"\n"+s.list.View()+"\n"+components.SingleLine(components.Muted(s.list.Position()),width),width,s.body.Height()+1)
+	return components.FitRows(s.filter.view(width)+"\n"+components.SingleLine(components.Muted(context), width)+"\n"+s.list.View()+"\n"+components.SingleLine(components.Muted(s.list.Position()), width), width, s.body.Height()+1)
 }
 
 type Gebieden struct {
@@ -280,6 +292,7 @@ func NewGebieden(lib *core.Library, assets []core.AssetMeta) *Gebieden {
 }
 func (s *Gebieden) ID() ScreenID            { return ScreenGebieden }
 func (s *Gebieden) EditingFilter() bool     { return s.filter.editing }
+func (s *Gebieden) PaletteKeyMap() []key.Binding { return inventoryPaletteKeys(s.KeyMap(),s.list,s.details,s.filter.editing) }
 func (s *Gebieden) Busy() bool              { return s.opening }
 func (s *Gebieden) SetSpinner(frame string) { s.spinner = frame }
 func (s *Gebieden) KeyMap() []key.Binding {
@@ -381,7 +394,7 @@ func (s *Gebieden) refresh() {
 		if s.lib != nil {
 			snapshot = s.lib.Snapshot
 		}
-		items = append(items, components.InventoryItem{ID: area.Code, Label: queryClean(area.Label()), Summary: "CBS-grens · kies met g in Kaart/Query", Status: components.StatusIdle,
+		items = append(items, components.InventoryItem{ID: area.Code, Label: queryClean(area.Label()),CompactLabel:queryClean(area.Name),CompactSummary:area.Code+" · "+area.Kind, Summary: "CBS-grens · kies met g in Kaart/Query", Status: components.StatusIdle,
 			Detail: queryClean(area.Label()) + "\n\nOfficiële CBS-grens\nSnapshot: " + queryClean(snapshot) + "\nGeen automatische selectie in Kaart/Query; kies daar expliciet met g."})
 	}
 	if len(areas) == 0 && !s.opening {
@@ -426,5 +439,5 @@ func (s *Gebieden) View() string {
 	if s.err != nil {
 		context = queryClean(s.err.Error())
 	}
-	return components.FitRows(s.filter.view(width)+"\n"+components.SingleLine(components.Muted(context),width)+"\n"+s.list.View()+"\n"+components.SingleLine(components.Muted(s.list.Position()),width),width,s.body.Height()+1)
+	return components.FitRows(s.filter.view(width)+"\n"+components.SingleLine(components.Muted(context), width)+"\n"+s.list.View()+"\n"+components.SingleLine(components.Muted(s.list.Position()), width), width, s.body.Height()+1)
 }
