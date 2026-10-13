@@ -23,8 +23,8 @@ func Panel(title, body string, width, height int, active bool) string {
 		border = ui.BorderActive
 		borderColor = ui.ColorPrimary
 	}
-	// Panels have no independent fill: the app shell supplies the shared black
-	// surface, so panels remain floating outlines rather than filled cards.
+	// No background: the terminal's own background shows through, so a panel is
+	// a floating outline rather than a filled card. Never paint a surface here.
 	// v2 Width/Height include the frame, and its word wrapper can remove ink
 	// from styled leading/trailing spaces. Fit the already laid-out body ourselves
 	// so map cells (including blank cells) survive the stack migration unchanged.

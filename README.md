@@ -27,11 +27,6 @@ nooit randen, kleuren of spacing definiëren**.
     Kaart, Profiel en Query. Bestaande paneeltoetsen 1–6 blijven gelijk;
     Ontdek is 7 en Query is 8.
 
-De TUI schildert een expliciete **RGB-zwarte achtergrond (`#000000`)** over
-header, panelen, lege cellen en commandobar. De achtergrond is niet afhankelijk
-van de terminalkleur of diens configureerbare ANSI-zwart; kaartkleuren blijven
-ongewijzigd. Voor tekst gebruikt de TUI altijd de donkere themavariant.
-
 ## Regels voor uitbreidingen (de contracten)
 
 1. **Nooit** `lipgloss.NewStyle()` met een hex of AdaptiveColor in

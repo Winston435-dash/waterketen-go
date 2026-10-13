@@ -491,7 +491,7 @@ func (m Model) View() tea.View {
 
 func (m Model) viewContent() string {
 	if !m.ready {
-		return components.AppSurface("initialiseren…")
+		return "initialiseren…"
 	}
 	header := m.renderHeader()
 	body := m.renderBody()
@@ -518,7 +518,7 @@ func (m Model) viewContent() string {
 		}
 	}
 	bar := m.cmdBar.View(m.width, bindings)
-	return components.AppSurface(lipgloss.JoinVertical(lipgloss.Left, header, body, bar))
+	return lipgloss.JoinVertical(lipgloss.Left, header, body, bar)
 }
 
 func (m Model) renderBody() string {
@@ -599,8 +599,6 @@ func screenTitle(s screens.Screen) string {
 
 // Run starts the TUI. Called from cmd/waterketen-tui/main.go.
 func Run(root string) error {
-	// The app owns a black surface even when the terminal's default is light.
-	// Keep adaptive foreground tokens on their legible dark-background variant.
 	p := tea.NewProgram(New(root))
 	_, err := p.Run()
 	return err
