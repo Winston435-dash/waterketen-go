@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"image/color"
 	"strings"
 
@@ -16,7 +17,7 @@ import (
 // owns the data ink (core.CellColour), the kit owns only emphasis
 // (bold/underline), and screens never touch a colour. Runs of one style are
 // emitted in a single Render call so the escape output stays compact.
-func RenderAtlas(r *core.Render) string {
+func RenderAtlas(r *core.Render, compact ...bool) string {
 	var b strings.Builder
 	for y, row := range r.Cells {
 		var cur string
@@ -44,14 +45,18 @@ func RenderAtlas(r *core.Render) string {
 	if len(r.Legend) == 0 || len(r.Cells) == 0 {
 		return grid
 	}
-	legend := renderAtlasLegend(r.Legend, len(r.Cells[0]))
+	width := len(r.Cells[0])
+	legend := AtlasLegend(r.Legend, width)
+	if len(compact) > 0 && compact[0] {
+		legend = SingleLine(Muted(fmt.Sprintf("Legenda: %d lagen · L opent", len(r.Legend))), width)
+	}
 	if legend == "" {
 		return grid
 	}
 	return grid + "\n" + legend
 }
 
-func renderAtlasLegend(entries []core.LegendEntry, width int) string {
+func AtlasLegend(entries []core.LegendEntry, width int) string {
 	if width < 8 || len(entries) == 0 {
 		return ""
 	}
@@ -88,6 +93,29 @@ func renderAtlasLegend(entries []core.LegendEntry, width int) string {
 		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+type AtlasGeometry struct {
+	Width, GridHeight int
+	Compact           bool
+}
+
+// AtlasLayout owns the height reserved for the actual legend. It is used both
+// before drawing and when presenting the committed frame; no fixed six-row gap.
+func AtlasLayout(width, height int, entries []core.LegendEntry) AtlasGeometry {
+	compact := height <= ui.CompactMapRows
+	rows := 0
+	if len(entries) > 0 {
+		rows = strings.Count(AtlasLegend(entries, width), "\n") + 1
+		if compact {
+			rows = 1
+		}
+	}
+	if rows >= height-2 {
+		compact = true
+		rows = min(rows, 1)
+	}
+	return AtlasGeometry{Width: max(1, width), GridHeight: max(1, height-rows), Compact: compact}
 }
 
 // atlasStyle maps a core CellStyle to lipgloss. There is deliberately no colour

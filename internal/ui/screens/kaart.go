@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 
 	"waterketen/internal/core"
@@ -29,9 +30,11 @@ import (
 //   - MANAGED (fallback): the per-area assets from `waterketen fetch`, used when
 //     no library snapshot exists. Same rendering, no area picker.
 type Kaart struct {
-	root   string
-	lib    *core.Library
-	assets []core.AssetMeta
+	legendOpen bool
+	legendView viewport.Model
+	root       string
+	lib        *core.Library
+	assets     []core.AssetMeta
 
 	atlas         *core.LibraryAtlas // nil until the library opens
 	layers        []string           // chosen layer set (library world)
@@ -91,6 +94,9 @@ func NewKaart(root string, lib *core.Library, assets []core.AssetMeta) *Kaart {
 
 func (s *Kaart) ID() ScreenID { return ScreenKaart }
 func (s *Kaart) KeyMap() []key.Binding {
+	if s.legendOpen {
+		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End}
+	}
 	if s.picker != nil {
 		return s.picker.KeyMap()
 	}
@@ -101,7 +107,7 @@ func (s *Kaart) KeyMap() []key.Binding {
 		ui.Keys.PanLeft, ui.Keys.PanRight, ui.Keys.Up, ui.Keys.Down,
 		ui.Keys.ZoomIn, ui.Keys.ZoomOut, ui.Keys.Fit,
 		ui.Keys.PrevLayer, ui.Keys.NextLayer, ui.Keys.Overlay, ui.Keys.Labels,
-		ui.Keys.Search, ui.Keys.Quit,
+		ui.Keys.Search, ui.Keys.Legend, ui.Keys.Quit,
 	}
 	if s.atlas != nil {
 		bindings = append(bindings, ui.Keys.Area, ui.Keys.Layers)
@@ -117,12 +123,15 @@ func (s *Kaart) ShortKeyMap() []key.Binding {
 	if s.atlas != nil {
 		keys = append(keys, ui.Keys.Area, ui.Keys.Layers)
 	}
-	return append(keys, ui.Keys.ZoomIn, ui.Keys.ZoomOut, ui.Keys.Fit, ui.Keys.Up, ui.Keys.Down, ui.Keys.Back)
+	return append(keys, ui.Keys.Legend, ui.Keys.ZoomIn, ui.Keys.ZoomOut, ui.Keys.Fit, ui.Keys.Up, ui.Keys.Down)
 }
 
 func (s *Kaart) SetSize(w, h int) {
 	resized := (w != s.w || h != s.h) && s.hasView
 	s.w, s.h = w, h
+	if s.legendOpen {
+		s.refreshLegend()
+	}
 	if resized {
 		s.needsDraw = true
 		s.resizePending = s.atlas != nil
@@ -140,6 +149,9 @@ func (s *Kaart) ResizeCmd() tea.Cmd {
 }
 
 func (s *Kaart) Info() string {
+	if s.legendOpen {
+		return "legenda · esc terug naar kaart"
+	}
 	if s.picker != nil || s.search != nil {
 		return "overlay open"
 	}
@@ -349,7 +361,16 @@ func (s *Kaart) Picker() *Picker { return s.picker }
 // OverlayOpen reports whether ANY overlay (area/layer picker or street search)
 // currently owns the keyboard. The app needs the union: routing a key to the map
 // while an overlay is open would let 'g' or 'q' fire behind it.
-func (s *Kaart) OverlayOpen() bool { return s.picker != nil || s.search != nil }
+func (s *Kaart) OverlayOpen() bool { return s.picker != nil || s.search != nil || s.legendOpen }
+
+func (s *Kaart) refreshLegend() {
+	w, h := max(1, s.w-4), max(1, s.h-2)
+	s.legendView.SetWidth(w)
+	s.legendView.SetHeight(h)
+	if s.render != nil {
+		s.legendView.SetContent(components.AtlasLegend(s.render.Legend, w))
+	}
+}
 
 // OpenAreaPicker opens the 'g' overlay over the snapshot's areas.
 func (s *Kaart) OpenAreaPicker() {
@@ -403,6 +424,7 @@ func (s *Kaart) DrawCmd(generation int) tea.Cmd {
 	}
 	scene, view := s.scene, s.view
 	w, h := s.innerSize()
+	availableH := max(1, s.h-2)
 	active, overlay, mode, labels := s.active, s.overlay, s.mode, s.labels
 	selected, street := s.selected, s.street
 	var display []string
@@ -412,6 +434,16 @@ func (s *Kaart) DrawCmd(generation int) tea.Cmd {
 	return func() tea.Msg {
 		r := core.RenderScene(scene, view, w, h,
 			active, overlay, mode, labels, true, selected, street, display, true)
+		// The first frame reveals the real visible legend. Refit the grid to its
+		// measured height, with a bounded adjustment for changing visible entries.
+		for i := 0; i < 3; i++ {
+			geometry := components.AtlasLayout(w, availableH, r.Legend)
+			if geometry.GridHeight == h {
+				break
+			}
+			h = geometry.GridHeight
+			r = core.RenderScene(scene, view, w, h, active, overlay, mode, labels, true, selected, street, display, true)
+		}
 		return DrawnMsg{Render: &r, Generation: generation}
 	}
 }
@@ -428,7 +460,12 @@ func (s *Kaart) NeedsDraw() bool { return s.needsDraw }
 func (s *Kaart) MarkDirty() { s.needsDraw = true }
 
 func (s *Kaart) innerSize() (int, int) {
-	return max(1, s.w-4), max(1, s.h-8)
+	var legend []core.LegendEntry
+	if s.render != nil {
+		legend = s.render.Legend
+	}
+	geometry := components.AtlasLayout(max(1, s.w-4), max(1, s.h-2), legend)
+	return geometry.Width, geometry.GridHeight
 }
 
 // ActiveLayerChoices returns the cycle order for [ and ]. The CHOSEN layer set
@@ -472,6 +509,16 @@ func (s *Kaart) cycleLayer(step int) {
 // --- update ----------------------------------------------------------------
 
 func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
+	if s.legendOpen {
+		if keymsg, ok := msg.(tea.KeyPressMsg); ok {
+			if key.Matches(keymsg, ui.Keys.Back) || key.Matches(keymsg, ui.Keys.Legend) {
+				s.legendOpen = false
+				return s, nil
+			}
+			return s, scrollInventory(&s.legendView, msg)
+		}
+		// Async map completions still belong to the map while the legend is open.
+	}
 	switch m := msg.(type) {
 	case SearchQueryMsg:
 		s.ApplySearch(m)
@@ -541,6 +588,12 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 }
 
 func (s *Kaart) handleKey(m tea.KeyPressMsg) tea.Cmd {
+	if key.Matches(m, ui.Keys.Legend) && s.render != nil {
+		s.legendOpen = true
+		s.legendView = viewport.New()
+		s.refreshLegend()
+		return nil
+	}
 	if s.scene == nil {
 		return nil
 	}
@@ -662,6 +715,9 @@ func (s *Kaart) handleMouse(m tea.MouseMsg) tea.Cmd {
 // --- view ------------------------------------------------------------------
 
 func (s *Kaart) View() string {
+	if s.legendOpen {
+		return s.legendView.View()
+	}
 	if s.search != nil {
 		return s.search.View()
 	}
@@ -684,7 +740,8 @@ func (s *Kaart) View() string {
 	if s.render == nil || s.needsDraw {
 		return components.Busy(s.spinner, "Kaart wordt getekend…")
 	}
-	return components.RenderAtlas(s.render)
+	geometry := components.AtlasLayout(max(1, s.w-4), max(1, s.h-2), s.render.Legend)
+	return components.RenderAtlas(s.render, geometry.Compact)
 }
 
 func thousandsShort(n int) string {

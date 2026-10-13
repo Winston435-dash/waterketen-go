@@ -44,10 +44,11 @@ const (
 // --- Spacing tokens (terminal cells) ----------------------------------------
 
 const (
-	SpacingXS = 1 // one cell: padding inside badges/tight containers
-	SpacingSM = 2 // two cells: default inner padding
-	SpacingMD = 3 // section gaps
-	SpacingLG = 4 // screen-level margins
+	SpacingXS      = 1  // one cell: padding inside badges/tight containers
+	SpacingSM      = 2  // two cells: default inner padding
+	SpacingMD      = 3  // section gaps
+	SpacingLG      = 4  // screen-level margins
+	CompactMapRows = 16 // use a one-row legend when the content box is short
 )
 
 // --- Border tokens ----------------------------------------------------------
