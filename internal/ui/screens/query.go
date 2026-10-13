@@ -89,6 +89,11 @@ func (s *Query) SetSize(w, h int) {
 		s.picker.SetSize(s.width, s.body.Height())
 	}
 	s.refresh()
+	if s.mode == queryObjects {
+		s.revealObject()
+	} else if s.resultFocus {
+		s.revealResult()
+	}
 }
 func (s *Query) KeyMap() []key.Binding {
 	if s.picker != nil {
@@ -101,6 +106,9 @@ func (s *Query) KeyMap() []key.Binding {
 	if s.mode == queryDetails {
 		bindings = nil
 	}
+	if s.result != nil && s.mode == querySummary {
+		bindings = append(bindings, ui.Keys.Rerun)
+	}
 	bindings = append(bindings, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End, ui.Keys.Back, ui.Keys.Quit)
 	return bindings
 }
@@ -112,6 +120,15 @@ func (s *Query) ShortKeyMap() []key.Binding {
 	keys := s.KeyMap()
 	if s.mode == queryDetails {
 		return []key.Binding{ui.Keys.Back, ui.Keys.Up, ui.Keys.Down}
+	}
+	if s.mode == queryObjects {
+		return []key.Binding{ui.Keys.Inspect, ui.Keys.Back, ui.Keys.Up, ui.Keys.Down}
+	}
+	if s.result != nil && s.resultFocus {
+		return []key.Binding{ui.Keys.Inspect, ui.Keys.Rerun, ui.Keys.Back, ui.Keys.Area, ui.Keys.QueryLayers}
+	}
+	if s.mode == querySummary {
+		return []key.Binding{ui.Keys.RunQuery, ui.Keys.Area, ui.Keys.QueryLayers, ui.Keys.Back}
 	}
 	return append(keys[:min(3, len(keys))], ui.Keys.Back)
 }
@@ -236,7 +253,9 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		}
 		s.finishWork()
 		s.result, s.err, s.resultFocus = msg.Result, msg.Err, msg.Err == nil
+		s.body.GotoTop()
 		s.refresh()
+		s.revealResult()
 		return s, nil
 	case QueryObjectsMsg:
 		if msg.Generation != s.generation || !s.pageLoading || s.mode != queryObjects {
@@ -302,6 +321,8 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			if s.mode == queryDetails {
 				s.mode = queryObjects
+			} else if s.mode == queryObjects {
+				s.mode, s.resultFocus = querySummary, s.result != nil
 			} else {
 				s.mode, s.resultFocus = querySummary, false
 			}
@@ -309,6 +330,13 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			s.refresh()
 			if s.mode == queryObjects {
 				s.revealObject()
+			} else if s.resultFocus {
+				s.revealResult()
+			}
+			return s, nil
+		case key.Matches(msg, ui.Keys.Rerun):
+			if s.mode == querySummary {
+				return s, s.runCmd()
 			}
 			return s, nil
 		case key.Matches(msg, ui.Keys.Enter):
@@ -326,6 +354,9 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			if !s.resultFocus || s.result == nil {
 				return s, s.runCmd()
 			}
+			if len(s.result.Layers) == 0 {
+				return s, nil
+			}
 			row := s.result.Layers[s.resultCursor]
 			if row.Status != core.QueryOK || row.Count == 0 {
 				return s, nil
@@ -341,14 +372,10 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			}
 			return s, nil
 		}
-		if s.mode == querySummary && s.resultFocus && s.result != nil && (key.Matches(msg, ui.Keys.Up) || key.Matches(msg, ui.Keys.Down)) {
-			s.resultCursor = queryMove(msg, s.resultCursor, len(s.result.Layers), 1)
+		if s.mode == querySummary && s.resultFocus && s.result != nil && len(s.result.Layers) > 0 && key.Matches(msg, ui.Keys.Up, ui.Keys.Down, ui.Keys.PageUp, ui.Keys.PageDown, ui.Keys.Home, ui.Keys.End) {
+			s.resultCursor = queryMove(msg, s.resultCursor, len(s.result.Layers), max(1, s.body.Height()-4))
 			s.refresh()
-			line := 3 + s.resultCursor
-			if s.width < 90 {
-				line += len(s.formLines(s.width)) + 1
-			}
-			s.reveal(line)
+			s.revealResult()
 			return s, nil
 		}
 		if key.Matches(msg, ui.Keys.Home) {
@@ -393,6 +420,13 @@ func (s *Query) revealObject() {
 	s.reveal(line)
 }
 
+func (s *Query) revealResult() {
+	if s.result != nil && s.resultFocus && len(s.result.Layers) > 0 {
+		s.resultCursor = min(s.resultCursor, len(s.result.Layers)-1)
+		s.reveal(4 + s.resultCursor) // one context row, then the three-row result heading
+	}
+}
+
 func (s *Query) reveal(line int) {
 	if line < s.body.YOffset() {
 		s.body.SetYOffset(line)
@@ -402,6 +436,12 @@ func (s *Query) reveal(line int) {
 	}
 }
 func (s *Query) formLines(width int) []string {
+	if s.body.Height() < 18 {
+		return []string{components.Strong("GEBIED · " + s.area.Code),
+			components.SingleLine(s.area.Kind+" "+s.area.Name+" · g wijzigt", width),
+			components.Strong(fmt.Sprintf("LAGEN · %d gekozen · l wijzigt", len(s.selected))),
+			"", components.Strong("[ Enter: query uitvoeren ]")}
+	}
 	lines := []string{components.Strong("GEBIED"), components.Strong("  " + s.area.Kind + " " + s.area.Name + "  ▾  g"), components.Muted("  " + s.area.Code + " · CBS"), "", components.Strong("LAGEN")}
 	for _, l := range s.layers {
 		if !slices.Contains(s.selected, l.ID) {
@@ -502,16 +542,21 @@ func (s *Query) refresh() {
 			lines = append(lines, components.Muted(fmt.Sprintf("Pagina %d–%d van %s · geen sample", s.pageOffset+1, s.pageOffset+len(s.objects), Thousands(layer.Count))))
 		}
 	} else if s.library != nil && s.area.Code != "" {
-		if s.width >= 90 {
+		if s.result != nil {
+			lines = []string{components.Muted(fmt.Sprintf("%s · %d lagen · g/l wijzigen", s.area.Code, len(s.selected)))}
+			lines = append(lines, s.countLines(s.width)...)
+			if s.resultFocus {
+				lines = append(lines, components.Muted("Enter: objecten · ctrl+r: opnieuw"))
+			} else {
+				lines = append(lines, components.Muted("Enter: opnieuw tellen · ↑↓: lezen"))
+			}
+		} else if s.width >= 90 {
 			leftWidth := 36
 			body := components.CatalogColumns(strings.Join(s.formLines(leftWidth), "\n"), strings.Join(s.countLines(s.width-leftWidth-3), "\n"), leftWidth)
 			lines = strings.Split(body, "\n")
 		} else {
 			lines = append(s.formLines(s.width), "")
 			lines = append(lines, s.countLines(s.width)...)
-		}
-		if s.resultFocus {
-			lines = append(lines, components.Muted("Enter op een resultaat: objecten bekijken"))
 		}
 		lines = append(lines, components.Muted("Snapshot · "+queryDate(s.library.Manifest.CreatedAt)))
 		if s.result != nil && len(s.result.Layers) > 0 {

@@ -22,7 +22,11 @@ Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
   legenda in plaats van zes vaste reserveregels. Op korte schermen één regel;
   `L` opent een scrollbare volledige legenda. Op 30×12 zeven kaartregels in
   plaats van twee. Vier echte `step3-*`-captureformaten en geometrie-/toetstests.
-- [ ] 4. Query-resultaten eerst.
+- [x] 4. Query-resultaten eerst. Compact formulier op korte schermen, na uitvoering
+  resultaten bovenaan, `ctrl+r` als aparte herhaalactie. Selectie blijft zichtbaar
+  na terugkeer en resize; pagina-/begin-/eindtoetsen navigeren ook resultaten.
+  Vier echte `step4-*`-captureformaten: alle drie Delfshaven-resultaten passen
+  nu zelfs op 30×12. Objectdetails/paginering en annuleren blijven getest.
 - [ ] 5. Scrollbaar BOB-overzicht.
 - [ ] 6. Compacte inventarissen en taakgericht opdrachtenpalet.
 

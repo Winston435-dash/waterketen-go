@@ -38,6 +38,7 @@ type KeyMap struct {
 	QueryLayers key.Binding
 	RunQuery    key.Binding
 	Inspect     key.Binding
+	Rerun       key.Binding
 
 	// Atlas (kaart) only
 	PanLeft  key.Binding
@@ -88,6 +89,7 @@ var Keys = KeyMap{
 	QueryLayers: key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "lagen")),
 	RunQuery:    key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "uitvoeren")),
 	Inspect:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "objecten")),
+	Rerun:       key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "herhaal query")),
 
 	PanLeft:  key.NewBinding(key.WithKeys("left"), key.WithHelp("←", "west")),
 	PanRight: key.NewBinding(key.WithKeys("right"), key.WithHelp("→", "oost")),
