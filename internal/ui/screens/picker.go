@@ -306,17 +306,7 @@ func (p *Picker) View() string {
 // p.w-2 rendered a dialog wider than its host, and lipgloss wrapped the PANEL
 // border instead — measured on a 48-column phone.
 func (p *Picker) dialogWidth() int {
-	w := 72
-	if p.w-8 < w {
-		w = p.w - 8
-	}
-	if w < 20 {
-		w = 20
-	}
-	if w > p.w {
-		w = p.w
-	}
-	return w
+	return components.DialogWidth(72,p.w)
 }
 
 // innerWidth is the printable width inside the dialog.

@@ -391,6 +391,7 @@ func (p *commandPalette) View(width, height int) string {
 		for i := start; i < len(commands) && len(lines) < height-1; i++ {
 			command := commands[i]
 			label := command.group + " · " + command.label
+			if width<64 { label=command.label }
 			if command.shortcut != "" {
 				label += "  · " + command.shortcut
 			}

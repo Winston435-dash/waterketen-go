@@ -49,6 +49,7 @@ const (
 	SpacingMD      = 3  // section gaps
 	SpacingLG      = 4  // screen-level margins
 	CompactMapRows = 16 // use a one-row legend when the content box is short
+	CompactDialogWidth = 60 // dialogs use the full content width on phones
 )
 
 // --- Border tokens ----------------------------------------------------------

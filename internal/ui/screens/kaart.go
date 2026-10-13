@@ -136,6 +136,9 @@ func (s *Kaart) ShortKeyMap() []key.Binding {
 func (s *Kaart) SetSize(w, h int) {
 	resized := (w != s.w || h != s.h) && s.hasView
 	s.w, s.h = w, h
+	ow,oh:=s.overlaySize()
+	if s.picker!=nil { s.picker.SetSize(ow,oh) }
+	if s.search!=nil { s.search.SetSize(ow,oh) }
 	if s.legendOpen {
 		s.refreshLegend()
 	}
@@ -369,6 +372,7 @@ func (s *Kaart) Picker() *Picker { return s.picker }
 // currently owns the keyboard. The app needs the union: routing a key to the map
 // while an overlay is open would let 'g' or 'q' fire behind it.
 func (s *Kaart) OverlayOpen() bool { return s.picker != nil || s.search != nil || s.legendOpen }
+func (s *Kaart) overlaySize() (int,int) { return max(1,s.w-4),max(1,s.h-2) }
 
 func (s *Kaart) refreshLegend() {
 	w, h := max(1, s.w-4), max(1, s.h-2)
@@ -385,7 +389,7 @@ func (s *Kaart) OpenAreaPicker() {
 		return
 	}
 	p := NewAreaPicker(s.atlas.Areas)
-	p.SetSize(s.w, s.h)
+	w,h:=s.overlaySize();p.SetSize(w,h)
 	s.picker = p
 }
 
@@ -396,7 +400,7 @@ func (s *Kaart) OpenLayerPicker() {
 	}
 	available := s.atlas.Library.LayerNames()
 	p := NewLayerPicker(available, s.layers, available)
-	p.SetSize(s.w, s.h)
+	w,h:=s.overlaySize();p.SetSize(w,h)
 	s.picker = p
 }
 

@@ -2,7 +2,13 @@ package components
 
 import (
 	"charm.land/lipgloss/v2"
+	"waterketen/internal/ui"
 )
+
+func DialogWidth(preferred,host int) int {
+	if host<ui.CompactDialogWidth { return max(1,host) }
+	return max(1,min(preferred,host-2*ui.SpacingLG))
+}
 
 // Modal renders `content` as a floating dialog over `background` (both full
 // screen-sized views). The dialog is a Panel — the same token borders — centered.
