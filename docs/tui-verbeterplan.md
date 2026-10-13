@@ -14,7 +14,10 @@ Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
   van spaties anders. De exacte diffs en `step1-verification.json` staan bij
   de scratch-artefacten. Dit is een expliciete afwijking van de strikte
   byte-identiteitsregel, geen stilzwijgend geslaagde bytecheck.
-- [ ] 2. Vindbare toetsen en correcte overlay-hulp.
+- [x] 2. Vindbare toetsen en correcte overlay-hulp. Kaartacties zoeken/gebied/lagen
+  hebben voorrang, `? hulp` blijft zichtbaar, overlays tonen geen ontoegankelijke
+  globale toetsen en laagkiezers tonen Spatie/Enter/Esc. ANSI-/graphemebewuste
+  afkapping en titel-ellipsis getest. Vier echte `step2-*`-captureformaten gecontroleerd.
 - [ ] 3. Kaartgeometrie en compacte legenda.
 - [ ] 4. Query-resultaten eerst.
 - [ ] 5. Scrollbaar BOB-overzicht.

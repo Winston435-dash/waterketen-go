@@ -98,7 +98,9 @@ func (p *Picker) Toggling() bool   { return p.mode == pickToggle }
 
 func (p *Picker) KeyMap() []key.Binding {
 	keys := []key.Binding{ui.Keys.Enter, ui.Keys.Back}
-	if p.Toggling() { keys = append([]key.Binding{ui.Keys.Toggle}, keys...) }
+	if p.Toggling() {
+		keys = append([]key.Binding{ui.Keys.Toggle}, keys...)
+	}
 	return append(keys, ui.Keys.Up, ui.Keys.Down)
 }
 

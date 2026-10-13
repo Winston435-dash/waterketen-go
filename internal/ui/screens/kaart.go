@@ -110,9 +110,13 @@ func (s *Kaart) KeyMap() []key.Binding {
 }
 
 func (s *Kaart) ShortKeyMap() []key.Binding {
-	if s.OverlayOpen() { return s.KeyMap() }
+	if s.OverlayOpen() {
+		return s.KeyMap()
+	}
 	keys := []key.Binding{ui.Keys.Search}
-	if s.atlas != nil { keys = append(keys, ui.Keys.Area, ui.Keys.Layers) }
+	if s.atlas != nil {
+		keys = append(keys, ui.Keys.Area, ui.Keys.Layers)
+	}
 	return append(keys, ui.Keys.ZoomIn, ui.Keys.ZoomOut, ui.Keys.Fit, ui.Keys.Up, ui.Keys.Down, ui.Keys.Back)
 }
 

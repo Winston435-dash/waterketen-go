@@ -494,7 +494,9 @@ func (m Model) viewContent() string {
 	body := m.renderBody()
 	screen := m.screens[m.active]
 	bindings := screen.KeyMap()
-	if short, ok := screen.(interface{ ShortKeyMap() []key.Binding }); ok { bindings = short.ShortKeyMap() }
+	if short, ok := screen.(interface{ ShortKeyMap() []key.Binding }); ok {
+		bindings = short.ShortKeyMap()
+	}
 	if m.palette != nil {
 		bindings = []key.Binding{ui.Keys.Up, ui.Keys.Down, ui.Keys.Enter, ui.Keys.Back}
 		if m.palette.scope == palettePanel {
@@ -502,9 +504,15 @@ func (m Model) viewContent() string {
 		}
 	} else {
 		locked := false
-		if overlay, ok := screen.(interface{ OverlayOpen() bool }); ok { locked = overlay.OverlayOpen() }
-		if filter, ok := screen.(interface{ EditingFilter() bool }); ok { locked = locked || filter.EditingFilter() }
-		if !locked { bindings = append(bindings, ui.Keys.PanelPalette) }
+		if overlay, ok := screen.(interface{ OverlayOpen() bool }); ok {
+			locked = overlay.OverlayOpen()
+		}
+		if filter, ok := screen.(interface{ EditingFilter() bool }); ok {
+			locked = locked || filter.EditingFilter()
+		}
+		if !locked {
+			bindings = append(bindings, ui.Keys.PanelPalette)
+		}
 	}
 	bar := m.cmdBar.View(m.width, bindings)
 	return components.AppSurface(lipgloss.JoinVertical(lipgloss.Left, header, body, bar))

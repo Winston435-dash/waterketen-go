@@ -62,13 +62,17 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 		bindings = bindings[:len(bindings)-1]
 	}
 	room := width
-	if suffix != "" { room = max(0, width-lipgloss.Width(suffix)-lipgloss.Width(barSep)) }
+	if suffix != "" {
+		room = max(0, width-lipgloss.Width(suffix)-lipgloss.Width(barSep))
+	}
 	if width >= compactWidth {
 		c.help.SetWidth(room)
 		c.help.ShowAll = false
 		content := c.help.ShortHelpView(bindings)
 		if suffix != "" {
-			if content != "" { content += barSep }
+			if content != "" {
+				content += barSep
+			}
 			content += suffix
 		}
 		return SingleLine(content, width)
@@ -79,11 +83,15 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 	var described []string
 	for _, binding := range primary {
 		desc := binding.Help().Desc
-		if desc == "straat zoeken" { desc = "zoek" }
+		if desc == "straat zoeken" {
+			desc = "zoek"
+		}
 		described = append(described, barInk.Render(binding.Help().Key)+" "+Muted(desc))
 	}
 	if full := strings.Join(described, barSep); len(primary) > 0 && lipgloss.Width(full) <= room {
-		if suffix != "" { full += barSep + suffix }
+		if suffix != "" {
+			full += barSep + suffix
+		}
 		return SingleLine(full, width)
 	}
 	parts := make([]string, 0, len(bindings))
@@ -96,7 +104,9 @@ func (c CommandBar) View(width int, bindings []key.Binding) string {
 	// reads as a rendering bug. SingleLine is the last-resort clip.
 	content := clipParts(parts, lipgloss.Width(barSep), room)
 	if suffix != "" {
-		if content != "" { content += barSep }
+		if content != "" {
+			content += barSep
+		}
 		content += suffix
 	}
 	return SingleLine(content, width)
