@@ -26,6 +26,27 @@ var layerColours = map[string]string{
 	"oppervlaktewatergemalen": "#f2d35e",
 	"groen":                   "#5a8f6f",
 	"gebouwen":                "#4a5a68",
+	"hwh-kunstwerken-duiker":  "#75c9bd",
+	"hwh-kunstwerken-gemaal":  "#e0bd69",
+	"hwh-kunstwerken-sluis":   "#b3a1e3",
+	"hwh-kunstwerken-stuw":    "#e58ba0",
+}
+
+// MapLayerLabel keeps alternative IMWA deliveries visibly separate from the
+// municipal/GWSW layers. Existing labels and layer keys are unchanged.
+func MapLayerLabel(name string) string {
+	switch name {
+	case "hwh-kunstwerken-duiker":
+		return "IMWA — duikers"
+	case "hwh-kunstwerken-gemaal":
+		return "IMWA — gemalen"
+	case "hwh-kunstwerken-sluis":
+		return "IMWA — sluizen"
+	case "hwh-kunstwerken-stuw":
+		return "IMWA — stuwen"
+	default:
+		return name
+	}
 }
 
 // Networks are drawn even in overlay mode regardless of the active layer.

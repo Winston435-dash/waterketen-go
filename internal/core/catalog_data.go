@@ -146,10 +146,10 @@ func NewCatalog() Catalog {
 	// waterketen question asks about are added alongside so the register does
 	// not silently hide them.
 	for _, extra := range []struct{ id, label, official, summary, geometry, source, limit string }{
-		{"hwh-kunstwerken-gemaal", "Kunstwerken IMWA — gemalen", "waterschappen-kunstwerken-imwa:gemaal", "Door waterschappen beheerde gemalen in het watersysteem.", "punten", "hwh_kunstwerken_imwa", "8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal."},
-		{"hwh-kunstwerken-stuw", "Kunstwerken IMWA — stuwen", "waterschappen-kunstwerken-imwa:stuw", "Stuwen die het waterpeil in een watergang regelen.", "punten", "hwh_kunstwerken_imwa", "53.142 gemeten: de grootste groep. Een stuw regelt peil, geen afvalwatertransport."},
-		{"hwh-kunstwerken-sluis", "Kunstwerken IMWA — sluizen", "waterschappen-kunstwerken-imwa:sluis", "Sluizen in het waterbeheer en de scheepvaart.", "punten", "hwh_kunstwerken_imwa", "889 gemeten. Geen zuivering of gemaal; een eigen objecttype."},
-		{"hwh-kunstwerken-duiker", "Kunstwerken IMWA — duikers", "waterschappen-kunstwerken-imwa:duiker", "Duikers: watergangen die onder een weg of kering door kruisen.", "punten", "hwh_kunstwerken_imwa", "Een duiker is geen rioolbuis, ook al ligt hij ondergronds."},
+		{"hwh-kunstwerken-gemaal", "Kunstwerken IMWA — gemalen", "waterschappen-kunstwerken-imwa:gemaal", "Door waterschappen beheerde gemalen in het watersysteem.", "punten, lijnen of vlakken (bronafhankelijk)", "hwh_kunstwerken_imwa", "8.565 gemeten. Een gemaal hier is niet automatisch een rioolgemaal."},
+		{"hwh-kunstwerken-stuw", "Kunstwerken IMWA — stuwen", "waterschappen-kunstwerken-imwa:stuw", "Stuwen die het waterpeil in een watergang regelen.", "punten, lijnen of vlakken (bronafhankelijk)", "hwh_kunstwerken_imwa", "53.142 gemeten: de grootste groep. Een stuw regelt peil, geen afvalwatertransport."},
+		{"hwh-kunstwerken-sluis", "Kunstwerken IMWA — sluizen", "waterschappen-kunstwerken-imwa:sluis", "Sluizen in het waterbeheer en de scheepvaart.", "punten, lijnen of vlakken (bronafhankelijk)", "hwh_kunstwerken_imwa", "889 gemeten. Geen zuivering of gemaal; een eigen objecttype."},
+		{"hwh-kunstwerken-duiker", "Kunstwerken IMWA — duikers", "waterschappen-kunstwerken-imwa:duiker", "Duikers: watergangen die onder een weg of kering door kruisen.", "punten, lijnen of vlakken (bronafhankelijk)", "hwh_kunstwerken_imwa", "Een duiker is geen rioolbuis, ook al ligt hij ondergronds."},
 		{"hwh-kunstwerken-vispassage", "Kunstwerken IMWA — vispassages", "waterschappen-kunstwerken-imwa:vispassage", "Voorzieningen die vismigratie langs een kunstwerk mogelijk maken.", "punten", "hwh_kunstwerken_imwa", "Ecologische inrichting; geen waterketenobject."},
 		{"hwh-oppervlaktewaterlichaam", "Oppervlaktewaterlichaam (IMWA)", "waterschappen-oppervlaktewateren-imwa:oppervlaktewaterlichaam", "Landelijke laag van oppervlaktewaterlichamen volgens IMWA.", "vlakken", "hwh_oppervlaktewateren_imwa", "1.430.861 gemeten: beheerssemantiek, geen topografie. Geen debiet of waterstand."},
 		{"hwh-waterkering", "Waterkering (IMWA)", "waterschappen-keringen-imwa:waterkering", "Waterkeringen zoals dijken, dammen en kades.", "lijnen en vlakken", "hwh_keringen_imwa", "28.396 gemeten. Registratie is geen actuele toetsstatus."},
@@ -158,6 +158,11 @@ func NewCatalog() Catalog {
 		{"hwh-peilbesluitgebied", "Peilbesluitgebied (IMWA)", "waterschappen-waterbeheergebieden-imwa:peilbesluitgebied", "Het deel waarvoor formeel een peilbesluit geldt.", "vlakken", "hwh_waterbeheergebieden_imwa", "3.937 gemeten: het besluitdeel, geen groter peilgebied."},
 	} {
 		c.Layers = append(c.Layers, CatalogLayer{ID: extra.id, Label: extra.label, Official: extra.official, Summary: extra.summary, Question: "Welk water, welke kering en welk peilgebied liggen bij dit gebied?", Geometry: extra.geometry, SourceID: extra.source, Limit: extra.limit, Use: "Broncontrole in Go; geen automatische kaartlaag of analyse.", Terms: []string{"imwa", "kering", "peilgebied", "wfs"}})
+		for _, object := range imwaMapTypes {
+			if extra.id == "hwh-kunstwerken-"+object {
+				c.Layers[len(c.Layers)-1].Use = "Ophalen met waterketen-go bibliotheek imwa; daarna afzonderlijk kiesbaar op Kaart en in Query. Geen automatische download; alternatieve registraties niet optellen."
+			}
+		}
 	}
 	// DAMO and RIONED each publish a family of object types. The types the
 	// register already described (put, rioleringsgebied, zuiveringseenheid) keep

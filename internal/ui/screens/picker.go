@@ -73,7 +73,7 @@ func NewLayerPicker(available, visible, order []string) *Picker {
 	for _, n := range order {
 		for _, a := range available {
 			if a == n {
-				items = append(items, pickItem{key: n, label: n, mark: on[n]})
+				items = append(items, pickItem{key: n, label: core.MapLayerLabel(n), mark: on[n]})
 				break
 			}
 		}

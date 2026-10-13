@@ -61,6 +61,12 @@ V1-doel: een TUI die er goed uitziet en leest uit `~/.local/share/waterketen/`
 `analyse`, `braille`. De Python `fetch`/`bibliotheek` blijven de producer van de
 data tot de Go-fetch er is — beide tools praten hetzelfde opslagformaat.
 
+Uitzondering: `waterketen-go bibliotheek imwa` is een gerichte Go-producer voor
+de vier IMWA-kunstwerktypen (duiker, gemaal, sluis, stuw). Deze gebruikt WFS-JSON
+met gecontroleerde paginering, GDAL voor de polygonclip en GeoPackage/R-tree,
+en publiceert een nieuwe snapshot met behoud van de bestaande bestanden en
+volledige manifestmetadata. De generieke `fetch` en OSM-bouw blijven Python.
+
 ## Werkwijze
 
 - Bestaand Python-project **niet aanraken** (git werkboom is vies, maar dat is

@@ -1,7 +1,7 @@
 // waterketen is the command-line interface to the managed waterketen store.
 // It shares the data directory with the Python CLI (~/.local/share/waterketen)
 // and answers the reading questions: sources, status, analyse. Fetching stays
-// with the Python CLI for now (see MIGRATION.md).
+// with the Python CLI except the explicit IMWA library import (see MIGRATION.md).
 package main
 
 import (
@@ -24,7 +24,7 @@ func main() {
 		Use:   "waterketen",
 		Short: "Betrouwbare workflow voor Rotterdamse waterketen-geodata.",
 	}
-	root.AddCommand(discoverCmd(), sourcesCmd(), statusCmd(), analyseCmd(), brailleCmd())
+	root.AddCommand(discoverCmd(), sourcesCmd(), statusCmd(), analyseCmd(), brailleCmd(), libraryCmd())
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "waterketen:", err)
 		os.Exit(1)

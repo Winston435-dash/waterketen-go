@@ -146,3 +146,19 @@ func TestRenderSceneDrawsGemalenAsDots(t *testing.T) {
 		t.Fatalf("gemalen legend = %+v; want a dot marker", rendered.Legend)
 	}
 }
+
+func TestIMWALegendsKeepSourceAndGeometry(t *testing.T) {
+	for _, object := range imwaMapTypes {
+		name := "hwh-kunstwerken-" + object
+		for _, shape := range []struct{ kind, symbol string }{{"point", "•"}, {"linestring", "━━"}, {"polygon", "■"}} {
+			entry := layerLegendEntry(name, []Feature{{Geometry: Geometry{Kind: shape.kind}}})
+			if entry.Symbol != shape.symbol || entry.Label != MapLayerLabel(name) || entry.Style != StyleForLayer(name) {
+				t.Fatalf("%s/%s: %+v", name, shape.kind, entry)
+			}
+		}
+		ink := CellColour(StyleForLayer(name))
+		if ink == "" || ColourToStyle(ink) != StyleForLayer(name) {
+			t.Fatalf("%s: data-ink is not uniquely resolvable: %s", name, ink)
+		}
+	}
+}

@@ -337,7 +337,7 @@ func layerLegendEntry(name string, features []Feature) LegendEntry {
 	case "drinkwater", "water", "groen", "gebouwen":
 		symbol = "■"
 	default:
-		if _, known := layerColours[name]; !known && len(features) > 0 {
+		if _, known := layerColours[name]; (!known || strings.HasPrefix(name, "hwh-kunstwerken-")) && len(features) > 0 {
 			switch features[0].Geometry.Kind {
 			case "point", "multipoint":
 				symbol = "•"
@@ -348,7 +348,7 @@ func layerLegendEntry(name string, features []Feature) LegendEntry {
 			}
 		}
 	}
-	return LegendEntry{Label: name, Style: StyleForLayer(name), Symbol: symbol}
+	return LegendEntry{Label: MapLayerLabel(name), Style: StyleForLayer(name), Symbol: symbol}
 }
 
 func valueLegendEntry(label string, style CellStyle) LegendEntry {

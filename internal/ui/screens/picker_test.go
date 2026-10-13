@@ -179,3 +179,23 @@ func TestPickerViewFitsScreen(t *testing.T) {
 		}
 	}
 }
+
+func TestLayerPickerSeparatesIMWAFromExistingPumps(t *testing.T) {
+	available := core.OrderLayers([]string{"gemalen", "oppervlaktewatergemalen", "hwh-kunstwerken-duiker", "hwh-kunstwerken-gemaal", "hwh-kunstwerken-sluis", "hwh-kunstwerken-stuw"})
+	p := NewLayerPicker(available, []string{"gemalen"}, available)
+	p.SetSize(68, 40)
+	for _, item := range p.all {
+		if item.key == "gemalen" && (!item.mark || item.label != "gemalen") {
+			t.Fatal("existing pump selection changed")
+		}
+		if strings.HasPrefix(item.key, "hwh-kunstwerken-") && (item.mark || !strings.HasPrefix(item.label, "IMWA — ")) {
+			t.Fatal("IMWA source unclear or enabled without selection", item)
+		}
+	}
+	p.cursor = indexOfKey(p, "hwh-kunstwerken-gemaal")
+	p.Update(keys(" "))
+	result, done := p.Update(keys("enter"))
+	if !done || !result.Confirm || len(result.Marked) != 2 || result.Marked[1] != "hwh-kunstwerken-gemaal" {
+		t.Fatalf("IMWA display label lost source key: %+v", result)
+	}
+}

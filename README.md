@@ -62,6 +62,8 @@ ongewijzigd. Voor tekst gebruikt de TUI altijd de donkere themavariant.
 - ✅ GeoPackage-lezing **zonder cgo** (pure-Go `modernc.org/sqlite` + eigen
   GeoPackageBinary/WKB-decoder).
 - ✅ Live WFS/ArcGIS-probes (hits-only) via `net/http`.
+- ✅ Expliciete IMWA-import: duikers, gemalen, sluizen en stuwen via PDOK,
+  geclipt op de Rotterdamse gemeentegrens en gepubliceerd als nieuwe snapshot.
 - ✅ **Bronnenregister met licentie per bron.** Zeventien bedrade bronlagen (GWSW,
   DAMO, Vewin, RIONED-OGC, Zuid-Holland, IMWA en RWS) met hun eigen
   `TypeName` en `License`, plus zes gedetecteerde-niet-bedrade bronnen met
@@ -84,7 +86,7 @@ ongewijzigd. Voor tekst gebruikt de TUI altijd de donkere themavariant.
 - ⏳ `fetch` (GWSW-paging + clip op CBS-grens) — nog in Python, zie
   `MIGRATION.md`.
 - ⏳ `bibliotheek bouw` (osmium-import van PBF) — nog Python. **Lezen** van de
-  snapshot is nu wel native.
+  snapshot en aanvullen met IMWA-kunstwerken is nu wel native.
 - ⏳ `kaart` SVG/PNG-export — nog Python.
 
 ## Gebruik
@@ -169,10 +171,38 @@ rmdir "$empty"
   uitbreiding van een namen-allowlist. Bestaande kaartkleuren/tekenvolgorde blijven
   gelijk; nieuwe lagen krijgen neutrale data-ink en een geometriepassende legenda.
 
-Een broncontrole downloadt geen dataset. Nieuwe DAMO-/RIONED-/IMWA-lagen moeten
-nog expliciet door de producer worden opgehaald en in een snapshot opgenomen
-voordat Kaart en Query ze lokaal kunnen gebruiken. Alternatieve leveringen worden
-niet opgeteld als extra fysiek netwerk.
+Een broncontrole downloadt geen dataset. Nieuwe bronlagen moeten expliciet door
+de producer worden opgehaald en in een snapshot opgenomen voordat Kaart en Query
+ze lokaal kunnen gebruiken. Alternatieve leveringen worden niet opgeteld als
+extra fysiek netwerk.
+
+### IMWA-kunstwerken op de kaart
+
+Met een bestaande kaartbibliotheek in RD (`EPSG:28992`) en `ogr2ogr` (GDAL):
+
+```bash
+go run ./cmd/waterketen bibliotheek imwa
+# Of met de geïnstalleerde Go-CLI:
+waterketen-go bibliotheek imwa
+```
+
+Dit haalt **duikers, gemalen, sluizen en stuwen** van Het Waterschapshuis via
+PDOK op binnen de Rotterdamse bbox, met gecontroleerde WFS-paginering en behoud
+van bronattributen en echte punt-/lijn-/vlakgeometrie. GDAL knipt op de volledige
+CBS-gemeentegrens (`GM0599`), niet alleen de bbox. Brondatum blijft onbekend;
+ophaaldatum, CC0-licentie en herkomst worden afzonderlijk bewaard.
+
+Alle vier de lagen moeten geldig zijn voordat de nieuwe snapshot actief wordt.
+De vorige snapshot blijft intact; bestaande vectorbestanden worden via hard links
+hergebruikt, niet nogmaals gekopieerd. Bestaande manifestvelden blijven behouden.
+De import ondersteunt ook `--data-root` en `--json`. Geen automatische download
+bij TUI-start, broncontrole of openen van de catalogus.
+
+**Herstart de TUI**, open **5 Kaart → t** en vink **IMWA — duikers**, **IMWA —
+gemalen**, **IMWA — sluizen** en **IMWA — stuwen** aan met `Spatie`; bevestig met
+`Enter`. Ze blijven standaard uit om de bestaande kaart niet te veranderen.
+Ze staan ook lokaal beschikbaar in **2 Lagen** en **8 Query**. De IMWA-gemalen
+zijn een alternatieve registratie, niet extra gemeentelijke/GWSW-gemalen.
 
 ## Query: gebied kiezen, lagen tellen
 
