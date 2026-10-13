@@ -27,7 +27,10 @@ Review: 13 oktober 2026. **Gewenste stack: Charm v2**, op verzoek van Winston.
   na terugkeer en resize; pagina-/begin-/eindtoetsen navigeren ook resultaten.
   Vier echte `step4-*`-captureformaten: alle drie Delfshaven-resultaten passen
   nu zelfs op 30×12. Objectdetails/paginering en annuleren blijven getest.
-- [ ] 5. Scrollbaar BOB-overzicht.
+- [x] 5. Scrollbaar BOB-overzicht. Alle geregistreerde waarden bereikbaar met
+  pijlen/PgUp/PgDown/Home/End, straatkeuze via `s` met zoeken/plakken en annuleren.
+  Geen pseudo-doorsnede: NAP en “geen diepte onder maaiveld” blijven expliciet.
+  Vier echte `step5-*`-captureformaten tonen de 54e Tjalklaanwaarde en straatkeuze.
 - [ ] 6. Compacte inventarissen en taakgericht opdrachtenpalet.
 
 ## Conclusie

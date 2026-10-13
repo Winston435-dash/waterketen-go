@@ -166,8 +166,10 @@ rmdir "$empty"
   en wist daarbuiten het filter.
 - **4 Analyse** scheidt berekeningen over managed gebiedsbestanden van
   **snapshotmetadata**. Snapshot-aantallen zijn geen geometrieanalyse; voor een
-  exacte gebiedstelling gebruik je **8 Query**. **6 Profiel** toont alleen managed
-  BOB-lagen en benoemt buishoogte in NAP, niet diepte onder straatmaaiveld.
+  exacte gebiedstelling gebruik je **8 Query**. **6 Profiel** is een scrollbaar
+  **BOB-overzicht**, geen ruimtelijke doorsnede: alleen managed BOB-lagen,
+  buisbodem in NAP, niet diepte onder straatmaaiveld. `s` kiest een straat;
+  pijlen/PgUp/PgDown/Home/End bereiken alle buizen, zonder verborgen restlijst.
 - **5 Kaart** en **8 Query** herkennen nieuwe gepubliceerde vectorlagen zonder
   uitbreiding van een namen-allowlist. Bestaande kaartkleuren/tekenvolgorde blijven
   gelijk; nieuwe lagen krijgen neutrale data-ink en een geometriepassende legenda.
@@ -214,7 +216,9 @@ Delfshaven (`BU05990320`) zijn verschillende gebieden.
 Met `l` kies je lagen; `Spatie` schakelt een vinkje en `Enter` past de keuze
 toe. `Esc` annuleert de selectie. Druk daarna `Enter` om offline te tellen.
 Selecteer een resultaat met `↑`/`↓`; `Enter` opent de objecten en nogmaals
-`Enter` de bronattributen. `PgUp`/`PgDown`, `Home` en `End` navigeren over alle
+  `Enter` de bronattributen. Na uitvoering staan de resultaten voorop, ook op
+  kleine terminals. `ctrl+r` herhaalt de query zonder eerst de focus te verlaten.
+  `PgUp`/`PgDown`, `Home` en `End` navigeren over alle
 objecten, ook voorbij de eerste pagina van 50. `Esc` gaat terug of breekt
 lopend querywerk af.
 
