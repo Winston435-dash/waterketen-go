@@ -90,17 +90,13 @@ nooit randen, kleuren of spacing definiëren**.
 Opgenomen met VHS; de brede demo laat ook de offline gebiedsquery voor wijk
 Delfshaven zien.
 
-<details>
-<summary>Desktop — alle acht panelen</summary>
+### Desktop — alle acht panelen
 
 ![Brede TUI-demo met de query voor Delfshaven](demo/waterketen-tui.gif)
-</details>
 
-<details>
-<summary>Mobiel — smalle terminalweergave</summary>
+### Mobiel — smalle terminalweergave
 
 ![Mobiele TUI-demo met Ontdek en de kaart](demo/waterketen-tui-mobiel.gif)
-</details>
 
 Zie [demo/README.md](demo/README.md) voor de VHS-tapes en instructies om de
 GIF's opnieuw te genereren.
