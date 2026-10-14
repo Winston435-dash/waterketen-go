@@ -137,3 +137,17 @@ func TestQueryCancelDiscardsLateResults(t *testing.T) {
 		t.Fatal("cancellation is not visible")
 	}
 }
+
+func TestCancellingInitialLoadAllowsRetry(t *testing.T) {
+	s := NewQuery(t.TempDir())
+	if cmd := s.LoadCmd(); cmd == nil || !s.Busy() {
+		t.Fatal("initial metadata load was not dispatched")
+	}
+	s.Update(keys("esc"))
+	if s.loaded {
+		t.Fatal("cancelled initial load was marked complete")
+	}
+	if cmd := s.LoadCmd(); cmd == nil || !s.Busy() {
+		t.Fatal("cancelled initial load could not be retried")
+	}
+}

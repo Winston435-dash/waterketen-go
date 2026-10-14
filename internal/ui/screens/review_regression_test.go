@@ -121,6 +121,18 @@ func TestMapLoadErrorsFinishBusyWorkAndRetryStaleView(t *testing.T) {
 	}
 }
 
+func TestRedrawWithoutSceneDoesNotStartBusyWork(t *testing.T) {
+	s := regressionMap(t)
+	s.SetError(errors.New("missing scene"))
+	s.MarkDirty()
+	if s.Busy() {
+		t.Fatal("redraw marked an undrawable error screen busy")
+	}
+	if cmd := s.DrawCmd(1); cmd != nil {
+		t.Fatal("redraw dispatched rendering without a scene")
+	}
+}
+
 func TestAnalysisAndProfileSurviveSmallTerminalsWithData(t *testing.T) {
 	data := []*LayerData{{Area: "test", Layer: "riool", Spec: core.LayerSpecFor("riool"), Features: []core.Feature{{Street: "test", BOB: -2}, {Street: "test", BOB: -1}}}}
 	for _, box := range [][2]int{{100, 30}, {30, 2}, {10, 20}, {1, 1}} {

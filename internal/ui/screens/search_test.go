@@ -134,6 +134,33 @@ func TestApplySearchDropsStaleEpoch(t *testing.T) {
 	k.ApplySearch(queryResult("west", []string{"Westzeedijk"}, 5))
 }
 
+func TestApplySearchDropsOlderQuery(t *testing.T) {
+	k := &Kaart{epoch: 3}
+	s := &StreetSearch{query: "we", epoch: 3, matches: []string{"Westzeedijk"}}
+	k.search = s
+
+	k.ApplySearch(queryResult("w", []string{"Witte de Withstraat"}, 3))
+	if got := strings.Join(s.matches, ","); got != "Westzeedijk" {
+		t.Fatalf("older query replaced current matches: %q", got)
+	}
+}
+
+func TestSetAtlasInvalidatesSearchFromPreviousArea(t *testing.T) {
+	k := &Kaart{scene: &core.Scene{}, epoch: 4}
+	k.search = &StreetSearch{query: "west", epoch: 4, busy: true}
+	k.SetAtlas(&core.LibraryAtlas{
+		Library: &core.Library{},
+		Area:    core.Area{Code: "WK059903", Name: "Delfshaven", Kind: core.KindWijk},
+	})
+	if k.epoch == 4 {
+		t.Fatal("switching the atlas area did not advance the search generation")
+	}
+	k.ApplySearch(queryResult("west", []string{"old-area street"}, 4))
+	if len(k.search.matches) != 0 || !k.search.busy {
+		t.Fatalf("old-area search result was committed: %+v", k.search)
+	}
+}
+
 // TestOverlayOpenCoversBothOverlays: the app routes keys to the Kaart when
 // OverlayOpen is true. If the street search did not count, typing in it would
 // also switch panels on 'g' and quit on 'q'.

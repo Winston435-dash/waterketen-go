@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -64,6 +65,21 @@ func TestMapResizeDispatchesRedrawInsteadOfLeavingMapBusy(t *testing.T) {
 	}
 	if view := ansi.Strip(k.View()); strings.Contains(view, "Kaart wordt geladen") {
 		t.Fatalf("resize left the managed map waiting on a load that cannot complete: %q", view)
+	}
+}
+
+func TestRedrawAfterMapErrorDoesNotStartSpinnerChain(t *testing.T) {
+	m := mapLifecycleModel(t)
+	k := m.kaart()
+	k.SetError(errors.New("load failed"))
+
+	next, cmd := m.Update(appKey("r"))
+	m = next.(Model)
+	if cmd != nil {
+		t.Fatal("redraw after an error scheduled a render or spinner tick")
+	}
+	if k.Busy() {
+		t.Fatal("map remained busy after a redraw with no scene")
 	}
 }
 

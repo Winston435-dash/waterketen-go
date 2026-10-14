@@ -1,8 +1,11 @@
 package core
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"waterketen/internal/testutil"
 )
 
 func testLibrary(t *testing.T) *Library {
@@ -107,6 +110,36 @@ func TestAreaLabelLeadsWithCode(t *testing.T) {
 	}
 	if !strings.Contains(got, "Delfshaven") {
 		t.Errorf("label %q mist de naam", got)
+	}
+}
+
+func TestLoadAreasMergesSplitFeaturesByIdentity(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "areas.gpkg")
+	db := testutil.GeoPackage(t, path, `
+		INSERT INTO gpkg_geometry_columns VALUES('areas','geom',28992);
+		CREATE TABLE areas (fid INTEGER PRIMARY KEY, geom BLOB, code TEXT, name TEXT, kind TEXT);
+	`)
+	if _, err := db.Exec(`INSERT INTO areas VALUES
+		(1, ?, 'GM0599', 'Rotterdam', 'gemeente'),
+		(2, ?, 'GM0599', 'Rotterdam', 'gemeente')`,
+		testutil.Polygon([][2]float64{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}}),
+		testutil.Polygon([][2]float64{{20, 20}, {30, 20}, {30, 30}, {20, 30}, {20, 20}})); err != nil {
+		t.Fatal(err)
+	}
+
+	areas, err := LoadAreas(&Library{Root: filepath.Dir(path)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(areas) != 1 {
+		t.Fatalf("split CBS geometry produced %d selectable areas, want one: %+v", len(areas), areas)
+	}
+	area, err := SelectArea(areas, DefaultAreaCode)
+	if err != nil {
+		t.Fatalf("select split municipality by code: %v", err)
+	}
+	if area.Bounds != (BBox{MinX: 0, MinY: 0, MaxX: 30, MaxY: 30}) {
+		t.Fatalf("merged bounds = %+v, want both geometry parts", area.Bounds)
 	}
 }
 

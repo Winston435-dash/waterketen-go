@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +18,10 @@ import (
 	"waterketen/internal/core"
 	"waterketen/internal/testutil"
 )
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
 
 func assetFixture(t *testing.T, date string, broken bool) string {
 	t.Helper()
@@ -60,6 +66,39 @@ func TestStatusHandlesMissingAndInvalidDates(t *testing.T) {
 		if !strings.Contains(output.String(), want) {
 			t.Fatalf("date %q: %s", date, output.String())
 		}
+	}
+}
+
+func TestStatusReturnsOutputWriteErrors(t *testing.T) {
+	cmd := statusCmd()
+	cmd.SetOut(failingWriter{})
+	cmd.SetArgs([]string{"--data-root", t.TempDir()})
+	if err := cmd.Execute(); !errors.Is(err, io.ErrClosedPipe) {
+		t.Fatalf("status Execute() error = %v, want %v", err, io.ErrClosedPipe)
+	}
+}
+
+func TestReadCommandsRejectUnexpectedArguments(t *testing.T) {
+	root := t.TempDir()
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+		args []string
+	}{
+		{"sources", sourcesCmd(), []string{"extra"}},
+		{"status", statusCmd(), []string{"--data-root", root, "extra"}},
+		{"analyse", analyseCmd(), []string{"--gebied", "test", "--laag", "riool", "--data-root", root, "extra"}},
+		{"braille", brailleCmd(), []string{"--gebied", "test", "--laag", "riool", "--data-root", root, "extra"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.cmd.SetOut(&bytes.Buffer{})
+			tc.cmd.SetErr(&bytes.Buffer{})
+			tc.cmd.SetArgs(tc.args)
+			if err := tc.cmd.Execute(); err == nil {
+				t.Fatal("unexpected positional argument was accepted")
+			}
+		})
 	}
 }
 

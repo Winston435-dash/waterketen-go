@@ -105,3 +105,19 @@ func TestAreaFilterUsesPolygonHolesAndBoundary(t *testing.T) {
 		t.Fatal("non-polygon area accepted")
 	}
 }
+
+func TestRepresentativePointStaysInsideConcavePolygon(t *testing.T) {
+	geometry := Geometry{Kind: "polygon", Polygon: Polygon{queryRing(
+		[2]float64{0, 0}, [2]float64{4, 0}, [2]float64{4, 4},
+		[2]float64{3, 4}, [2]float64{3, 1}, [2]float64{1, 1},
+		[2]float64{1, 4}, [2]float64{0, 4}, [2]float64{0, 0},
+	)}}
+	filter, err := newAreaFilter(geometry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	point := geometry.RepresentativePoint()
+	if !filter.covers(point) {
+		t.Fatalf("representative point %+v falls outside the concave polygon", point)
+	}
+}
