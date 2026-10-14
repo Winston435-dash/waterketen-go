@@ -121,3 +121,23 @@ func TestRepresentativePointStaysInsideConcavePolygon(t *testing.T) {
 		t.Fatalf("representative point %+v falls outside the concave polygon", point)
 	}
 }
+
+func TestRepresentativePointRespectsHolesAndMultiPolygonParts(t *testing.T) {
+	outer := queryRing([2]float64{0, 0}, [2]float64{10, 0}, [2]float64{10, 10}, [2]float64{0, 10}, [2]float64{0, 0})
+	hole := queryRing([2]float64{3, 3}, [2]float64{7, 3}, [2]float64{7, 7}, [2]float64{3, 7}, [2]float64{3, 3})
+	first := queryRing([2]float64{20, 20}, [2]float64{24, 20}, [2]float64{24, 24}, [2]float64{20, 24}, [2]float64{20, 20})
+	second := queryRing([2]float64{30, 30}, [2]float64{34, 30}, [2]float64{34, 34}, [2]float64{30, 34}, [2]float64{30, 30})
+	cases := []Geometry{
+		{Kind: "polygon", Polygon: Polygon{outer, hole}},
+		{Kind: "multipolygon", Polygons: []Polygon{{first}, {second}}},
+	}
+	for _, geometry := range cases {
+		filter, err := newAreaFilter(geometry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if point := geometry.RepresentativePoint(); !filter.covers(point) {
+			t.Errorf("representative point %+v falls outside %s", point, geometry.Kind)
+		}
+	}
+}

@@ -282,8 +282,8 @@ func (s *Kaart) visibleLayerNames() []string {
 	return s.layers
 }
 
-// SetAtlas commits an opened library atlas: it adopts the area, the layer set
-// and the fit view, then triggers the first viewport read.
+// SetAtlas commits an opened library atlas, advances the search generation,
+// adopts the area/layers/view, and triggers the first viewport read.
 func (s *Kaart) SetAtlas(atlas *core.LibraryAtlas) tea.Cmd {
 	s.epoch++
 	s.opening = false
@@ -557,8 +557,6 @@ func (s *Kaart) Update(msg tea.Msg) (Screen, tea.Cmd) {
 			s.err = m.Err.Error()
 			return s, s.managedSceneCmd()
 		}
-		// A new area is a new generation of street searches.
-		s.epoch++
 		return s, s.SetAtlas(m.Atlas)
 	case LibraryLayerMsg:
 		if m.Err != nil {

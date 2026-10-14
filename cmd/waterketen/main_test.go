@@ -69,12 +69,27 @@ func TestStatusHandlesMissingAndInvalidDates(t *testing.T) {
 	}
 }
 
-func TestStatusReturnsOutputWriteErrors(t *testing.T) {
-	cmd := statusCmd()
-	cmd.SetOut(failingWriter{})
-	cmd.SetArgs([]string{"--data-root", t.TempDir()})
-	if err := cmd.Execute(); !errors.Is(err, io.ErrClosedPipe) {
-		t.Fatalf("status Execute() error = %v, want %v", err, io.ErrClosedPipe)
+func TestTextCommandsReturnOutputWriteErrors(t *testing.T) {
+	root := assetFixture(t, "", false)
+	cases := []struct {
+		name string
+		cmd  *cobra.Command
+		args []string
+	}{
+		{"sources", sourcesCmd(), nil},
+		{"status", statusCmd(), []string{"--data-root", root}},
+		{"analyse", analyseCmd(), []string{"--gebied", "test", "--laag", "riool", "--data-root", root}},
+		{"braille", brailleCmd(), []string{"--gebied", "test", "--laag", "riool", "--data-root", root}},
+		{"discover", discoverCmd(), []string{"--data-root", root, "--overzicht", "vragen"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.cmd.SetOut(failingWriter{})
+			tc.cmd.SetArgs(tc.args)
+			if err := tc.cmd.Execute(); !errors.Is(err, io.ErrClosedPipe) {
+				t.Fatalf("Execute() error = %v, want %v", err, io.ErrClosedPipe)
+			}
+		})
 	}
 }
 

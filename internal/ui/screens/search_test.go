@@ -136,12 +136,12 @@ func TestApplySearchDropsStaleEpoch(t *testing.T) {
 
 func TestApplySearchDropsOlderQuery(t *testing.T) {
 	k := &Kaart{epoch: 3}
-	s := &StreetSearch{query: "we", epoch: 3, matches: []string{"Westzeedijk"}}
+	s := &StreetSearch{query: "we", epoch: 3, matches: []string{"Westzeedijk"}, busy: true}
 	k.search = s
 
 	k.ApplySearch(queryResult("w", []string{"Witte de Withstraat"}, 3))
-	if got := strings.Join(s.matches, ","); got != "Westzeedijk" {
-		t.Fatalf("older query replaced current matches: %q", got)
+	if got := strings.Join(s.matches, ","); got != "Westzeedijk" || !s.busy {
+		t.Fatalf("older query changed current search state: matches=%q busy=%v", got, s.busy)
 	}
 }
 
