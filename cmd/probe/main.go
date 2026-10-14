@@ -19,33 +19,11 @@ func main() {
 	}
 	var layers []core.SceneSource
 	for _, p := range paths {
-		db, err := core.Open(p)
-		must(err)
-		tbl, err := core.FeatureTable(db)
-		must(err)
-		n, err := tbl.Count()
-		must(err)
 		name := base(p)
-		var feats []core.Feature
-		tbl.Each(func(r core.Row) {
-			f := core.Feature{
-				Layer:      name,
-				Position:   len(feats),
-				Geometry:   r.Geometry,
-				Properties: r.Properties,
-				BOB:        bobOf(r),
-			}
-			if name == "riool" || name == "straten" {
-				f.Street = r.Properties["STRAATNAAM"]
-				if f.Street == "" {
-					f.Street = r.Properties["name"]
-				}
-			}
-			feats = append(feats, f)
-		})
+		n, feats, err := readFeatures(p, name)
+		must(err)
 		fmt.Printf("%-32s %6d rijen -> %6d features met geometrie\n", name, n, len(feats))
 		layers = append(layers, core.SceneSource{Name: name, Features: feats})
-		db.Close()
 	}
 
 	scene, err := core.NewScene("delfshaven", layers, nil)
@@ -62,6 +40,42 @@ func main() {
 	for _, k := range keys {
 		fmt.Printf("  materiaal %-20s %s\n", k, scene.Materials[k])
 	}
+}
+
+func readFeatures(path, name string) (int, []core.Feature, error) {
+	db, err := core.Open(path)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer db.Close()
+	tbl, err := core.FeatureTable(db)
+	if err != nil {
+		return 0, nil, err
+	}
+	n, err := tbl.Count()
+	if err != nil {
+		return 0, nil, err
+	}
+	var feats []core.Feature
+	if err := tbl.Each(func(r core.Row) {
+		f := core.Feature{
+			Layer:      name,
+			Position:   len(feats),
+			Geometry:   r.Geometry,
+			Properties: r.Properties,
+			BOB:        bobOf(r),
+		}
+		if name == "riool" || name == "straten" {
+			f.Street = r.Properties["STRAATNAAM"]
+			if f.Street == "" {
+				f.Street = r.Properties["name"]
+			}
+		}
+		feats = append(feats, f)
+	}); err != nil {
+		return 0, nil, err
+	}
+	return n, feats, nil
 }
 
 func bobOf(r core.Row) float64 {

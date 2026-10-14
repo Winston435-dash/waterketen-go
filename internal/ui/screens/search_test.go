@@ -117,7 +117,7 @@ func TestStreetSearchQueryChangedOnlyOnTyping(t *testing.T) {
 // area must be DROPPED, or the map jumps to a street in a city the user left.
 func TestApplySearchDropsStaleEpoch(t *testing.T) {
 	k := &Kaart{scene: &core.Scene{}}
-	s := &StreetSearch{epoch: 5}
+	s := &StreetSearch{query: "west", epoch: 5}
 	k.search = s
 	k.epoch = 5
 

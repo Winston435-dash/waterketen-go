@@ -285,6 +285,7 @@ func (s *Kaart) visibleLayerNames() []string {
 // SetAtlas commits an opened library atlas: it adopts the area, the layer set
 // and the fit view, then triggers the first viewport read.
 func (s *Kaart) SetAtlas(atlas *core.LibraryAtlas) tea.Cmd {
+	s.epoch++
 	s.opening = false
 	s.atlas = atlas
 	s.err = ""
@@ -474,7 +475,12 @@ func (s *Kaart) NeedsDraw() bool { return s.needsDraw }
 // MarkDirty asks for the current view to be drawn again without reloading data.
 // 'r' uses it; a redraw must never touch the scene pointer, or a nil scene turns
 // a harmless key into a crash.
-func (s *Kaart) MarkDirty() { s.needsDraw = true }
+func (s *Kaart) MarkDirty() {
+	if s.scene == nil || !s.hasView {
+		return
+	}
+	s.needsDraw = true
+}
 
 func (s *Kaart) innerSize() (int, int) {
 	var legend []core.LegendEntry

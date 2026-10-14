@@ -21,12 +21,13 @@ func discoverCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			output := newCommandOutput(cmd.OutOrStdout())
 			if markdown {
-				fmt.Fprintln(cmd.OutOrStdout(), "# Waterketen ontdekken\n\nGegenereerd uit de gedeelde CLI-/TUI-catalogus. Deze uitleg beschrijft de geregistreerde bronnen en bekende lagen, niet alle lagen van elke externe dienst. Lezen doet geen download of live controle.\n\nAanbieder → API-dienst (toegang) → laag (verzameling) → feature (kaartobject) → eigenschap (bijvoorbeeld materiaal). Een GeoPackage is een lokaal bestand, geen API.")
+				fmt.Fprintln(output, "# Waterketen ontdekken\n\nGegenereerd uit de gedeelde CLI-/TUI-catalogus. Deze uitleg beschrijft de geregistreerde bronnen en bekende lagen, niet alle lagen van elke externe dienst. Lezen doet geen download of live controle.\n\nAanbieder → API-dienst (toegang) → laag (verzameling) → feature (kaartobject) → eigenschap (bijvoorbeeld materiaal). Een GeoPackage is een lokaal bestand, geen API.")
 				for section := core.CatalogQuestions; section <= core.CatalogTerms; section++ {
-					fmt.Fprintf(cmd.OutOrStdout(), "\n## %s\n", core.CatalogSections[section])
+					fmt.Fprintf(output, "\n## %s\n", core.CatalogSections[section])
 					for _, entry := range catalog.Entries(section) {
-						fmt.Fprintf(cmd.OutOrStdout(), "\n### %s (`%s`)\n", entry.Title, entry.ID)
+						fmt.Fprintf(output, "\n### %s (`%s`)\n", entry.Title, entry.ID)
 						lines, err := catalog.Explain(section, entry.ID, technical)
 						if err != nil {
 							return err
@@ -39,11 +40,11 @@ func discoverCmd() *cobra.Command {
 							if line.Kind == "warning" {
 								prefix = "> "
 							}
-							fmt.Fprintf(cmd.OutOrStdout(), "\n%s%s\n", prefix, line.Text)
+							fmt.Fprintf(output, "\n%s%s\n", prefix, line.Text)
 						}
 					}
 				}
-				return nil
+				return output.Err()
 			}
 			section, id := core.CatalogQuestions, ""
 			for _, choice := range []struct {
@@ -67,14 +68,14 @@ func discoverCmd() *cobra.Command {
 				}
 				for _, line := range lines {
 					if line.Kind == "heading" {
-						fmt.Fprintln(cmd.OutOrStdout())
+						fmt.Fprintln(output)
 					}
-					fmt.Fprintln(cmd.OutOrStdout(), line.Text)
+					fmt.Fprintln(output, line.Text)
 				}
 				if !technical && section != core.CatalogTerms {
-					fmt.Fprintln(cmd.OutOrStdout(), "\nVoeg --technisch toe voor de volledige API-aanvraag en parameters.")
+					fmt.Fprintln(output, "\nVoeg --technisch toe voor de volledige API-aanvraag en parameters.")
 				}
-				return nil
+				return output.Err()
 			}
 			if asJSON && overview == "" {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(catalog)
@@ -94,12 +95,12 @@ func discoverCmd() *cobra.Command {
 			if asJSON {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(entries)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), core.CatalogSections[section])
+			fmt.Fprintln(output, core.CatalogSections[section])
 			for _, entry := range entries {
-				fmt.Fprintf(cmd.OutOrStdout(), "\n%s — %s\n  %s\n", entry.ID, entry.Title, entry.Summary)
+				fmt.Fprintf(output, "\n%s — %s\n  %s\n", entry.ID, entry.Title, entry.Summary)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "\nKies een ID met --vraag, --bron, --laag of --begrip. --overzicht toont de bijbehorende lijst.")
-			return nil
+			fmt.Fprintln(output, "\nKies een ID met --vraag, --bron, --laag of --begrip. --overzicht toont de bijbehorende lijst.")
+			return output.Err()
 		},
 	}
 	cmd.Flags().StringVar(&question, "vraag", "", "vraag-ID (bijv. riool of drinkwater)")

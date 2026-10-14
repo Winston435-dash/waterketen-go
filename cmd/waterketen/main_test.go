@@ -79,7 +79,7 @@ func TestStatusReturnsOutputWriteErrors(t *testing.T) {
 }
 
 func TestReadCommandsRejectUnexpectedArguments(t *testing.T) {
-	root := t.TempDir()
+	root := assetFixture(t, "", false)
 	cases := []struct {
 		name string
 		cmd  *cobra.Command

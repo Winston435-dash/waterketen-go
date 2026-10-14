@@ -196,7 +196,7 @@ func (s *Kaart) SearchCmd(query string) tea.Cmd {
 // ApplySearch stores a finished search result. A result from an earlier area
 // generation is dropped, not applied.
 func (s *Kaart) ApplySearch(msg SearchQueryMsg) {
-	if s.search == nil || msg.Epoch != s.epoch {
+	if s.search == nil || msg.Epoch != s.epoch || msg.Epoch != s.search.epoch || msg.Query != s.search.query {
 		return
 	}
 	s.search.busy = false

@@ -82,6 +82,8 @@ func LoadAreas(lib *Library) ([]Area, error) {
 	if err != nil {
 		return nil, fmt.Errorf("areas.gpkg: %w", err)
 	}
+	type areaIdentity struct{ code, name, kind string }
+	indices := make(map[areaIdentity]int)
 	var out []Area
 	err = tbl.Each(func(r Row) {
 		code, name, kind := r.Properties["code"], r.Properties["name"], r.Properties["kind"]
@@ -92,6 +94,12 @@ func LoadAreas(lib *Library) ([]Area, error) {
 		if !ok {
 			return
 		}
+		key := areaIdentity{code, name, kind}
+		if i, exists := indices[key]; exists {
+			out[i].Bounds, _ = mergeBBox(out[i].Bounds, true, b)
+			return
+		}
+		indices[key] = len(out)
 		out = append(out, Area{Code: code, Name: name, Kind: kind, Bounds: b})
 	})
 	if err != nil {

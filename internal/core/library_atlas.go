@@ -326,11 +326,11 @@ func (la *LibraryAtlas) visibleNames(names []string) []string {
 	return la.Library.HasLayers("riool", "drinkwaterleidingen")
 }
 
-// StreetNames searches local OSM street names inside the selected area. It reads
-// the name column only: no geometry is touched, so the search answers in ~160 ms
-// on a 58.748-row layer. It uses core.MatchStreetQuery, the same matcher as the
-// managed world, so both rank hits the same way — and both accept "west zeedijk"
-// for "Westzeedijk".
+// StreetNames searches local OSM street names across the published city
+// snapshot. A wijk view must not hide streets elsewhere in the city. It reads
+// the name column only: no geometry is touched. It uses core.MatchStreetQuery,
+// the same matcher as the managed world, so both rank hits the same way — and
+// both accept "west zeedijk" for "Westzeedijk".
 func (la *LibraryAtlas) StreetNames(query string) []string {
 	path := la.Library.LayerPath("straten")
 	if path == "" {

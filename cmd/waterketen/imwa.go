@@ -29,12 +29,13 @@ func libraryCmd() *cobra.Command {
 			if asJSON {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(result)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Gepubliceerd: %s\n", result.Snapshot)
+			output := newCommandOutput(cmd.OutOrStdout())
+			fmt.Fprintf(output, "Gepubliceerd: %s\n", result.Snapshot)
 			for _, name := range core.OrderLayers([]string{"hwh-kunstwerken-duiker", "hwh-kunstwerken-gemaal", "hwh-kunstwerken-sluis", "hwh-kunstwerken-stuw"}) {
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s: %d objecten\n", name, result.Counts[name])
+				fmt.Fprintf(output, "  %s: %d objecten\n", name, result.Counts[name])
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Herstart de TUI; kies de IMWA-lagen met t op de kaart. Bron: Het Waterschapshuis / PDOK, CC0.")
-			return nil
+			fmt.Fprintln(output, "Herstart de TUI; kies de IMWA-lagen met t op de kaart. Bron: Het Waterschapshuis / PDOK, CC0.")
+			return output.Err()
 		},
 	}
 	imwa.Flags().String("data-root", "", "overschrijf $WATERKETEN_DATA_DIR")

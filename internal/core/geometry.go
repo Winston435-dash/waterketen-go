@@ -211,11 +211,35 @@ func lineLength(l LineString) float64 {
 	return n
 }
 
-// RepresentativePoint is the centroid of the geometry's vertices — cheap and
-// good enough as a label fallback (shapely's representative_point()).
+// RepresentativePoint chooses an anchor on the geometry. Polygon anchors are
+// kept inside the polygon; line anchors use their midpoint and collections use
+// the first part with a finite anchor.
 func (g Geometry) RepresentativePoint() Point {
-	if g.Kind == "point" {
+	switch g.Kind {
+	case "point":
 		return g.Point
+	case "polygon":
+		return polygonRepresentativePoint(g.Polygon)
+	case "multipolygon":
+		for _, polygon := range g.Polygons {
+			if point := polygonRepresentativePoint(polygon); finiteXY(point) {
+				return point
+			}
+		}
+	case "collection":
+		for _, part := range g.Parts {
+			if point := part.RepresentativePoint(); finiteXY(point) {
+				return point
+			}
+		}
+	case "linestring", "multilinestring":
+		if point := g.Interpolate(0.5); finiteXY(point) {
+			return point
+		}
+	case "multipoint":
+		if points := g.Dots(); len(points) > 0 {
+			return points[0]
+		}
 	}
 	var sx, sy float64
 	var n int
@@ -231,6 +255,136 @@ func (g Geometry) RepresentativePoint() Point {
 		return Point{math.NaN(), math.NaN(), math.NaN()}
 	}
 	return Point{sx / float64(n), sy / float64(n), math.NaN()}
+}
+
+func polygonRepresentativePoint(polygon Polygon) Point {
+	var sx, sy float64
+	var n int
+	var ys []float64
+	for _, ring := range polygon {
+		for _, point := range ring {
+			if !finiteXY(point) {
+				continue
+			}
+			sx, sy, n = sx+point.X, sy+point.Y, n+1
+			ys = append(ys, point.Y)
+		}
+	}
+	if n == 0 {
+		return Point{math.NaN(), math.NaN(), math.NaN()}
+	}
+	candidate := Point{sx / float64(n), sy / float64(n), math.NaN()}
+	if polygonCovers(candidate, polygon) {
+		return candidate
+	}
+
+	// Between consecutive vertex Y values, the polygon's horizontal crossings
+	// are stable. Pick the midpoint of the widest interval that is truly inside,
+	// including holes in the even/odd crossing sequence.
+	sort.Float64s(ys)
+	uniqueY := ys[:0]
+	for _, y := range ys {
+		if len(uniqueY) == 0 || uniqueY[len(uniqueY)-1] != y {
+			uniqueY = append(uniqueY, y)
+		}
+	}
+	bestWidth := 0.0
+	var best Point
+	for i := 1; i < len(uniqueY); i++ {
+		if uniqueY[i] <= uniqueY[i-1] {
+			continue
+		}
+		y := uniqueY[i-1] + (uniqueY[i]-uniqueY[i-1])/2
+		var crossings []float64
+		for _, ring := range polygon {
+			for j, a := range ring {
+				if len(ring) < 2 {
+					break
+				}
+				b := ring[(j+1)%len(ring)]
+				if !finiteXY(a) || !finiteXY(b) || (a.Y > y) == (b.Y > y) {
+					continue
+				}
+				crossings = append(crossings, a.X+(y-a.Y)*(b.X-a.X)/(b.Y-a.Y))
+			}
+		}
+		sort.Float64s(crossings)
+		for j := 0; j+1 < len(crossings); j += 2 {
+			width := crossings[j+1] - crossings[j]
+			if width <= bestWidth {
+				continue
+			}
+			point := Point{crossings[j] + width/2, y, math.NaN()}
+			if polygonCovers(point, polygon) {
+				best, bestWidth = point, width
+			}
+		}
+	}
+	if bestWidth > 0 {
+		return best
+	}
+	// A degenerate ring has no interior scanline; its boundary is still part of
+	// the geometry and is a safer anchor than an outside vertex average.
+	for _, ring := range polygon {
+		for _, point := range ring {
+			if finiteXY(point) && polygonCovers(point, polygon) {
+				point.Z = math.NaN()
+				return point
+			}
+		}
+	}
+	return Point{math.NaN(), math.NaN(), math.NaN()}
+}
+
+func polygonCovers(point Point, polygon Polygon) bool {
+	if len(polygon) == 0 {
+		return false
+	}
+	outer := ringLocation(point, polygon[0])
+	if outer == 0 {
+		return false
+	}
+	if outer == 2 {
+		return true
+	}
+	for _, hole := range polygon[1:] {
+		switch ringLocation(point, hole) {
+		case 2:
+			return true
+		case 1:
+			return false
+		}
+	}
+	return true
+}
+
+func ringLocation(point Point, ring LineString) int {
+	if len(ring) < 3 {
+		return 0
+	}
+	inside := false
+	for i, a := range ring {
+		b := ring[(i+1)%len(ring)]
+		cross := (b.X-a.X)*(point.Y-a.Y) - (b.Y-a.Y)*(point.X-a.X)
+		if cross == 0 && point.X >= math.Min(a.X, b.X) && point.X <= math.Max(a.X, b.X) &&
+			point.Y >= math.Min(a.Y, b.Y) && point.Y <= math.Max(a.Y, b.Y) {
+			return 2
+		}
+		if (a.Y > point.Y) != (b.Y > point.Y) {
+			x := a.X + (point.Y-a.Y)*(b.X-a.X)/(b.Y-a.Y)
+			if point.X < x {
+				inside = !inside
+			}
+		}
+	}
+	if inside {
+		return 1
+	}
+	return 0
+}
+
+func finiteXY(point Point) bool {
+	return !math.IsNaN(point.X) && !math.IsNaN(point.Y) && !math.IsInf(point.X, 0) && !math.IsInf(point.Y, 0)
 }
 
 // --- Spatial index ----------------------------------------------------------

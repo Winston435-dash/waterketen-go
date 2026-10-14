@@ -45,6 +45,7 @@ func sourcesCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "sources",
 		Short: "toon geregistreerde bronnen en (optioneel) hun live status",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			type sourceOut struct {
 				core.Source
@@ -85,6 +86,7 @@ func sourcesCmd() *cobra.Command {
 				enc.SetIndent("", "  ")
 				return enc.Encode(out)
 			}
+			output := newCommandOutput(cmd.OutOrStdout())
 			for _, s := range out {
 				if s.Wired {
 					style := components.StatusOK
@@ -100,12 +102,12 @@ func sourcesCmd() *cobra.Command {
 						line += fmt.Sprintf("  ·  DOWN: %s", s.Error)
 					}
 					line += "  ·  " + s.License
-					fmt.Fprintln(cmd.OutOrStdout(), components.Badge(style, line))
+					fmt.Fprintln(output, components.Badge(style, line))
 				} else {
-					fmt.Fprintln(cmd.OutOrStdout(), components.Badge(components.StatusIdle, s.Label+" — "+s.Note+"  ·  "+s.License))
+					fmt.Fprintln(output, components.Badge(components.StatusIdle, s.Label+" — "+s.Note+"  ·  "+s.License))
 				}
 			}
-			return nil
+			return output.Err()
 		},
 	}
 	c.Flags().BoolVar(&asJSON, "json", false, "machine-leesbare output")
@@ -120,6 +122,7 @@ func statusCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "status",
 		Short: "toon beheerde data (managed) en herkomst — offline",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			root := dataRoot(cmd)
 			assets, err := core.LoadAssets(root)
@@ -138,11 +141,12 @@ func statusCmd() *cobra.Command {
 					"library": lib,
 				})
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Data-root: %s\n\n", root)
+			output := newCommandOutput(cmd.OutOrStdout())
+			fmt.Fprintf(output, "Data-root: %s\n\n", root)
 			if len(assets) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), components.Muted("Geen managed data. Haal op met: waterketen fetch …"))
+				fmt.Fprintln(output, components.Muted("Geen managed data. Haal op met: waterketen fetch …"))
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), components.Strong("Managed:"))
+				fmt.Fprintln(output, components.Strong("Managed:"))
 				for _, a := range assets {
 					exists := ""
 					if a.ProcessedExists() {
@@ -150,16 +154,16 @@ func statusCmd() *cobra.Command {
 					} else {
 						exists = "  (METADATA ZONDER BESTAND)"
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s/%-22s  %6s features  %s%s\n",
+					fmt.Fprintf(output, "  %s/%-22s  %6s features  %s%s\n",
 						a.Area, a.Layer, ui.Thousands(a.FeatureCount), assetDate(a.FetchedAt), exists)
 				}
 			}
-			fmt.Fprintln(cmd.OutOrStdout())
+			fmt.Fprintln(output)
 			if lib == nil {
-				fmt.Fprintln(cmd.OutOrStdout(), components.Muted("Geen kaartbibliotheek — bouw met Python: waterketen bibliotheek bouw …"))
+				fmt.Fprintln(output, components.Muted("Geen kaartbibliotheek — bouw met Python: waterketen bibliotheek bouw …"))
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), components.Strong(fmt.Sprintf("Bibliotheek-snapshot: %s", lib.Snapshot)))
-				fmt.Fprintf(cmd.OutOrStdout(), "  gebieden: %s  ·  CRS: %s\n", ui.Thousands(lib.Manifest.AreaCount), lib.Manifest.CRS)
+				fmt.Fprintln(output, components.Strong(fmt.Sprintf("Bibliotheek-snapshot: %s", lib.Snapshot)))
+				fmt.Fprintf(output, "  gebieden: %s  ·  CRS: %s\n", ui.Thousands(lib.Manifest.AreaCount), lib.Manifest.CRS)
 				names := make([]string, 0, len(lib.Manifest.Layers))
 				for n := range lib.Manifest.Layers {
 					names = append(names, n)
@@ -167,10 +171,10 @@ func statusCmd() *cobra.Command {
 				sort.Strings(names)
 				for _, n := range names {
 					rec := lib.Manifest.Layers[n]
-					fmt.Fprintf(cmd.OutOrStdout(), "  %-22s %8s features\n", n, ui.Thousands(rec.FeatureCount))
+					fmt.Fprintf(output, "  %-22s %8s features\n", n, ui.Thousands(rec.FeatureCount))
 				}
 			}
-			return nil
+			return output.Err()
 		},
 	}
 	c.Flags().BoolVar(&asJSON, "json", false, "machine-leesbare output")
@@ -185,6 +189,7 @@ func analyseCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "analyse --gebied GEBIED --laag LAAG",
 		Short: "analyseer een managed laag: netwerk, lengte, diepte",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			gebied, _ := cmd.Flags().GetString("gebied")
 			laag, _ := cmd.Flags().GetString("laag")
@@ -223,34 +228,35 @@ func analyseCmd() *cobra.Command {
 				}
 				return enc.Encode(out)
 			}
+			output := newCommandOutput(cmd.OutOrStdout())
 			label := d.Layer
 			if spec != nil {
 				label = spec.Label
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), components.Strong(fmt.Sprintf("%s/%s — %s", d.Area, d.Layer, label)))
-			fmt.Fprintf(cmd.OutOrStdout(), "  features: %s (lijnen %s · vlakken %s · punten %s)\n",
+			fmt.Fprintln(output, components.Strong(fmt.Sprintf("%s/%s — %s", d.Area, d.Layer, label)))
+			fmt.Fprintf(output, "  features: %s (lijnen %s · vlakken %s · punten %s)\n",
 				ui.Thousands(summary.Features), ui.Thousands(summary.Lines), ui.Thousands(summary.Polygons), ui.Thousands(summary.Points))
 			if spec != nil && !spec.Linear {
-				fmt.Fprintf(cmd.OutOrStdout(), "  omtrek totaal: %.2f km\n", summary.TotalM/1000)
+				fmt.Fprintf(output, "  omtrek totaal: %.2f km\n", summary.TotalM/1000)
 			} else if summary.Lines > 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "  lengte totaal: %.2f km\n", summary.TotalM/1000)
-				fmt.Fprintf(cmd.OutOrStdout(), "  gemiddelde leiding: %.1f m\n", summary.TotalM/float64(summary.Lines))
+				fmt.Fprintf(output, "  lengte totaal: %.2f km\n", summary.TotalM/1000)
+				fmt.Fprintf(output, "  gemiddelde leiding: %.1f m\n", summary.TotalM/float64(summary.Lines))
 			}
 			if spec != nil && spec.HasBOB {
 				if summary.BOBMeasured == 0 {
-					fmt.Fprintln(cmd.OutOrStdout(), components.Error("  geen BOB gemeten (0,00 = geen meting)"))
+					fmt.Fprintln(output, components.Error("  geen BOB gemeten (0,00 = geen meting)"))
 				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "  BOB: gemeten op %s van %s (%.1f%%)\n",
+					fmt.Fprintf(output, "  BOB: gemeten op %s van %s (%.1f%%)\n",
 						ui.Thousands(summary.BOBMeasured), ui.Thousands(summary.Features),
 						100*float64(summary.BOBMeasured)/float64(summary.Features))
-					fmt.Fprintf(cmd.OutOrStdout(), "  BOB: min %.2f · mediaan %.2f · max %.2f\n",
+					fmt.Fprintf(output, "  BOB: min %.2f · mediaan %.2f · max %.2f\n",
 						summary.BOBMin, summary.BOBMedian, summary.BOBMax)
 				}
 			}
 			if summary.Streets > 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "  straten met buizen: %s\n", ui.Thousands(summary.Streets))
+				fmt.Fprintf(output, "  straten met buizen: %s\n", ui.Thousands(summary.Streets))
 			}
-			return nil
+			return output.Err()
 		},
 	}
 	c.Flags().String("gebied", "", "gebied (bijv. delfshaven)")
@@ -268,6 +274,7 @@ func brailleCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "braille --gebied GEBIED --laag LAAG",
 		Short: "teken managed data als braillekaart in de terminal",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			gebied, _ := cmd.Flags().GetString("gebied")
 			laag, _ := cmd.Flags().GetString("laag")
@@ -278,6 +285,7 @@ func brailleCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			output := newCommandOutput(cmd.OutOrStdout())
 			for _, a := range assets {
 				if a.Area == gebied && a.Layer == laag {
 					d, err := core.LoadLayer(a)
@@ -296,9 +304,9 @@ func brailleCmd() *cobra.Command {
 						for _, c := range row {
 							b.WriteRune(c.Rune)
 						}
-						fmt.Fprintln(cmd.OutOrStdout(), b.String())
+						fmt.Fprintln(output, b.String())
 					}
-					return nil
+					return output.Err()
 				}
 			}
 			return fmt.Errorf("geen managed data voor %s/%s", gebied, laag)

@@ -336,7 +336,6 @@ func (s *Query) Update(msg tea.Msg) (Screen, tea.Cmd) {
 		case key.Matches(msg, ui.Keys.Back):
 			if s.Busy() {
 				s.Cancel()
-				s.loaded = true
 				s.err = fmt.Errorf("Query afgebroken")
 			}
 			if s.mode == queryDetails {
