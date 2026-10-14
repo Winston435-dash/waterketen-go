@@ -21,10 +21,11 @@ Nodig: `vhs`, `ttyd`, `ffmpeg` en een Chromium.
 
 Wat de demo's laten zien:
 
-- `waterketen-tui.tape` — alle zeven panelen, `j`/`k`, de catalogus met `[`/`]`
+- `waterketen-tui.tape` — alle acht panelen, `j`/`k`, de catalogus met `[`/`]`
   en `t`, een echte bronverversing (`v`) met voortgangsbalk, de kaart (zoomen,
   `g` gebied, `/` straat zoeken, `t` lagen, `o` solo/samen met `[`/`]`, `f`
-  passend) en beide opdrachtenpaletten (`ctrl+p` en `?`).
+  passend), een offline telling op wijk Delfshaven in Query (`8`, `g`, `Enter`)
+  en beide opdrachtenpaletten (`ctrl+p` en `?`).
 - `waterketen-tui-mobiel.tape` — dezelfde app op 44 kolommen: de zijbalk wijkt
   voor de kaart, de paneeltoetsen staan in de header en Ontdek krijgt zijn eigen
   leesweergave.

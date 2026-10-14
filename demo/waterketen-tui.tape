@@ -149,6 +149,18 @@ Sleep 2s
 Type "]"
 Sleep 2s
 
+# --- Query (8): echte telling binnen de CBS-wijkgrens ------------------------
+Type "8"
+Sleep 4s
+Type "g"
+Sleep 1s
+Type "WK059903"
+Sleep 1s
+Enter
+Sleep 2s
+Enter
+Sleep 7s
+
 # --- Opdrachten: ctrl+p (globaal) en ? (paneel) ------------------------------
 Ctrl+P
 Sleep 2500ms
