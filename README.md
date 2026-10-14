@@ -85,6 +85,26 @@ nooit randen, kleuren of spacing definiëren**.
   snapshot en aanvullen met IMWA-kunstwerken is nu wel native.
 - ⏳ `kaart` SVG/PNG-export — nog Python.
 
+## TUI-demo's
+
+Opgenomen met VHS; de brede demo laat ook de offline gebiedsquery voor wijk
+Delfshaven zien.
+
+<details>
+<summary>Desktop — alle acht panelen</summary>
+
+![Brede TUI-demo met de query voor Delfshaven](demo/waterketen-tui.gif)
+</details>
+
+<details>
+<summary>Mobiel — smalle terminalweergave</summary>
+
+![Mobiele TUI-demo met Ontdek en de kaart](demo/waterketen-tui-mobiel.gif)
+</details>
+
+Zie [demo/README.md](demo/README.md) voor de VHS-tapes en instructies om de
+GIF's opnieuw te genereren.
+
 ## Gebruik
 
 ```bash
